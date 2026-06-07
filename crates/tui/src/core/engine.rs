@@ -1245,16 +1245,8 @@ impl Engine {
                     let _ = self.tx_event.send(Event::AgentList { agents }).await;
                 }
                 Op::ChangeMode { mode } => {
-                    let previous_mode = self.current_mode;
                     self.current_mode = mode;
                     self.emit_session_updated().await;
-                    // Notify the agent that the mode has changed so it can re-evaluate
-                    // any operations that were blocked by the previous mode's policy.
-                    if previous_mode != mode {
-                        let msg = Self::mode_change_runtime_message(previous_mode, mode);
-                        self.session.add_message(msg);
-                        self.emit_session_updated().await;
-                    }
                     let _ = self
                         .tx_event
                         .send(Event::status(format!(
@@ -1412,47 +1404,6 @@ impl Engine {
                 workspace: self.session.workspace.clone(),
             })
             .await;
-    }
-
-    /// Build a runtime event message notifying the agent that the operating mode has changed.
-    /// This lets the agent re-evaluate any operations that were blocked by the previous mode.
-    fn mode_change_runtime_message(previous_mode: AppMode, new_mode: AppMode) -> Message {
-        let (policy_note, re_eval_hint) = match new_mode {
-            AppMode::Yolo => (
-                "all operations run automatically without requiring user approval",
-                "Re-evaluate any previously blocked write, patch, or shell operations \
-                 — they are now auto-approved.",
-            ),
-            AppMode::Agent => (
-                "read-only operations run silently; writes, patches, and shell \
-                 commands require user approval",
-                "Any operations you ran automatically under YOLO mode now require \
-                 explicit user approval before executing.",
-            ),
-            AppMode::Plan => (
-                "all writes and patches are blocked; shell and code execution are unavailable",
-                "Any previously planned operations that require writes or shell access \
-                 must wait until the mode changes back to Agent or YOLO.",
-            ),
-        };
-        Message {
-            role: "user".to_string(),
-            content: vec![ContentBlock::Text {
-                text: format!(
-                    "<codewhale:runtime_event kind=\"mode_change\" visibility=\"internal\">\n\
-This is an internal runtime event, not user input. The operating mode has changed \
-from {previous} mode to {new} mode.\n\n\
-In {new} mode: {policy}\n\n\
-{re_eval}\n\
-</codewhale:runtime_event>",
-                    previous = previous_mode.description(),
-                    new = new_mode.description(),
-                    policy = policy_note,
-                    re_eval = re_eval_hint,
-                ),
-                cache_control: None,
-            }],
-        }
     }
 
     async fn add_session_message(&mut self, message: Message) {
@@ -2692,51 +2643,34 @@ fn agent_approval_mode_for_turn(
     }
 }
 
-fn mode_prompt_marker(mode: AppMode) -> String {
+/// Produce a minimal runtime-policy tag for the per-turn transient user message.
+///
+/// All mode and approval policy descriptions live in the frozen system-prompt
+/// prefix (`render_runtime_policy_reference()`). This tag is a pointer — the
+/// model looks up the corresponding rules from the system prompt.  Reduces
+/// per-request overhead from ~500 tokens to ~12 tokens.
+fn runtime_prompt_text(mode: AppMode, approval_mode: crate::tui::approval::ApprovalMode) -> String {
+    let mode_str = mode_prompt_marker_value(mode);
+    let approval_str = approval_prompt_marker_value(approval_mode);
     format!(
-        "<mode_prompt mode=\"{}\">",
-        match mode {
-            AppMode::Agent => "agent",
-            AppMode::Plan => "plan",
-            AppMode::Yolo => "yolo",
-        }
+        "<runtime_prompt visibility=\"internal\" mode=\"{mode_str}\" approval=\"{approval_str}\"/>"
     )
 }
 
-fn approval_prompt_marker(approval_mode: crate::tui::approval::ApprovalMode) -> String {
-    format!(
-        "<approval_policy policy=\"{}\">",
-        match approval_mode {
-            crate::tui::approval::ApprovalMode::Auto => "auto",
-            crate::tui::approval::ApprovalMode::Suggest => "suggest",
-            crate::tui::approval::ApprovalMode::Never => "never",
-        }
-    )
-}
-
-fn mode_prompt_text(mode: AppMode) -> &'static str {
+fn mode_prompt_marker_value(mode: AppMode) -> &'static str {
     match mode {
-        AppMode::Agent => prompts::AGENT_MODE,
-        AppMode::Plan => prompts::PLAN_MODE,
-        AppMode::Yolo => prompts::YOLO_MODE,
+        AppMode::Agent => "agent",
+        AppMode::Plan => "plan",
+        AppMode::Yolo => "yolo",
     }
 }
 
-fn runtime_prompt_text(mode: AppMode, approval_mode: crate::tui::approval::ApprovalMode) -> String {
-    let marker = mode_prompt_marker(mode);
-    let mode_text = mode_prompt_text(mode).trim();
-    let taxonomy = prompts::render_core_tool_taxonomy_block(mode);
-    let approval_marker = approval_prompt_marker(approval_mode);
-    let approval_text = prompts::approval_prompt_for_mode(mode, approval_mode).trim();
-    format!(
-        "<runtime_prompt visibility=\"internal\">\n\
-This is runtime control metadata for the current request, not user input. \
-Apply it to the next assistant response and tool calls. It supersedes any \
-earlier mode or approval metadata in the transcript.\n\n\
-{marker}\n{taxonomy}\n{mode_text}\n</mode_prompt>\n\n\
-{approval_marker}\n{approval_text}\n</approval_policy>\n\
-</runtime_prompt>"
-    )
+fn approval_prompt_marker_value(approval_mode: crate::tui::approval::ApprovalMode) -> &'static str {
+    match approval_mode {
+        crate::tui::approval::ApprovalMode::Auto => "auto",
+        crate::tui::approval::ApprovalMode::Suggest => "suggest",
+        crate::tui::approval::ApprovalMode::Never => "never",
+    }
 }
 
 /// Spawn the engine in a background task

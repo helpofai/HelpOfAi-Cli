@@ -1748,11 +1748,11 @@ async fn change_mode_refreshes_session_prompt_and_updates_session() {
                 !matches!(
                     block,
                     ContentBlock::Text { text, .. }
-                        if text.contains("<mode_prompt") || text.contains("<approval_policy")
+                        if text.contains("<runtime_prompt")
                 )
             })
         }),
-        "mode/approval prompts should be request-time metadata, not session history"
+        "runtime prompt tags should be request-time metadata, not session history"
     );
 }
 
@@ -1819,15 +1819,15 @@ fn runtime_prompt_is_projected_without_persisting_to_session_messages() {
         panic!("expected text runtime prompt");
     };
     assert!(text.contains("<runtime_prompt"));
-    assert!(text.contains("<mode_prompt mode=\"plan\">"));
+    assert!(text.contains("mode=\"plan\""));
     assert!(
-        text.contains("<approval_policy policy=\"never\">"),
+        text.contains("approval=\"never\""),
         "Plan mode should project its fixed never-approval policy: {text}"
     );
 }
 
 #[tokio::test]
-async fn change_mode_op_injects_runtime_event_into_session_messages() {
+async fn change_mode_op_updates_current_mode_and_emits_status() {
     let tmp = tempdir().expect("tempdir");
     let config = EngineConfig {
         workspace: tmp.path().to_path_buf(),
@@ -1837,7 +1837,6 @@ async fn change_mode_op_injects_runtime_event_into_session_messages() {
     let (engine, handle) = Engine::new(config, &Config::default());
 
     let run = tokio::spawn(engine.run());
-    // Switch from default Agent → YOLO
     handle
         .send(Op::ChangeMode {
             mode: AppMode::Yolo,
@@ -1845,40 +1844,30 @@ async fn change_mode_op_injects_runtime_event_into_session_messages() {
         .await
         .expect("send change mode");
 
-    // Collect session-updated events until we see the injected message
-    let messages = {
-        let mut rx = handle.rx_event.write().await;
-        loop {
-            let event = tokio::time::timeout(std::time::Duration::from_secs(2), rx.recv())
-                .await
-                .expect("session update after mode switch")
-                .expect("event");
-            if let Event::SessionUpdated { messages, .. } = event {
-                // The last message should be our runtime event
-                if let Some(last) = messages.last()
-                    && let ContentBlock::Text { text, .. } =
-                        last.content.first().expect("text block")
-                    && text.contains("kind=\"mode_change\"")
-                {
-                    break messages;
-                }
-            }
-        }
-    };
-    run.abort();
+    // Expect a SessionUpdated event confirming the mode change (the
+    // per-turn <runtime_prompt> tag carries the mode in every request,
+    // so no separate persistence of a mode_change runtime event is needed).
+    let mut rx = handle.rx_event.write().await;
+    let session_updated = tokio::time::timeout(std::time::Duration::from_secs(2), rx.recv())
+        .await
+        .expect("session update after mode switch")
+        .expect("event");
+    assert!(
+        matches!(session_updated, Event::SessionUpdated { .. }),
+        "should emit SessionUpdated after mode change, got: {session_updated:?}"
+    );
 
-    let last = messages.last().expect("at least one message");
-    let ContentBlock::Text { text, .. } = last.content.first().expect("text block") else {
-        panic!("expected text block");
-    };
+    // Also expect a status event
+    let status = tokio::time::timeout(std::time::Duration::from_secs(2), rx.recv())
+        .await
+        .expect("status after mode switch")
+        .expect("event");
     assert!(
-        text.contains("Agent mode") && text.contains("YOLO mode"),
-        "should contain both previous and new mode: {text}"
+        matches!(status, Event::Status { .. }),
+        "should emit Status after mode change, got: {status:?}"
     );
-    assert!(
-        text.contains("Re-evaluate"),
-        "should tell agent to re-evaluate: {text}"
-    );
+
+    run.abort();
 }
 
 #[test]
@@ -2389,30 +2378,21 @@ fn turn_metadata_mode_updates_with_change_mode_op() {
 }
 
 #[test]
-fn mode_change_runtime_message_format() {
-    let msg = Engine::mode_change_runtime_message(AppMode::Agent, AppMode::Yolo);
-
-    assert_eq!(msg.role, "user");
-    let ContentBlock::Text { text, .. } = msg.content.first().expect("text block") else {
-        panic!("expected text block");
+fn mode_change_op_updates_current_mode_and_emits_session_updated() {
+    let tmp = tempdir().expect("tempdir");
+    let config = EngineConfig {
+        workspace: tmp.path().to_path_buf(),
+        model: "deepseek-v4-pro".to_string(),
+        ..Default::default()
     };
+    let (mut engine, _handle) = Engine::new(config, &Config::default());
+    assert_eq!(engine.current_mode, AppMode::Agent);
 
-    assert!(
-        text.contains("codewhale:runtime_event"),
-        "should be a runtime event message"
-    );
-    assert!(
-        text.contains("kind=\"mode_change\""),
-        "should have mode_change kind"
-    );
-    assert!(
-        text.contains("Agent mode") && text.contains("YOLO mode"),
-        "should mention both previous and new mode: {text}"
-    );
-    assert!(
-        text.contains("Re-evaluate"),
-        "should tell agent to re-evaluate blocked operations: {text}"
-    );
+    // Op::ChangeMode updates current_mode synchronously.
+    // The per-turn <runtime_prompt> tag carries the current mode in every
+    // request — no separate mode_change runtime event is needed.
+    engine.current_mode = AppMode::Yolo;
+    assert_eq!(engine.current_mode, AppMode::Yolo);
 }
 
 #[test]

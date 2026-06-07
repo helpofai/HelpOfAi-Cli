@@ -701,14 +701,6 @@ impl Personality {
 
 // ── Composition ───────────────────────────────────────────────────────
 
-fn mode_prompt(mode: AppMode) -> &'static str {
-    match mode {
-        AppMode::Agent => AGENT_MODE,
-        AppMode::Yolo => YOLO_MODE,
-        AppMode::Plan => PLAN_MODE,
-    }
-}
-
 fn default_approval_mode_for_mode(mode: AppMode) -> ApprovalMode {
     match mode {
         AppMode::Agent => ApprovalMode::Suggest,
@@ -717,16 +709,76 @@ fn default_approval_mode_for_mode(mode: AppMode) -> ApprovalMode {
     }
 }
 
-pub(crate) fn approval_prompt_for_mode(mode: AppMode, approval_mode: ApprovalMode) -> &'static str {
-    match mode {
-        AppMode::Yolo => AUTO_APPROVAL,
-        AppMode::Plan => NEVER_APPROVAL,
-        AppMode::Agent => match approval_mode {
-            ApprovalMode::Auto => AUTO_APPROVAL,
-            ApprovalMode::Suggest => SUGGEST_APPROVAL,
-            ApprovalMode::Never => NEVER_APPROVAL,
-        },
-    }
+/// Generate a static reference block containing all mode and approval policy
+/// descriptions. This lives in the frozen system-prompt prefix (sent once per
+/// session) so the per-turn `<runtime_prompt>` tag can be a minimal pointer
+/// (`<runtime_prompt mode="yolo" approval="auto"/>`) instead of repeating the
+/// full policy text on every API request.
+/// Extract the body of a taxonomy block (strip the `## Core Tool Taxonomy`
+/// heading) so it can be nested under a mode-specific sub-heading without
+/// producing a broken heading hierarchy (## under ####).
+fn taxonomy_body(mode: AppMode) -> String {
+    let block = render_core_tool_taxonomy_block(mode);
+    block
+        .strip_prefix("## Core Tool Taxonomy\n\n")
+        .unwrap_or(&block)
+        .to_string()
+}
+
+pub(crate) fn render_runtime_policy_reference() -> String {
+    let taxonomy_agent = taxonomy_body(AppMode::Agent);
+    let taxonomy_plan = taxonomy_body(AppMode::Plan);
+    let taxonomy_yolo = taxonomy_body(AppMode::Yolo);
+
+    let mut out = String::with_capacity(8192);
+    out.push_str("## Runtime Policy Reference\n\n");
+
+    // Protocol explanation — how the per-turn tag maps to this reference.
+    out.push_str(
+        "Each turn, the latest message in the transcript will contain a \
+         `<runtime_prompt>` tag that specifies the currently active mode and \
+         approval policy. When you see this tag, look up the corresponding \
+         rules below and apply them for the current turn.\n\n\
+         The tag format is:\n\
+         `<runtime_prompt visibility=\"internal\" mode=\"<mode>\" approval=\"<approval>\"/>`\n\n",
+    );
+
+    // ── Mode reference ─────────────────────────────────────────────────
+    out.push_str("### Modes\n\n");
+
+    out.push_str("#### agent\n\n");
+    out.push_str(&taxonomy_agent);
+    out.push('\n');
+    out.push_str(AGENT_MODE.trim());
+    out.push_str("\n\n");
+
+    out.push_str("#### plan\n\n");
+    out.push_str(&taxonomy_plan);
+    out.push('\n');
+    out.push_str(PLAN_MODE.trim());
+    out.push_str("\n\n");
+
+    out.push_str("#### yolo\n\n");
+    out.push_str(&taxonomy_yolo);
+    out.push('\n');
+    out.push_str(YOLO_MODE.trim());
+    out.push_str("\n\n");
+
+    // ── Approval policy reference ──────────────────────────────────────
+    out.push_str("### Approval Policies\n\n");
+
+    out.push_str("#### auto\n\n");
+    out.push_str(AUTO_APPROVAL.trim());
+    out.push_str("\n\n");
+
+    out.push_str("#### suggest\n\n");
+    out.push_str(SUGGEST_APPROVAL.trim());
+    out.push_str("\n\n");
+
+    out.push_str("#### never\n\n");
+    out.push_str(NEVER_APPROVAL.trim());
+
+    out
 }
 
 /// Compose the full system prompt in deterministic order:
@@ -1164,6 +1216,13 @@ pub fn system_prompt_for_mode_with_context_skills_session_and_approval(
     //    when writing `.codewhale/handoff.md` on exit / `/compact`.
     full_prompt.push_str("\n\n");
     full_prompt.push_str(COMPACT_TEMPLATE);
+
+    // 5a. Runtime policy reference — all mode and approval policy descriptions
+    //     live here in the frozen prefix so the per-turn <runtime_prompt> tag
+    //     can be a minimal pointer instead of repeating the full policy text
+    //     on every API request (up to ~500 tokens saved per turn).
+    full_prompt.push_str("\n\n");
+    full_prompt.push_str(&render_runtime_policy_reference());
 
     // ── Volatile-content boundary ─────────────────────────────────────────
     // Everything below drifts mid-session and busts the prefix cache for

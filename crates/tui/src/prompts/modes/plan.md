@@ -1,4 +1,4 @@
-## Mode: Plan
+##### Mode: Plan
 
 You are running in Plan mode — design before implementing.
 
