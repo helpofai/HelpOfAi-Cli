@@ -83,7 +83,7 @@ pub fn fleet_task_to_worker_spec(
     }
 }
 
-fn fleet_task_prompt(task_spec: &FleetTaskSpec) -> String {
+pub(crate) fn fleet_task_prompt(task_spec: &FleetTaskSpec) -> String {
     let mut prompt = String::new();
     prompt.push_str("Fleet task: ");
     prompt.push_str(&task_spec.name);
