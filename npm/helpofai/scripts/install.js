@@ -1096,7 +1096,11 @@ function shouldIgnoreInstallFailure(
   argv = process.argv.slice(2),
   env = process.env,
 ) {
-  return isInstallContext(context) && isOptionalInstall(argv, env) && isRetryable(error);
+  return (
+    isInstallContext(context) &&
+    isOptionalInstall(argv, env) &&
+    (isRetryable(error) || error.status === 404 || (error.message && error.message.includes("404")))
+  );
 }
 
 async function run(options = {}) {
