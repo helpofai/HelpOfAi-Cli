@@ -1,5 +1,10 @@
 {
   "private": true,
+  "workspaces": [
+    "npm/helpofai",
+    "npm/deepseek-tui",
+    "npm/runtime-sdk"
+  ],
 
   "devDependencies": {
     "wrangler": "^4.94.0"
