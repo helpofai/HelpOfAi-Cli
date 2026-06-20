@@ -1,4 +1,4 @@
-//! Runtime HTTP/SSE API for local CodeWhale automation.
+//! Runtime HTTP/SSE API for local HelpOfAi automation.
 
 use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
@@ -19,7 +19,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
-use codewhale_protocol::runtime::{
+use helpofai_protocol::runtime::{
     DynamicToolCallResult, RUNTIME_API_VERSION, RUNTIME_EVENT_ENVELOPE_SCHEMA_VERSION,
     RuntimeCapabilities, RuntimeEventEnvelope, RuntimeExperimentalCapabilities,
 };
@@ -56,7 +56,7 @@ use crate::task_manager::{
     NewTaskRequest, SharedTaskManager, TaskManager, TaskManagerConfig, TaskRecord, TaskSummary,
 };
 use crate::tools::subagent::{AgentWorkerRecord, load_persisted_agent_worker_records};
-use codewhale_protocol::fleet::{
+use helpofai_protocol::fleet::{
     FleetArtifactKind, FleetRun, FleetRunId, FleetWorkerEventPayload, FleetWorkerStatus,
 };
 
@@ -86,12 +86,12 @@ pub struct RuntimeApiOptions {
     /// Additional CORS origins to allow on top of the built-in defaults
     /// (`http://localhost:{3000,1420}`, `http://127.0.0.1:{3000,1420}`,
     /// `tauri://localhost`). Populated by `--cors-origin` (repeatable),
-    /// `CODEWHALE_CORS_ORIGINS` (comma-separated, `DEEPSEEK_CORS_ORIGINS`
+    /// `HELPOFAI_CORS_ORIGINS` (comma-separated, `DEEPSEEK_CORS_ORIGINS`
     /// as alias), and `[runtime_api] cors_origins` in `config.toml`.
     /// Whalescale#255 / #561.
     pub cors_origins: Vec<String>,
     /// Optional bearer token required for `/v1/*` routes. If omitted here,
-    /// `run_http_server` checks `CODEWHALE_RUNTIME_TOKEN`, then
+    /// `run_http_server` checks `HELPOFAI_RUNTIME_TOKEN`, then
     /// `DEEPSEEK_RUNTIME_TOKEN` as an alias.
     pub auth_token: Option<String>,
     /// Allow `/v1/*` routes without auth when no token is configured.
@@ -377,7 +377,7 @@ struct SubmitUserInputResponse {
 struct RuntimeInfoResponse {
     service: &'static str,
     runtime_api_version: &'static str,
-    codewhale_version: &'static str,
+    helpofai_version: &'static str,
     bind_host: String,
     port: u16,
     auth_required: bool,
@@ -493,7 +493,7 @@ pub async fn run_http_server(
             .map(|h| h.join(".deepseek").join("sessions"))
             .unwrap_or_else(|| PathBuf::from(".deepseek").join("sessions"))
     });
-    let runtime_token_env = std::env::var("CODEWHALE_RUNTIME_TOKEN")
+    let runtime_token_env = std::env::var("HELPOFAI_RUNTIME_TOKEN")
         .ok()
         .or_else(|| std::env::var("DEEPSEEK_RUNTIME_TOKEN").ok());
     let resolved_auth = resolve_runtime_auth(
@@ -541,7 +541,7 @@ pub async fn run_http_server(
             println!("Runtime API auth: generated bearer token for this process.");
             println!("  Authorization: Bearer {token}");
             println!(
-                "  Set CODEWHALE_RUNTIME_TOKEN (or DEEPSEEK_RUNTIME_TOKEN as an alias) or pass --auth-token for a stable token."
+                "  Set HELPOFAI_RUNTIME_TOKEN (or DEEPSEEK_RUNTIME_TOKEN as an alias) or pass --auth-token for a stable token."
             );
         }
     } else if auth_enabled {
@@ -710,7 +710,7 @@ fn request_has_runtime_token(req: &Request, expected: &str) -> bool {
         .is_some_and(|token| token == expected)
         || req
             .headers()
-            .get("x-codewhale-runtime-token")
+            .get("x-helpofai-runtime-token")
             .and_then(|value| value.to_str().ok())
             .is_some_and(|token| token == expected)
         || req
@@ -776,7 +776,7 @@ async fn mobile_page(State(state): State<RuntimeApiState>, req: Request) -> Resp
     if !state.mobile_enabled {
         return (
             StatusCode::NOT_FOUND,
-            "mobile control is disabled; start with `codewhale serve --mobile`",
+            "mobile control is disabled; start with `helpofai serve --mobile`",
         )
             .into_response();
     }
@@ -859,7 +859,7 @@ fn detect_lan_ip() -> Option<String> {
 async fn health() -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "ok",
-        service: "codewhale-runtime-api",
+        service: "helpofai-runtime-api",
         mode: "local",
     })
 }
@@ -1740,7 +1740,7 @@ fn fleet_worker_json(inspection: &FleetWorkerInspection) -> Value {
     })
 }
 
-fn fleet_artifact_json(artifact: &codewhale_protocol::fleet::FleetArtifactRef) -> Value {
+fn fleet_artifact_json(artifact: &helpofai_protocol::fleet::FleetArtifactRef) -> Value {
     json!({
         "kind": artifact_kind_label(&artifact.kind),
         "path": artifact.path.clone(),
@@ -1750,7 +1750,7 @@ fn fleet_artifact_json(artifact: &codewhale_protocol::fleet::FleetArtifactRef) -
     })
 }
 
-fn fleet_event_json(event: &codewhale_protocol::fleet::FleetWorkerEvent) -> Value {
+fn fleet_event_json(event: &helpofai_protocol::fleet::FleetWorkerEvent) -> Value {
     json!({
         "seq": event.seq,
         "run_id": event.run_id.0.clone(),
@@ -1852,8 +1852,8 @@ async fn list_skills(
     State(state): State<RuntimeApiState>,
 ) -> Result<Json<SkillsResponse>, ApiError> {
     let skills_dir = resolve_skills_dir(&state.config, &state.workspace);
-    let mode = crate::skills::SkillDiscoveryMode::from_codewhale_only(
-        state.config.skills_config().scan_codewhale_only(),
+    let mode = crate::skills::SkillDiscoveryMode::from_helpofai_only(
+        state.config.skills_config().scan_helpofai_only(),
     );
     let (registry, directories) =
         discover_skills_for_runtime_api(&state.workspace, &skills_dir, mode);
@@ -1883,8 +1883,8 @@ async fn set_skill_enabled(
     Json(req): Json<SetSkillEnabledRequest>,
 ) -> Result<Json<SetSkillEnabledResponse>, ApiError> {
     let skills_dir = resolve_skills_dir(&state.config, &state.workspace);
-    let mode = crate::skills::SkillDiscoveryMode::from_codewhale_only(
-        state.config.skills_config().scan_codewhale_only(),
+    let mode = crate::skills::SkillDiscoveryMode::from_helpofai_only(
+        state.config.skills_config().scan_helpofai_only(),
     );
     let (registry, directories) =
         discover_skills_for_runtime_api(&state.workspace, &skills_dir, mode);
@@ -1971,9 +1971,9 @@ async fn submit_user_input(
 async fn runtime_info(State(state): State<RuntimeApiState>) -> Json<RuntimeInfoResponse> {
     let version = env!("CARGO_PKG_VERSION");
     Json(RuntimeInfoResponse {
-        service: "codewhale-runtime-api",
+        service: "helpofai-runtime-api",
         runtime_api_version: RUNTIME_API_VERSION,
-        codewhale_version: version,
+        helpofai_version: version,
         bind_host: state.bind_host.clone(),
         port: state.bind_port,
         auth_required: state.auth_required,
@@ -2958,12 +2958,12 @@ fn current_git_head(workspace: &std::path::Path) -> Option<String> {
 }
 
 fn resolve_skills_dir(config: &Config, workspace: &std::path::Path) -> PathBuf {
-    if config.skills_config().scan_codewhale_only() {
+    if config.skills_config().scan_helpofai_only() {
         if config.skills_dir.is_some() {
             return config.skills_dir();
         }
-        if let Some(codewhale_skills_dir) = crate::skills::codewhale_workspace_skills_dir(workspace)
-            && let Ok(canonical_skills) = fs::canonicalize(&codewhale_skills_dir)
+        if let Some(helpofai_skills_dir) = crate::skills::helpofai_workspace_skills_dir(workspace)
+            && let Ok(canonical_skills) = fs::canonicalize(&helpofai_skills_dir)
         {
             return canonical_skills;
         }
@@ -3385,9 +3385,9 @@ mod tests {
             &repo,
             &[
                 "-c",
-                "user.name=CodeWhale Test",
+                "user.name=HelpOfAi Test",
                 "-c",
-                "user.email=codewhale@example.invalid",
+                "user.email=helpofai@example.invalid",
                 "commit",
                 "-m",
                 "init",
@@ -3769,7 +3769,7 @@ mod tests {
             .json()
             .await?;
         assert_eq!(health["status"], "ok");
-        assert_eq!(health["service"], "codewhale-runtime-api");
+        assert_eq!(health["service"], "helpofai-runtime-api");
 
         let created: serde_json::Value = client
             .post(format!("http://{addr}/v1/tasks"))
@@ -3855,13 +3855,13 @@ mod tests {
             .error_for_status()?;
         assert_eq!(query_token.status(), StatusCode::OK);
 
-        let codewhale_header = client
+        let helpofai_header = client
             .get(format!("http://{addr}/v1/threads/summary"))
-            .header("x-codewhale-runtime-token", &token)
+            .header("x-helpofai-runtime-token", &token)
             .send()
             .await?
             .error_for_status()?;
-        assert_eq!(codewhale_header.status(), StatusCode::OK);
+        assert_eq!(helpofai_header.status(), StatusCode::OK);
 
         let deepseek_header = client
             .get(format!("http://{addr}/v1/threads/summary"))
@@ -3890,9 +3890,9 @@ mod tests {
             &repo,
             &[
                 "-c",
-                "user.name=CodeWhale Test",
+                "user.name=HelpOfAi Test",
                 "-c",
-                "user.email=codewhale@example.invalid",
+                "user.email=helpofai@example.invalid",
                 "commit",
                 "-m",
                 "init",
@@ -4108,17 +4108,17 @@ mod tests {
 
     #[tokio::test]
     async fn fleet_status_runtime_api_exposes_state_and_actions() -> Result<()> {
-        let root = std::env::temp_dir().join(format!("codewhale-fleet-api-{}", Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("helpofai-fleet-api-{}", Uuid::new_v4()));
         let workspace = root.join("workspace");
         fs::create_dir_all(&workspace)?;
         let manager = FleetManager::open(&workspace)?;
-        let task = codewhale_protocol::fleet::FleetTaskSpec {
+        let task = helpofai_protocol::fleet::FleetTaskSpec {
             id: "task-a".to_string(),
             name: "Task A".to_string(),
             description: None,
             objective: Some("Inspect fleet status through Runtime API".to_string()),
             instructions: "Stay running for inspection.".to_string(),
-            worker: Some(codewhale_protocol::fleet::FleetTaskWorkerProfile {
+            worker: Some(helpofai_protocol::fleet::FleetTaskWorkerProfile {
                 role: Some("status-reviewer".to_string()),
                 tool_profile: Some("read-only".to_string()),
                 tools: vec!["rg".to_string()],
@@ -4241,9 +4241,9 @@ mod tests {
         use std::collections::VecDeque;
 
         let root =
-            std::env::temp_dir().join(format!("codewhale-agent-runs-api-{}", Uuid::new_v4()));
+            std::env::temp_dir().join(format!("helpofai-agent-runs-api-{}", Uuid::new_v4()));
         let workspace = root.join("workspace");
-        fs::create_dir_all(workspace.join(".codewhale/state"))?;
+        fs::create_dir_all(workspace.join(".helpofai/state"))?;
 
         let record = AgentWorkerRecord {
             spec: AgentWorkerSpec {
@@ -4338,7 +4338,7 @@ mod tests {
             "workers": [record],
         });
         fs::write(
-            workspace.join(".codewhale/state/subagents.v1.json"),
+            workspace.join(".helpofai/state/subagents.v1.json"),
             serde_json::to_vec_pretty(&state_payload)?,
         )?;
 
@@ -6125,9 +6125,9 @@ mod tests {
             .error_for_status()?
             .json()
             .await?;
-        assert_eq!(info["service"], "codewhale-runtime-api");
+        assert_eq!(info["service"], "helpofai-runtime-api");
         assert_eq!(info["runtime_api_version"], "1.0");
-        assert_eq!(info["codewhale_version"], info["version"]);
+        assert_eq!(info["helpofai_version"], info["version"]);
         assert_eq!(info["bind_host"], "127.0.0.1");
         assert_eq!(info["auth_required"], false);
         assert!(info["version"].is_string());
@@ -6246,7 +6246,7 @@ mod tests {
             .await?
             .error_for_status()?;
         let html = enabled.text().await?;
-        assert!(html.contains("CodeWhale Mobile"));
+        assert!(html.contains("HelpOfAi Mobile"));
         assert!(html.contains("/v1/approvals/"));
         assert!(html.contains("MAX_VISIBLE_EVENTS = 100"));
         assert!(html.contains("replay_limit="));
@@ -6282,7 +6282,7 @@ mod tests {
             .send()
             .await?
             .error_for_status()?;
-        assert!(query.text().await?.contains("CodeWhale Mobile"));
+        assert!(query.text().await?.contains("HelpOfAi Mobile"));
 
         let bearer = client
             .get(format!("http://{addr}/mobile"))
@@ -6290,7 +6290,7 @@ mod tests {
             .send()
             .await?
             .error_for_status()?;
-        assert!(bearer.text().await?.contains("CodeWhale Mobile"));
+        assert!(bearer.text().await?.contains("HelpOfAi Mobile"));
 
         handle.abort();
         Ok(())
@@ -6313,7 +6313,7 @@ mod tests {
             .send()
             .await?
             .error_for_status()?;
-        assert!(page.text().await?.contains("CodeWhale Mobile"));
+        assert!(page.text().await?.contains("HelpOfAi Mobile"));
 
         let summary = client
             .get(format!("http://{addr}/v1/threads/summary"))
@@ -6495,40 +6495,40 @@ mod tests {
     }
 
     #[test]
-    fn resolve_skills_dir_respects_codewhale_only_scan() {
+    fn resolve_skills_dir_respects_helpofai_only_scan() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let workspace = tmp.path();
         let agents_skills = workspace.join(".agents").join("skills");
-        let codewhale_skills = workspace.join(".codewhale").join("skills");
+        let helpofai_skills = workspace.join(".helpofai").join("skills");
         fs::create_dir_all(&agents_skills).expect("create agents skills dir");
-        fs::create_dir_all(&codewhale_skills).expect("create codewhale skills dir");
+        fs::create_dir_all(&helpofai_skills).expect("create helpofai skills dir");
 
         let config = Config {
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
         };
         let resolved = resolve_skills_dir(&config, workspace);
 
-        let expected = fs::canonicalize(&codewhale_skills).expect("canonical codewhale skills");
+        let expected = fs::canonicalize(&helpofai_skills).expect("canonical helpofai skills");
         assert_eq!(resolved, expected);
     }
 
     #[test]
-    fn resolve_skills_dir_preserves_explicit_dir_in_codewhale_only_scan() {
+    fn resolve_skills_dir_preserves_explicit_dir_in_helpofai_only_scan() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let workspace = tmp.path().join("workspace");
-        let codewhale_skills = workspace.join(".codewhale").join("skills");
+        let helpofai_skills = workspace.join(".helpofai").join("skills");
         let configured_skills = tmp.path().join("configured-skills");
-        fs::create_dir_all(&codewhale_skills).expect("create codewhale skills dir");
+        fs::create_dir_all(&helpofai_skills).expect("create helpofai skills dir");
         fs::create_dir_all(&configured_skills).expect("create configured skills dir");
 
         let config = Config {
             skills_dir: Some(configured_skills.to_string_lossy().into_owned()),
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
@@ -6643,21 +6643,21 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn resolve_skills_dir_rejects_codewhale_only_symlink_escaping_workspace() {
+    fn resolve_skills_dir_rejects_helpofai_only_symlink_escaping_workspace() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let workspace_root = tmp.path().join("workspace");
         let escape_target = tmp.path().join("escape_target");
         fs::create_dir_all(&workspace_root).expect("create workspace");
         fs::create_dir_all(&escape_target).expect("create escape target");
 
-        let dotcodewhale = workspace_root.join(".codewhale");
-        fs::create_dir_all(&dotcodewhale).expect("create .codewhale");
-        let bad_link = dotcodewhale.join("skills");
+        let dothelpofai = workspace_root.join(".helpofai");
+        fs::create_dir_all(&dothelpofai).expect("create .helpofai");
+        let bad_link = dothelpofai.join("skills");
         std::os::unix::fs::symlink(&escape_target, &bad_link).expect("symlink");
 
         let config = Config {
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
@@ -6667,12 +6667,12 @@ mod tests {
         let canon_escape = fs::canonicalize(&escape_target).expect("canon escape");
         assert_ne!(
             resolved, canon_escape,
-            "CodeWhale-only symlink escaping workspace must not be resolved as skills dir"
+            "HelpOfAi-only symlink escaping workspace must not be resolved as skills dir"
         );
         assert_eq!(
             resolved,
             config.skills_dir(),
-            "with no valid in-workspace CodeWhale skills dir, resolution should fall back to config"
+            "with no valid in-workspace HelpOfAi skills dir, resolution should fall back to config"
         );
     }
 }

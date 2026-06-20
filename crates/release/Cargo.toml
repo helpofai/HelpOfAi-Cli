@@ -1,10 +1,10 @@
 [package]
-name = "codewhale-release"
+name = "helpofai-release"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Shared CodeWhale release discovery and version comparison helpers"
+description = "Shared HelpOfAi release discovery and version comparison helpers"
 
 [dependencies]
 anyhow.workspace = true

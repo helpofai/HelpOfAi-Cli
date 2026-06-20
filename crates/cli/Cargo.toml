@@ -1,5 +1,5 @@
 [package]
-name = "codewhale-cli"
+name = "helpofai-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,26 +7,26 @@ repository.workspace = true
 description = "Agentic terminal facade for open-source and open-weight coding models"
 
 [[bin]]
-name = "codewhale"
+name = "helpofai"
 path = "src/main.rs"
 
-# Short-form convenience alias — forwards to `codewhale` silently.
+# Short-form convenience alias — forwards to `helpofai` silently.
 [[bin]]
-name = "codew"
-path = "src/bin/codew_legacy_shim.rs"
+name = "hoa"
+path = "src/bin/hoa_legacy_shim.rs"
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true
-codewhale-agent = { path = "../agent", version = "0.8.62" }
-codewhale-app-server = { path = "../app-server", version = "0.8.62" }
-codewhale-config = { path = "../config", version = "0.8.62" }
-codewhale-execpolicy = { path = "../execpolicy", version = "0.8.62" }
-codewhale-mcp = { path = "../mcp", version = "0.8.62" }
-codewhale-release = { path = "../release", version = "0.8.62" }
-codewhale-secrets = { path = "../secrets", version = "0.8.62" }
-codewhale-state = { path = "../state", version = "0.8.62" }
+helpofai-agent = { path = "../agent", version = "0.8.62" }
+helpofai-app-server = { path = "../app-server", version = "0.8.62" }
+helpofai-config = { path = "../config", version = "0.8.62" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.62" }
+helpofai-mcp = { path = "../mcp", version = "0.8.62" }
+helpofai-release = { path = "../release", version = "0.8.62" }
+helpofai-secrets = { path = "../secrets", version = "0.8.62" }
+helpofai-state = { path = "../state", version = "0.8.62" }
 chrono.workspace = true
 dirs.workspace = true
 serde.workspace = true

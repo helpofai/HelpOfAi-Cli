@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, SecondsFormat, Utc};
-use codewhale_protocol::fleet::*;
+use helpofai_protocol::fleet::*;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -32,7 +32,7 @@ pub struct FleetManager {
     workspace: PathBuf,
     ledger: FleetLedger,
     stale_after: Duration,
-    exec_config: codewhale_config::FleetExecConfig,
+    exec_config: helpofai_config::FleetExecConfig,
     /// Optional sub-agent manager for headless worker execution.
     /// When set, fleet workers spawn real sub-agents; when None,
     /// the manager falls back to local simulation.
@@ -150,7 +150,7 @@ impl FleetManager {
             workspace,
             ledger,
             stale_after: Duration::from_secs(DEFAULT_STALE_AFTER_SECONDS),
-            exec_config: codewhale_config::FleetExecConfig::default(),
+            exec_config: helpofai_config::FleetExecConfig::default(),
             sub_agent_manager: None,
         })
     }
@@ -161,7 +161,7 @@ impl FleetManager {
     }
 
     /// Apply fleet headless-worker execution policy from config.
-    pub fn with_exec_config(mut self, exec_config: codewhale_config::FleetExecConfig) -> Self {
+    pub fn with_exec_config(mut self, exec_config: helpofai_config::FleetExecConfig) -> Self {
         self.exec_config = exec_config;
         self
     }
@@ -320,14 +320,14 @@ impl FleetManager {
         run_id: &FleetRunId,
         max_workers: usize,
         executor: &mut FleetExecutor,
-        codewhale_binary: &str,
+        helpofai_binary: &str,
         model: Option<&str>,
         tick_interval: Duration,
     ) -> Result<FleetStatusSnapshot> {
         let max_workers = max_workers.clamp(1, 128);
         loop {
             self.schedule_run(run_id, max_workers)?;
-            self.drive_executor_tick(run_id, executor, codewhale_binary, model)?;
+            self.drive_executor_tick(run_id, executor, helpofai_binary, model)?;
             self.refresh_run_status(run_id)?;
             if !self.run_has_open_work(run_id)? {
                 return self.run_status(run_id);
@@ -340,11 +340,11 @@ impl FleetManager {
         &self,
         run_id: &FleetRunId,
         executor: &mut FleetExecutor,
-        codewhale_binary: &str,
+        helpofai_binary: &str,
         model: Option<&str>,
     ) -> Result<FleetExecutorTickReport> {
         let mut report = FleetExecutorTickReport::default();
-        report.started += self.start_leased_workers(run_id, executor, codewhale_binary, model)?;
+        report.started += self.start_leased_workers(run_id, executor, helpofai_binary, model)?;
 
         for worker_id in executor.worker_ids() {
             for payload in executor.drain_events(&worker_id) {
@@ -695,7 +695,7 @@ impl FleetManager {
         &self,
         run_id: &FleetRunId,
         executor: &mut FleetExecutor,
-        codewhale_binary: &str,
+        helpofai_binary: &str,
         model: Option<&str>,
     ) -> Result<usize> {
         let state = self.ledger.rebuild_state()?;
@@ -727,7 +727,7 @@ impl FleetManager {
                 .cloned()
                 .unwrap_or_else(|| default_local_worker(worker_id));
             let command =
-                build_worker_exec_command(codewhale_binary, &task_spec, &self.exec_config, model);
+                build_worker_exec_command(helpofai_binary, &task_spec, &self.exec_config, model);
             let cwd = resolve_task_cwd(&self.workspace, &task_spec);
             match executor.start_worker_on_host(worker_id, &worker_spec.host, command, Some(cwd)) {
                 Ok(handle) => {
@@ -933,7 +933,7 @@ impl FleetManager {
         worker_id: &str,
         task_spec: &FleetTaskSpec,
     ) -> Result<FleetArtifactRef> {
-        let rel_path = PathBuf::from(".codewhale")
+        let rel_path = PathBuf::from(".helpofai")
             .join("fleet")
             .join(safe_path_segment(&run_id.0))
             .join(safe_path_segment(&task_spec.id))
@@ -1389,10 +1389,10 @@ mod tests {
     }
 
     #[cfg(unix)]
-    fn fake_codewhale(dir: &TempDir, body: &str) -> PathBuf {
+    fn fake_helpofai(dir: &TempDir, body: &str) -> PathBuf {
         use std::os::unix::fs::PermissionsExt;
 
-        let path = dir.path().join("fake-codewhale");
+        let path = dir.path().join("fake-helpofai");
         std::fs::write(&path, body).unwrap();
         let mut permissions = std::fs::metadata(&path).unwrap().permissions();
         permissions.set_mode(0o755);
@@ -1401,7 +1401,7 @@ mod tests {
     }
 
     #[cfg(unix)]
-    fn complete_with_fake_codewhale(
+    fn complete_with_fake_helpofai(
         manager: &FleetManager,
         run_id: &FleetRunId,
         max_workers: usize,
@@ -1495,7 +1495,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let manager = FleetManager::open(tmp.path()).unwrap();
         let path = task_spec_file(&tmp, vec![task("task-a"), task("task-b"), task("task-c")]);
-        let fake = fake_codewhale(
+        let fake = fake_helpofai(
             &tmp,
             r#"#!/bin/sh
 printf '{"type":"tool_use","name":"read_file","id":"fake","input":{}}\n'
@@ -1508,7 +1508,7 @@ exit 0
 
         assert_eq!(report.leased, 1);
         assert_eq!(report.queued, 2);
-        let status = complete_with_fake_codewhale(&manager, &report.run_id, 1, &fake);
+        let status = complete_with_fake_helpofai(&manager, &report.run_id, 1, &fake);
         assert_eq!(status.completed, 3);
         assert_eq!(status.running, 0);
         let state = manager.ledger.rebuild_state().unwrap();
@@ -1560,7 +1560,7 @@ exit 0
         let mut completed = task("task-a");
         completed.scorer = Some(FleetScorerSpec::ExitCode);
         let path = task_spec_file(&tmp, vec![completed]);
-        let fake = fake_codewhale(
+        let fake = fake_helpofai(
             &tmp,
             r#"#!/bin/sh
 printf '{"type":"done"}\n'
@@ -1569,7 +1569,7 @@ exit 0
         );
 
         let report = manager.create_run_from_task_spec_path(&path, 1).unwrap();
-        let status = complete_with_fake_codewhale(&manager, &report.run_id, 1, &fake);
+        let status = complete_with_fake_helpofai(&manager, &report.run_id, 1, &fake);
 
         assert_eq!(status.completed, 1);
         assert_eq!(status.failed, 0);
@@ -1602,7 +1602,7 @@ exit 0
             path: PathBuf::from("missing.log"),
             pattern: "[".to_string(),
         });
-        let fake = fake_codewhale(
+        let fake = fake_helpofai(
             &tmp,
             r#"#!/bin/sh
 case "$*" in
@@ -1641,7 +1641,7 @@ esac
         };
 
         let report = manager.create_run(doc, 3).unwrap();
-        let status = complete_with_fake_codewhale(&manager, &report.run_id, 3, &fake);
+        let status = complete_with_fake_helpofai(&manager, &report.run_id, 3, &fake);
 
         assert_eq!(status.failed, 3);
         assert_eq!(status.transport_failed, 1);
@@ -1756,7 +1756,7 @@ esac
                 workspace: Some(FleetWorkspaceRequirements {
                     root: None,
                     required_files: vec![PathBuf::from("Cargo.toml")],
-                    writable_paths: vec![PathBuf::from(".codewhale/fleet")],
+                    writable_paths: vec![PathBuf::from(".helpofai/fleet")],
                     environment: Some(FleetEnvironmentRequirements {
                         required: vec!["PATH".to_string()],
                         allowlist: vec![],

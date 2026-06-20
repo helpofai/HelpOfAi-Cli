@@ -9,7 +9,7 @@ use crate::models::{Message, SystemPrompt};
 use crate::tools::goal::GoalStatus;
 use crate::tui::app::AppMode;
 use crate::tui::approval::ApprovalMode;
-use codewhale_protocol::runtime::DynamicToolSpec;
+use helpofai_protocol::runtime::DynamicToolSpec;
 use std::path::PathBuf;
 
 /// Prefix used for tool-call ids created by local composer shell shortcuts.

@@ -3,7 +3,7 @@ Feature: Tool call lifecycle
     # This executable slice asserts the public exec stream and mocked LLM border.
     # The PTY screen slice should also assert Statusline state and BlueWhale activity:
     # running while the tool is executing, stopped or completed when the turn finishes.
-    Given an offline CodeWhale workspace containing:
+    Given an offline HelpOfAi workspace containing:
       | path      | kind   |
       | README.md | file   |
       | notes.txt | file   |
@@ -15,7 +15,7 @@ Feature: Tool call lifecycle
       | content                                                    |
       | The directory contains README.md, notes.txt, and src/.      |
     When the user asks "list the current directory"
-    Then CodeWhale should send the user request to the mocked LLM
+    Then HelpOfAi should send the user request to the mocked LLM
     And the public tool lifecycle should show a running tool:
       | status  | marker | tool     | input |
       | running | [~]    | list_dir | .     |
@@ -24,7 +24,7 @@ Feature: Tool call lifecycle
       | README.md | file   |
       | notes.txt | file   |
       | src       | folder |
-    And CodeWhale should send the tool result back to the mocked LLM
+    And HelpOfAi should send the tool result back to the mocked LLM
     And the public tool lifecycle should show a completed tool:
       | status    | marker | tool     | input |
       | completed | ✓      | list_dir | .     |

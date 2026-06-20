@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use codewhale_config::ProviderKind;
+use helpofai_config::ProviderKind;
 use serde::{Deserialize, Serialize};
 
 /// High-level model family used for shared identity affordances across clients.

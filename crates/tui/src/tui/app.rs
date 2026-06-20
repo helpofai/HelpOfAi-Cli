@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
-use codewhale_config::ProviderChain;
+use helpofai_config::ProviderChain;
 
 use crate::artifacts::ArtifactRecord;
 use crate::client::{CacheWarmupKey, PromptInspection};
@@ -69,13 +69,13 @@ pub(crate) fn resolve_skills_dir(
     global_skills_dir: &Path,
     config: &Config,
 ) -> PathBuf {
-    if config.skills_config().scan_codewhale_only() {
+    if config.skills_config().scan_helpofai_only() {
         if config.skills_dir.is_some() {
             return global_skills_dir.to_path_buf();
         }
-        if let Some(codewhale_skills_dir) = crate::skills::codewhale_workspace_skills_dir(workspace)
+        if let Some(helpofai_skills_dir) = crate::skills::helpofai_workspace_skills_dir(workspace)
         {
-            return codewhale_skills_dir;
+            return helpofai_skills_dir;
         }
         return global_skills_dir.to_path_buf();
     }
@@ -987,7 +987,7 @@ pub struct TuiOptions {
 pub enum InitialInput {
     /// Pre-populate the composer and wait for the user to press Enter.
     ///
-    /// Used by `codewhale pr <N>` (#451) to drop the model into a session
+    /// Used by `helpofai pr <N>` (#451) to drop the model into a session
     /// with the PR context already typed so the user can edit before sending.
     Prefill(String),
     /// Pre-populate the composer, submit it once startup is ready, then keep
@@ -1471,7 +1471,7 @@ pub struct App {
     pub config_profile: Option<String>,
     pub mcp_config_path: PathBuf,
     pub skills_dir: PathBuf,
-    pub skills_scan_codewhale_only: bool,
+    pub skills_scan_helpofai_only: bool,
     /// Path to the user-memory file (#489). Always populated; only
     /// consulted when `use_memory` is `true`.
     pub memory_path: PathBuf,
@@ -2271,7 +2271,7 @@ impl App {
         let shell_manager = new_shared_shell_manager(workspace.clone());
 
         // Initialize hooks executor from config, merged with project-local
-        // `.codewhale/hooks.toml` (#3026).
+        // `.helpofai/hooks.toml` (#3026).
         let hooks_config =
             crate::hooks::HooksConfig::load_with_project(config.hooks_config(), &workspace);
         let hooks = HookExecutor::new(hooks_config, workspace.clone());
@@ -2279,10 +2279,10 @@ impl App {
         // Initialize plan state
         let plan_state = new_shared_plan_state();
 
-        let skills_scan_codewhale_only = config.skills_config().scan_codewhale_only();
+        let skills_scan_helpofai_only = config.skills_config().scan_helpofai_only();
         let skills_dir = resolve_skills_dir(&workspace, &global_skills_dir, config);
         let cached_skills =
-            Self::discover_cached_skills(&workspace, &skills_dir, skills_scan_codewhale_only);
+            Self::discover_cached_skills(&workspace, &skills_dir, skills_scan_helpofai_only);
 
         let input_history = crate::composer_history::load_history();
         let (initial_input_text, initial_input_cursor, auto_submit_initial_input) =
@@ -2372,7 +2372,7 @@ impl App {
             config_profile,
             mcp_config_path: mcp_config_path.clone(),
             skills_dir,
-            skills_scan_codewhale_only,
+            skills_scan_helpofai_only,
             memory_path,
             use_memory,
             use_alt_screen,
@@ -2575,12 +2575,12 @@ impl App {
     fn discover_cached_skills(
         workspace: &std::path::Path,
         skills_dir: &std::path::Path,
-        scan_codewhale_only: bool,
+        scan_helpofai_only: bool,
     ) -> Vec<(String, String)> {
         crate::skills::discover_for_workspace_and_dir_with_mode(
             workspace,
             skills_dir,
-            crate::skills::SkillDiscoveryMode::from_codewhale_only(scan_codewhale_only),
+            crate::skills::SkillDiscoveryMode::from_helpofai_only(scan_helpofai_only),
         )
         .list()
         .iter()
@@ -2593,7 +2593,7 @@ impl App {
         self.cached_skills = Self::discover_cached_skills(
             &self.workspace,
             &skills_dir,
-            self.skills_scan_codewhale_only,
+            self.skills_scan_helpofai_only,
         );
     }
 
@@ -5080,7 +5080,7 @@ impl App {
 
     /// When the composer input exceeds [`MAX_SUBMITTED_INPUT_CHARS`], write
     /// the full content to a timestamped paste file under
-    /// `.codewhale/pastes/` and replace `self.input` with an `@`-mention
+    /// `.helpofai/pastes/` and replace `self.input` with an `@`-mention
     /// pointing at it so the model can read the full content via the
     /// normal file-mention resolution path (#553).
     fn consolidate_large_input(&mut self) {
@@ -5090,9 +5090,9 @@ impl App {
         let now = chrono::Local::now();
         let suffix = uuid::Uuid::new_v4().to_string()[..8].to_string();
         let filename = format!("paste-{}-{}.md", now.format("%Y-%m-%d-%H%M%S"), suffix);
-        let rel_path = format!(".codewhale/pastes/{filename}");
+        let rel_path = format!(".helpofai/pastes/{filename}");
 
-        let pastes_dir = self.workspace.join(".codewhale/pastes");
+        let pastes_dir = self.workspace.join(".helpofai/pastes");
         if let Err(e) = std::fs::create_dir_all(&pastes_dir) {
             // Fallback: keep a truncated version so we don't lose the
             // user's input entirely when the filesystem is unhappy.
@@ -6137,8 +6137,8 @@ mod tests {
         assert_eq!(shell_command_from_bang_input("!pwd"), Ok(Some("pwd")));
         assert_eq!(shell_command_from_bang_input("! pwd"), Ok(Some("pwd")));
         assert_eq!(
-            shell_command_from_bang_input("  !  cargo test -p codewhale-tui sidebar"),
-            Ok(Some("cargo test -p codewhale-tui sidebar"))
+            shell_command_from_bang_input("  !  cargo test -p helpofai-tui sidebar"),
+            Ok(Some("cargo test -p helpofai-tui sidebar"))
         );
         assert_eq!(shell_command_from_bang_input("normal message"), Ok(None));
     }
@@ -6508,7 +6508,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let config_path = tmp.path().join("config.toml");
         let _config_path = EnvVarGuard::set("DEEPSEEK_CONFIG_PATH", &config_path);
-        let _provider_env = EnvVarGuard::remove("CODEWHALE_PROVIDER");
+        let _provider_env = EnvVarGuard::remove("HELPOFAI_PROVIDER");
         let _legacy_provider_env = EnvVarGuard::remove("DEEPSEEK_PROVIDER");
         let _api_key_envs: Vec<_> = [
             "DEEPSEEK_API_KEY",
@@ -6548,7 +6548,7 @@ mod tests {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let config_path = tmp.path().join("config.toml");
         let _config_path = EnvVarGuard::set("DEEPSEEK_CONFIG_PATH", &config_path);
-        let _provider_env = EnvVarGuard::remove("CODEWHALE_PROVIDER");
+        let _provider_env = EnvVarGuard::remove("HELPOFAI_PROVIDER");
         let _legacy_provider_env = EnvVarGuard::remove("DEEPSEEK_PROVIDER");
 
         let config = Config {
@@ -6620,7 +6620,7 @@ mod tests {
     }
 
     #[test]
-    fn cached_skills_respect_codewhale_only_scan_config() {
+    fn cached_skills_respect_helpofai_only_scan_config() {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let workspace = tmp.path().join("workspace");
 
@@ -6635,16 +6635,16 @@ mod tests {
         )
         .expect("write claude skill");
 
-        let codewhale_dir = workspace
-            .join(".codewhale")
+        let helpofai_dir = workspace
+            .join(".helpofai")
             .join("skills")
-            .join("codewhale-skill");
-        std::fs::create_dir_all(&codewhale_dir).expect("codewhale skill dir");
+            .join("helpofai-skill");
+        std::fs::create_dir_all(&helpofai_dir).expect("helpofai skill dir");
         std::fs::write(
-            codewhale_dir.join("SKILL.md"),
-            "---\nname: codewhale-skill\ndescription: CodeWhale skill\n---\nbody\n",
+            helpofai_dir.join("SKILL.md"),
+            "---\nname: helpofai-skill\ndescription: HelpOfAi skill\n---\nbody\n",
         )
-        .expect("write codewhale skill");
+        .expect("write helpofai skill");
 
         let mut options = test_options(false);
         options.workspace = workspace.clone();
@@ -6653,19 +6653,19 @@ mod tests {
             options,
             &Config {
                 skills: Some(crate::config::SkillsConfig {
-                    scan_codewhale_only: Some(true),
+                    scan_helpofai_only: Some(true),
                     ..Default::default()
                 }),
                 ..Default::default()
             },
         );
 
-        assert_eq!(app.skills_dir, workspace.join(".codewhale").join("skills"));
+        assert_eq!(app.skills_dir, workspace.join(".helpofai").join("skills"));
         assert!(
             app.cached_skills
                 .iter()
-                .any(|(name, _)| name == "codewhale-skill"),
-            "CodeWhale skill should be cached: {:?}",
+                .any(|(name, _)| name == "helpofai-skill"),
+            "HelpOfAi skill should be cached: {:?}",
             app.cached_skills
         );
         assert!(
@@ -6678,12 +6678,12 @@ mod tests {
     }
 
     #[test]
-    fn resolve_skills_dir_requires_codewhale_skills_to_be_directory() {
+    fn resolve_skills_dir_requires_helpofai_skills_to_be_directory() {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let workspace = tmp.path().join("workspace");
-        std::fs::create_dir_all(workspace.join(".codewhale")).expect("codewhale dir");
+        std::fs::create_dir_all(workspace.join(".helpofai")).expect("helpofai dir");
         std::fs::write(
-            workspace.join(".codewhale").join("skills"),
+            workspace.join(".helpofai").join("skills"),
             "not a directory",
         )
         .expect("skills file");
@@ -6691,7 +6691,7 @@ mod tests {
         let global_skills_dir = tmp.path().join("global-skills");
         let config = Config {
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
@@ -6736,20 +6736,20 @@ mod tests {
     }
 
     #[test]
-    fn cached_skills_preserve_configured_directory_in_codewhale_only_scan() {
+    fn cached_skills_preserve_configured_directory_in_helpofai_only_scan() {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let workspace = tmp.path().join("workspace");
 
-        let codewhale_skill_dir = workspace
-            .join(".codewhale")
+        let helpofai_skill_dir = workspace
+            .join(".helpofai")
             .join("skills")
-            .join("workspace-codewhale");
-        std::fs::create_dir_all(&codewhale_skill_dir).expect("workspace codewhale skill dir");
+            .join("workspace-helpofai");
+        std::fs::create_dir_all(&helpofai_skill_dir).expect("workspace helpofai skill dir");
         std::fs::write(
-            codewhale_skill_dir.join("SKILL.md"),
-            "---\nname: workspace-codewhale\ndescription: Workspace CodeWhale skill\n---\nbody\n",
+            helpofai_skill_dir.join("SKILL.md"),
+            "---\nname: workspace-helpofai\ndescription: Workspace HelpOfAi skill\n---\nbody\n",
         )
-        .expect("write workspace codewhale skill");
+        .expect("write workspace helpofai skill");
 
         let configured_dir = tmp.path().join("configured-skills");
         let configured_skill_dir = configured_dir.join("configured-skill");
@@ -6766,7 +6766,7 @@ mod tests {
         let config = Config {
             skills_dir: Some(configured_dir.to_string_lossy().into_owned()),
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
@@ -6777,8 +6777,8 @@ mod tests {
         assert!(
             app.cached_skills
                 .iter()
-                .any(|(name, _)| name == "workspace-codewhale"),
-            "workspace CodeWhale skill should still be cached: {:?}",
+                .any(|(name, _)| name == "workspace-helpofai"),
+            "workspace HelpOfAi skill should still be cached: {:?}",
             app.cached_skills
         );
         assert!(
@@ -6791,12 +6791,12 @@ mod tests {
     }
 
     #[test]
-    fn cached_skills_reject_codewhale_only_workspace_symlink_escape() {
+    fn cached_skills_reject_helpofai_only_workspace_symlink_escape() {
         let tmp = tempfile::TempDir::new().expect("tempdir");
         let workspace = tmp.path().join("workspace");
         let escape_target = tmp.path().join("escape-target");
         let escaped_skill_dir = escape_target.join("escaped-skill");
-        std::fs::create_dir_all(workspace.join(".codewhale")).expect("codewhale dir");
+        std::fs::create_dir_all(workspace.join(".helpofai")).expect("helpofai dir");
         std::fs::create_dir_all(&escaped_skill_dir).expect("escaped skill dir");
         std::fs::write(
             escaped_skill_dir.join("SKILL.md"),
@@ -6804,7 +6804,7 @@ mod tests {
         )
         .expect("write escaped skill");
 
-        let link_path = workspace.join(".codewhale").join("skills");
+        let link_path = workspace.join(".helpofai").join("skills");
         if create_dir_symlink(&escape_target, &link_path).is_err() {
             return;
         }
@@ -6815,7 +6815,7 @@ mod tests {
         options.skills_dir = global_skills_dir.clone();
         let config = Config {
             skills: Some(crate::config::SkillsConfig {
-                scan_codewhale_only: Some(true),
+                scan_helpofai_only: Some(true),
                 ..Default::default()
             }),
             ..Default::default()
@@ -6827,7 +6827,7 @@ mod tests {
             !app.cached_skills
                 .iter()
                 .any(|(name, _)| name == "escaped-skill"),
-            "strict app cache must not follow escaped workspace CodeWhale symlinks: {:?}",
+            "strict app cache must not follow escaped workspace HelpOfAi symlinks: {:?}",
             app.cached_skills
         );
     }
@@ -6847,7 +6847,7 @@ mod tests {
 
         assert_eq!(app.input, full_content);
         assert_eq!(app.cursor_position, app.input.chars().count());
-        let pastes_dir = tmp.path().join(".codewhale/pastes");
+        let pastes_dir = tmp.path().join(".helpofai/pastes");
         assert!(
             !pastes_dir.exists() || std::fs::read_dir(&pastes_dir).unwrap().next().is_none(),
             "paste file should not be written before submit"
@@ -6869,7 +6869,7 @@ mod tests {
         );
         let mention_start = full_content.len();
         assert!(
-            submitted[mention_start..].starts_with("\n@.codewhale/pastes/paste-"),
+            submitted[mention_start..].starts_with("\n@.helpofai/pastes/paste-"),
             "expected @mention suffix, got: {}",
             &submitted[mention_start..]
         );
@@ -6900,9 +6900,9 @@ mod tests {
         app.insert_paste_text(&small);
 
         assert_eq!(app.input, small);
-        assert!(!app.input.starts_with("@.codewhale/pastes/"));
+        assert!(!app.input.starts_with("@.helpofai/pastes/"));
         // No paste file gets written for under-cap pastes.
-        let pastes_dir = tmp.path().join(".codewhale/pastes");
+        let pastes_dir = tmp.path().join(".helpofai/pastes");
         assert!(
             !pastes_dir.exists() || std::fs::read_dir(&pastes_dir).unwrap().next().is_none(),
             "no paste file should be written for under-cap content"
@@ -6931,7 +6931,7 @@ mod tests {
         );
         let mention_start = full_content.len();
         assert!(
-            submitted[mention_start..].starts_with("\n@.codewhale/pastes/paste-"),
+            submitted[mention_start..].starts_with("\n@.helpofai/pastes/paste-"),
             "submitted text should end with @mention, got suffix: {}",
             &submitted[mention_start..]
         );

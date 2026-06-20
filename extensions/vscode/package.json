@@ -1,13 +1,13 @@
 {
-  "name": "codewhale-vscode",
-  "displayName": "CodeWhale",
-  "description": "Official CodeWhale VS Code integration scaffold for local runtime attach and terminal launch.",
+  "name": "helpofai-vscode",
+  "displayName": "HelpOfAi",
+  "description": "Official HelpOfAi VS Code integration scaffold for local runtime attach and terminal launch.",
   "version": "0.8.53",
-  "publisher": "codewhale",
+  "publisher": "helpofai",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Hmbown/CodeWhale.git",
+    "url": "https://github.com/helpofai/HelpOfAi-Cli.git",
     "directory": "extensions/vscode"
   },
   "engines": {
@@ -17,13 +17,13 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codewhale.openTerminal",
-    "onCommand:codewhale.startRuntime",
-    "onCommand:codewhale.checkRuntime",
-    "onCommand:codewhale.refreshAgentView",
-    "onCommand:codewhale.refreshSnapshots",
-    "onCommand:codewhale.openRuntimeDocs",
-    "onView:codewhale.runtimeStatus"
+    "onCommand:helpofai.openTerminal",
+    "onCommand:helpofai.startRuntime",
+    "onCommand:helpofai.checkRuntime",
+    "onCommand:helpofai.refreshAgentView",
+    "onCommand:helpofai.refreshSnapshots",
+    "onCommand:helpofai.openRuntimeDocs",
+    "onView:helpofai.runtimeStatus"
   ],
   "main": "./out/extension.js",
   "files": [
@@ -35,56 +35,56 @@
   "contributes": {
     "commands": [
       {
-        "command": "codewhale.openTerminal",
-        "title": "CodeWhale: Open Terminal"
+        "command": "helpofai.openTerminal",
+        "title": "HelpOfAi: Open Terminal"
       },
       {
-        "command": "codewhale.startRuntime",
-        "title": "CodeWhale: Start Local Runtime"
+        "command": "helpofai.startRuntime",
+        "title": "HelpOfAi: Start Local Runtime"
       },
       {
-        "command": "codewhale.checkRuntime",
-        "title": "CodeWhale: Check Runtime"
+        "command": "helpofai.checkRuntime",
+        "title": "HelpOfAi: Check Runtime"
       },
       {
-        "command": "codewhale.refreshAgentView",
-        "title": "CodeWhale: Refresh Agent View"
+        "command": "helpofai.refreshAgentView",
+        "title": "HelpOfAi: Refresh Agent View"
       },
       {
-        "command": "codewhale.refreshSnapshots",
-        "title": "CodeWhale: Refresh Restore Points"
+        "command": "helpofai.refreshSnapshots",
+        "title": "HelpOfAi: Refresh Restore Points"
       },
       {
-        "command": "codewhale.openRuntimeDocs",
-        "title": "CodeWhale: Open Runtime API Docs"
+        "command": "helpofai.openRuntimeDocs",
+        "title": "HelpOfAi: Open Runtime API Docs"
       }
     ],
     "configuration": {
-      "title": "CodeWhale",
+      "title": "HelpOfAi",
       "properties": {
-        "codewhale.commandPath": {
+        "helpofai.commandPath": {
           "type": "string",
-          "default": "codewhale",
-          "description": "Command or absolute path used to launch CodeWhale."
+          "default": "helpofai",
+          "description": "Command or absolute path used to launch HelpOfAi."
         },
-        "codewhale.runtimeHost": {
+        "helpofai.runtimeHost": {
           "type": "string",
           "default": "127.0.0.1",
-          "description": "Local host used for CodeWhale runtime attach checks."
+          "description": "Local host used for HelpOfAi runtime attach checks."
         },
-        "codewhale.runtimePort": {
+        "helpofai.runtimePort": {
           "type": "number",
           "default": 7878,
           "minimum": 1,
           "maximum": 65535,
-          "description": "Local port used for CodeWhale runtime attach checks."
+          "description": "Local port used for HelpOfAi runtime attach checks."
         },
-        "codewhale.runtimeToken": {
+        "helpofai.runtimeToken": {
           "type": "string",
           "default": "",
           "description": "Optional bearer token for authenticated runtime endpoints."
         },
-        "codewhale.agentViewRefreshIntervalSeconds": {
+        "helpofai.agentViewRefreshIntervalSeconds": {
           "type": "number",
           "default": 15,
           "minimum": 0,
@@ -96,17 +96,17 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codewhale",
-          "title": "CodeWhale",
-          "icon": "media/codewhale.svg"
+          "id": "helpofai",
+          "title": "HelpOfAi",
+          "icon": "media/helpofai.svg"
         }
       ]
     },
     "views": {
-      "codewhale": [
+      "helpofai": [
         {
           "type": "webview",
-          "id": "codewhale.runtimeStatus",
+          "id": "helpofai.runtimeStatus",
           "name": "Agent View"
         }
       ]

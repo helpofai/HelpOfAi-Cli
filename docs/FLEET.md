@@ -2,7 +2,7 @@
 
 Agent Fleet is the local-first control plane for durable multi-worker runs. It
 is **not** a separate execution engine: a fleet worker is a headless
-`codewhale exec` run that the fleet launches and tracks durably. See
+`helpofai exec` run that the fleet launches and tracks durably. See
 [AGENT_RUNTIME.md](AGENT_RUNTIME.md) for how sub-agents, `exec`, and the fleet
 converge on one durable runtime. In product language, a user may still "open a
 sub-agent"; in architecture language, durable nested work should be a
@@ -13,40 +13,40 @@ needs retry, sleep/restart survival, remote execution, receipts, or a ledgered
 audit trail. The initial CLI surface is:
 
 ```sh
-codewhale fleet init
-codewhale fleet run tasks.json --max-workers 4
-codewhale fleet status
-codewhale fleet inspect <worker-id>
-codewhale fleet logs <worker-id>
-codewhale fleet artifacts <worker-id>
-codewhale fleet interrupt <worker-id>
-codewhale fleet restart <worker-id>
-codewhale fleet stop --all
+helpofai fleet init
+helpofai fleet run tasks.json --max-workers 4
+helpofai fleet status
+helpofai fleet inspect <worker-id>
+helpofai fleet logs <worker-id>
+helpofai fleet artifacts <worker-id>
+helpofai fleet interrupt <worker-id>
+helpofai fleet restart <worker-id>
+helpofai fleet stop --all
 ```
 
-Fleet state is stored under the workspace in `.codewhale/fleet.jsonl`. Worker
-logs and adapter logs are stored under `.codewhale/fleet/` and
-`.codewhale/fleet-host/`.
+Fleet state is stored under the workspace in `.helpofai/fleet.jsonl`. Worker
+logs and adapter logs are stored under `.helpofai/fleet/` and
+`.helpofai/fleet-host/`.
 
-## Naming: Modes, WhaleFlow, Fleet, and Swarm
+## Naming: Modes, HelpFlow, Fleet, and Swarm
 
 These names describe different layers, not competing systems. Agent, Plan, and
-YOLO stay the permission/work modes. WhaleFlow is an orchestration overlay that
+YOLO stay the permission/work modes. HelpFlow is an orchestration overlay that
 can run on top of those modes when the task needs a continuous workflow.
 
-- **WhaleFlow** is the repeatable workflow plan and user-facing orchestration
+- **HelpFlow** is the repeatable workflow plan and user-facing orchestration
   overlay: a script/IR that decides which phases and agents run next, keeps
   intermediate results out of the main conversation, and can be inspected or
-  rerun. A WhaleFlow run should have a visible progress view and a clear active
+  rerun. A HelpFlow run should have a visible progress view and a clear active
   header state instead of feeling like a hidden background task.
 - **Fleet** is the execution substrate: headless workers, local/SSH hosts,
   trust policy, leases, heartbeats, logs, receipts, and status APIs.
-- **Swarm** is the high-fanout behavior inside WhaleFlow. It is gated in
+- **Swarm** is the high-fanout behavior inside HelpFlow. It is gated in
   v0.8.61: `/swarm` must not revive prompt-only sub-agent fanout. It should
-  compile into a WhaleFlow-backed fleet run once the durable worker and goal
+  compile into a HelpFlow-backed fleet run once the durable worker and goal
   re-dispatch substrate is available.
 
-UI guidance: keep the main transcript calm. A WhaleFlow run should appear as a
+UI guidance: keep the main transcript calm. A HelpFlow run should appear as a
 compact progress card plus Work/Agents sidebar rows with phase names, worker
 counts, receipts, and nested indentation for child workers. Use the whale mark
 sparingly as an active header/status signal; avoid repeating emoji-heavy rows
@@ -54,7 +54,7 @@ for every worker.
 
 ## Task Spec
 
-`codewhale fleet run` accepts JSON or TOML. A minimal JSON spec:
+`helpofai fleet run` accepts JSON or TOML. A minimal JSON spec:
 
 ```json
 {
@@ -70,7 +70,7 @@ for every worker.
 }
 ```
 
-Workers are optional. If omitted, CodeWhale creates local worker slots up to
+Workers are optional. If omitted, HelpOfAi creates local worker slots up to
 `--max-workers`.
 
 Task specs are typed in Rust and keep verification data separate from worker
@@ -82,10 +82,10 @@ transcripts. A task can declare:
 - `input_files`, extra `context`, `budget`, `timeout_seconds`, and `retry_policy`
 - `expected_artifacts`, `scorer`, `tags`, and free-form `metadata`
 
-Workers write bounded artifact files under `.codewhale/fleet/` and ledger only
+Workers write bounded artifact files under `.helpofai/fleet/` and ledger only
 the artifact refs: kind, path, checksum, MIME type, and size. Receipts record
 `pass`, `fail`, `partial`, `skip`, or `timeout`; failed receipts may also mark
-the source as `transport`, `task`, or `verifier`. `codewhale fleet status`
+the source as `transport`, `task`, or `verifier`. `helpofai fleet status`
 surfaces those failure-source counts separately.
 
 Deterministic built-in scorers are `exit_code`, `file_exists`, `regex_match`,
@@ -130,7 +130,7 @@ override any field in the task spec:
   "input_files": ["crates/**/*.rs"],
   "budget": { "max_tokens": 32000 },
   "expected_artifacts": ["log", "report"],
-  "scorer": { "kind": "regex_match", "path": ".codewhale/fleet/report.md", "pattern": "finding|all clear" }
+  "scorer": { "kind": "regex_match", "path": ".helpofai/fleet/report.md", "pattern": "finding|all clear" }
 }
 ```
 
@@ -209,12 +209,12 @@ Example alert config shape:
   "adapters": {
     "ops-slack": {
       "kind": "slack",
-      "webhook_env": "CODEWHALE_FLEET_SLACK_WEBHOOK",
-      "channel": "#codewhale-fleet"
+      "webhook_env": "HELPOFAI_FLEET_SLACK_WEBHOOK",
+      "channel": "#helpofai-fleet"
     },
     "pager": {
       "kind": "pager_duty",
-      "routing_key_env": "CODEWHALE_FLEET_PAGERDUTY_ROUTING_KEY",
+      "routing_key_env": "HELPOFAI_FLEET_PAGERDUTY_ROUTING_KEY",
       "severity": "critical"
     }
   }
@@ -224,7 +224,7 @@ Example alert config shape:
 Use dry-run to inspect a redacted adapter payload without sending:
 
 ```sh
-codewhale fleet alert-dry-run \
+helpofai fleet alert-dry-run \
   --event stale \
   --run-id fleet-demo \
   --worker-id fleet-demo-local-1 \
@@ -234,13 +234,13 @@ codewhale fleet alert-dry-run \
 ```
 
 The payload includes the run id, worker id, task id, status, short reason, and
-safe inspection commands such as `codewhale fleet status` and
-`codewhale fleet inspect <worker-id>`. Endpoints, webhook secrets, and
+safe inspection commands such as `helpofai fleet status` and
+`helpofai fleet inspect <worker-id>`. Endpoints, webhook secrets, and
 PagerDuty routing keys are shown as `<redacted:env:...>`.
 
 ## Status Surfaces
 
-`codewhale fleet status` shows compact counts for queued, running, completed,
+`helpofai fleet status` shows compact counts for queued, running, completed,
 partial, failed, restarted, escalated, cancelled, stale, and verifier/transport
 failure sources. `inspect` shows the worker state plus the current task
 objective, role, host, heartbeat, latest event, artifact refs, latest error, and
@@ -266,9 +266,9 @@ decisions in the fleet ledger.
 ## Manager-Agent Runbook
 
 Manager agents should treat Fleet operations as typed, ledgered control-plane
-work. Start with `codewhale fleet status`, then inspect one run or worker with
-`codewhale fleet inspect <worker-id>`, `logs`, and `artifacts`. Use direct
-reads of `.codewhale/fleet.jsonl`, host logs, or remote files only when the
+work. Start with `helpofai fleet status`, then inspect one run or worker with
+`helpofai fleet inspect <worker-id>`, `logs`, and `artifacts`. Use direct
+reads of `.helpofai/fleet.jsonl`, host logs, or remote files only when the
 typed CLI/API surface cannot provide the required evidence.
 
 Classify the worker before taking action:
@@ -288,10 +288,10 @@ Choose one typed action:
 
 - Restart a worker only when the failure is transient, retry budget remains,
   the task is idempotent or retry-safe, and no permission or secret boundary is
-  involved: `codewhale fleet restart <worker-id>`.
+  involved: `helpofai fleet restart <worker-id>`.
 - Interrupt or stop only when the current task is unsafe to continue or the
-  operator explicitly asks for cancellation: `codewhale fleet interrupt
-  <worker-id>` or `codewhale fleet stop --all`.
+  operator explicitly asks for cancellation: `helpofai fleet interrupt
+  <worker-id>` or `helpofai fleet stop --all`.
 - Do not restart pure task failures by default; preserve artifacts and hand the
   receipt to the task owner unless the task spec says retrying can produce new
   evidence.
@@ -304,13 +304,13 @@ Choose one typed action:
 Safe Slack or PagerDuty draft:
 
 ```text
-CodeWhale fleet needs attention
+HelpOfAi fleet needs attention
 Run: <run-id>
 Worker: <worker-id>
 Task: <task-id or unknown>
 Classification: <transient failure | task failure | verifier failure | needs-human>
 Reason: <one sentence, no secrets>
-Latest typed evidence: codewhale fleet inspect <worker-id>; codewhale fleet artifacts <worker-id>
+Latest typed evidence: helpofai fleet inspect <worker-id>; helpofai fleet artifacts <worker-id>
 Safe log excerpt: <3 lines max or "see artifact <ref>">
 Requested decision: <restart approval | verifier review | task owner review | permission decision>
 ```
@@ -347,12 +347,12 @@ Example SSH worker spec:
   "host": {
     "kind": "ssh",
     "host": "builder.example.com",
-    "user": "codewhale",
+    "user": "helpofai",
     "port": 22,
-    "identity": "~/.ssh/codewhale_fleet",
-    "working_directory": "/srv/codewhale/work",
-    "env_allowlist": ["CODEWHALE_PROFILE"],
-    "codewhale_binary": "/usr/local/bin/codewhale"
+    "identity": "~/.ssh/helpofai_fleet",
+    "working_directory": "/srv/helpofai/work",
+    "env_allowlist": ["HELPOFAI_PROFILE"],
+    "helpofai_binary": "/usr/local/bin/helpofai"
   },
   "capabilities": ["local", "linux", "tests"],
   "max_concurrent_tasks": 1
@@ -362,10 +362,10 @@ Example SSH worker spec:
 Defaults are intentionally conservative:
 
 - no hosted control plane or cloud provisioning is enabled;
-- SSH requires an explicit host, working directory, and CodeWhale binary path;
+- SSH requires an explicit host, working directory, and HelpOfAi binary path;
 - secret-like environment names such as `TOKEN`, `SECRET`, `PASSWORD`,
   `API_KEY`, and `PRIVATE_KEY` are rejected from adapter allowlists;
-- secrets should remain in CodeWhale config providers or remote host config,
+- secrets should remain in HelpOfAi config providers or remote host config,
   not in task instructions, argv, or fleet logs.
 
 ## Security and Trust Boundaries
@@ -378,7 +378,7 @@ writes) and how it must prove its identity before being granted those privileges
 
 | Level | Access | Requires |
 |-------|--------|----------|
-| `sandbox` | No network, no secrets, writes only to `.codewhale/fleet/` | Nothing — default for new workers |
+| `sandbox` | No network, no secrets, writes only to `.helpofai/fleet/` | Nothing — default for new workers |
 | `local` | Workspace reads, gated writes, configured secrets | Local process (same uid) |
 | `remote-verified` | Network access, bounded capability grants, configured secrets | SSH host-key verification or equivalent attestation |
 | `operator` | Full access to all secrets, unrestricted writes, any action | Operator-owned machine |
@@ -398,7 +398,7 @@ granted, and a ceiling on the maximum trust level:
     "default_trust_level": "sandbox",
     "allowed_secrets": [
       {"key": "GH_TOKEN", "source": "env"},
-      {"key": "CODEWHALE_API_KEY", "source": "keyring"}
+      {"key": "HELPOFAI_API_KEY", "source": "keyring"}
     ],
     "capability_grants": [
       {
@@ -430,7 +430,7 @@ optional source hint that tells the fleet manager where to resolve the value:
 Supported sources:
 - `"env"` — resolve from a process environment variable
 - `"keyring"` — resolve from the OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service)
-- `"file"` — resolve from `~/.codewhale/secrets/`
+- `"file"` — resolve from `~/.helpofai/secrets/`
 - absent — try all sources in default order (store first, then env)
 
 Secret refs are redacted in logs and ledger entries: `<secret:env.GH_TOKEN>`.
@@ -457,14 +457,14 @@ SSH workers should always set `host_key_fingerprint` in production:
   "host": {
     "kind": "ssh",
     "host": "builder.example.com",
-    "user": "codewhale",
+    "user": "helpofai",
     "port": 22,
-    "identity": "~/.ssh/codewhale_fleet",
+    "identity": "~/.ssh/helpofai_fleet",
     "host_key_fingerprint": "SHA256:aLGqZo1M6c...",
     "known_hosts": "~/.ssh/known_hosts",
-    "working_directory": "/srv/codewhale/work",
-    "env_allowlist": ["CODEWHALE_PROFILE"],
-    "codewhale_binary": "/usr/local/bin/codewhale"
+    "working_directory": "/srv/helpofai/work",
+    "env_allowlist": ["HELPOFAI_PROFILE"],
+    "helpofai_binary": "/usr/local/bin/helpofai"
   },
   "capabilities": ["local", "linux", "tests"],
   "max_concurrent_tasks": 1
@@ -481,8 +481,8 @@ endpoints, or as a secret reference:
 {
   "kind": "slack",
   "webhook": {
-    "url_ref": {"key": "CODEWHALE_FLEET_SLACK_WEBHOOK", "source": "env"},
-    "secret_ref": {"key": "CODEWHALE_FLEET_SLACK_SIGNING_SECRET", "source": "keyring"}
+    "url_ref": {"key": "HELPOFAI_FLEET_SLACK_WEBHOOK", "source": "env"},
+    "secret_ref": {"key": "HELPOFAI_FLEET_SLACK_SIGNING_SECRET", "source": "keyring"}
   }
 }
 ```

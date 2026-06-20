@@ -5,10 +5,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const isZh = locale === "zh";
   return {
-    title: isZh ? "常见问题 · CodeWhale" : "FAQ · CodeWhale",
+    title: isZh ? "常见问题 · HelpOfAi" : "FAQ · HelpOfAi",
     description: isZh
-      ? "CodeWhale 常见问题：安装、配置、提供商、模型、模式、安全与隐私。答案来自实际代码、文档和 GitHub 议题。"
-      : "CodeWhale frequently asked questions: install, config, providers, models, modes, security, and privacy. Answers sourced from real code, docs, and GitHub issues.",
+      ? "HelpOfAi 常见问题：安装、配置、提供商、模型、模式、安全与隐私。答案来自实际代码、文档和 GitHub 议题。"
+      : "HelpOfAi frequently asked questions: install, config, providers, models, modes, security, and privacy. Answers sourced from real code, docs, and GitHub issues.",
   };
 }
 
@@ -20,35 +20,35 @@ interface FaqItem {
 
 const faqEn: FaqItem[] = [
   {
-    q: "What is CodeWhale?",
+    q: "What is HelpOfAi?",
     a: (
       <>
-        CodeWhale is a terminal-native coding agent for open-source and open-weight models. It runs from the <code className="inline">codewhale</code> command, streams reasoning blocks, edits local workspaces with approval gates, and can auto-route each turn to the right model and thinking level. DeepSeek V4 is the first-class model path; OpenRouter, Hugging Face, self-hosted runtimes, and other OpenAI-compatible routes are additive.
+        HelpOfAi is a terminal-native coding agent for open-source and open-weight models. It runs from the <code className="inline">helpofai</code> command, streams reasoning blocks, edits local workspaces with approval gates, and can auto-route each turn to the right model and thinking level. DeepSeek V4 is the first-class model path; OpenRouter, Hugging Face, self-hosted runtimes, and other OpenAI-compatible routes are additive.
       </>
     ),
     sources: ["README.md", "docs/ARCHITECTURE.md"],
   },
   {
-    q: "How do I install CodeWhale?",
+    q: "How do I install HelpOfAi?",
     a: (
       <>
         <p className="mb-2">Four paths, same result:</p>
         <pre className="code-block mb-2">
 {`# npm (recommended — no Rust toolchain needed)
-npm install -g codewhale
+npm install -g helpofai
 
 # Cargo (needs Rust 1.88+)
-cargo install codewhale-cli --locked
-cargo install codewhale-tui --locked
+cargo install helpofai-cli --locked
+cargo install helpofai-tui --locked
 
 # Homebrew (macOS)
-brew tap Hmbown/deepseek-tui && brew install deepseek-tui
+brew tap helpofai/HelpOfAi-Cli && brew install deepseek-tui
 
 # Direct download
-# https://github.com/Hmbown/CodeWhale/releases`}
+# https://github.com/helpofai/HelpOfAi-Cli/releases`}
         </pre>
         <p>
-          Run <code className="inline">codewhale</code> to start. First run creates <code className="inline">~/.codewhale/</code> automatically. Legacy <code className="inline">~/.deepseek/</code> is still read as a compatibility fallback.
+          Run <code className="inline">helpofai</code> to start. First run creates <code className="inline">~/.helpofai/</code> automatically. Legacy <code className="inline">~/.deepseek/</code> is still read as a compatibility fallback.
           See the <Link href="/install" className="body-link">full install guide</Link> for China mirrors, Docker, and troubleshooting.
         </p>
       </>
@@ -56,25 +56,25 @@ brew tap Hmbown/deepseek-tui && brew install deepseek-tui
     sources: ["README.md", "#1860", "#1914"],
   },
   {
-    q: "What's the difference between codewhale and codewhale-tui?",
+    q: "What's the difference between helpofai and helpofai-tui?",
     a: (
       <>
-        <code className="inline">codewhale</code> is the dispatcher CLI — it manages config, auth, updates, and launches the TUI.
-        <code className="inline">codewhale-tui</code> is the terminal UI binary that runs the agent loop.
-        When you type <code className="inline">codewhale</code>, the dispatcher spawns <code className="inline">codewhale-tui</code> for you.
+        <code className="inline">helpofai</code> is the dispatcher CLI — it manages config, auth, updates, and launches the TUI.
+        <code className="inline">helpofai-tui</code> is the terminal UI binary that runs the agent loop.
+        When you type <code className="inline">helpofai</code>, the dispatcher spawns <code className="inline">helpofai-tui</code> for you.
         Both are installed together; you rarely need to think about the split.
       </>
     ),
     sources: ["README.md"],
   },
   {
-    q: "Is CodeWhale the same as DeepSeek TUI? What about the rename?",
+    q: "Is HelpOfAi the same as DeepSeek TUI? What about the rename?",
     a: (
       <>
-        Yes. CodeWhale is the new name for what was previously called DeepSeek TUI.
-        The canonical command is now <code className="inline">codewhale</code>. Legacy <code className="inline">deepseek</code> and <code className="inline">deepseek-tui</code> commands remain as compatibility shims — they still work.
-        Config lives at <code className="inline">~/.codewhale/</code>. Legacy <code className="inline">~/.deepseek/</code> config is still read as a compatibility fallback, and <code className="inline">DEEPSEEK_*</code> env vars continue to work.
-        DeepSeek is not deprecated. The rename reflects a mission idea put in this version: CodeWhale as an agentic terminal for open models across providers, not a narrowing away from DeepSeek.
+        Yes. HelpOfAi is the new name for what was previously called DeepSeek TUI.
+        The canonical command is now <code className="inline">helpofai</code>. Legacy <code className="inline">deepseek</code> and <code className="inline">deepseek-tui</code> commands remain as compatibility shims — they still work.
+        Config lives at <code className="inline">~/.helpofai/</code>. Legacy <code className="inline">~/.deepseek/</code> config is still read as a compatibility fallback, and <code className="inline">DEEPSEEK_*</code> env vars continue to work.
+        DeepSeek is not deprecated. The rename reflects a mission idea put in this version: HelpOfAi as an agentic terminal for open models across providers, not a narrowing away from DeepSeek.
       </>
     ),
     sources: ["docs/REBRAND.md", "README.md"],
@@ -88,36 +88,36 @@ brew tap Hmbown/deepseek-tui && brew install deepseek-tui
 export DEEPSEEK_API_KEY=sk-...
 
 # Method 2: Saved config (recommended — survives shell restarts)
-codewhale auth set --provider deepseek --api-key sk-...
+helpofai auth set --provider deepseek --api-key sk-...
 
 # Method 3: config.toml
-# Add to ~/.codewhale/config.toml:
+# Add to ~/.helpofai/config.toml:
 api_key = "sk-..."
 
 # Check what's active:
-codewhale auth status    # shows config, keyring, and env-var state
-codewhale doctor         # full connectivity check`}
+helpofai auth status    # shows config, keyring, and env-var state
+helpofai doctor         # full connectivity check`}
         </pre>
         <p>
           Saved config keys take precedence over environment variables.
-          Use <code className="inline">codewhale auth clear --provider deepseek</code> to remove a saved key.
+          Use <code className="inline">helpofai auth clear --provider deepseek</code> to remove a saved key.
         </p>
       </>
     ),
     sources: ["#907", "#1545", "docs/CONFIGURATION.md"],
   },
   {
-    q: "Which providers does CodeWhale support?",
+    q: "Which providers does HelpOfAi support?",
     a: (
       <>
-        <p className="mb-2">CodeWhale ships with these built-in providers:</p>
+        <p className="mb-2">HelpOfAi ships with these built-in providers:</p>
         <ul className="list-disc pl-5 space-y-1 text-sm text-ink-soft mb-3">
           <li><strong>DeepSeek</strong> — first-class, native API. Reasoning streaming, cache metrics, thinking effort control.</li>
           <li><strong>OpenRouter</strong> — unified API for DeepSeek models and other open-model routes.</li>
           <li><strong>OpenAI-compatible</strong>, <strong>NVIDIA NIM</strong>, <strong>AtlasCloud</strong>, <strong>Wanjie Ark</strong>, <strong>Volcengine Ark</strong>, <strong>Xiaomi MiMo</strong>, <strong>Novita</strong>, <strong>Fireworks</strong>, <strong>SiliconFlow</strong>, <strong>SiliconFlow CN</strong>, <strong>Arcee AI</strong>, <strong>Moonshot/Kimi</strong>, <strong>Hugging Face</strong>, <strong>DeepInfra</strong>, <strong>Together AI</strong>, <strong>Z.ai</strong>, <strong>StepFun</strong>, <strong>MiniMax</strong>, <strong>OpenAI Codex</strong>, <strong>Anthropic</strong>, <strong>SGLang</strong>, <strong>vLLM</strong>, <strong>Ollama</strong></li>
         </ul>
         <p>
-          Set the corresponding env var (e.g. <code className="inline">OPENROUTER_API_KEY</code>) and your provider in <code className="inline">~/.codewhale/config.toml</code>.
+          Set the corresponding env var (e.g. <code className="inline">OPENROUTER_API_KEY</code>) and your provider in <code className="inline">~/.helpofai/config.toml</code>.
           Self-hosted OpenAI-compatible endpoints are supported through the provider config.
         </p>
       </>
@@ -125,19 +125,19 @@ codewhale doctor         # full connectivity check`}
     sources: ["docs/CONFIGURATION.md", "#1978", "#1710"],
   },
   {
-    q: "How do I use OpenRouter with CodeWhale?",
+    q: "How do I use OpenRouter with HelpOfAi?",
     a: (
       <>
         <pre className="code-block mb-2">
 {`# 1. Set your OpenRouter key
 export OPENROUTER_API_KEY=sk-or-v1-...
 
-# 2. In ~/.codewhale/config.toml:
+# 2. In ~/.helpofai/config.toml:
 [providers.openrouter]
 api_key = "sk-or-v1-..."
 
 # 3. Run with an OpenRouter model:
-codewhale --model openrouter/deepseek/deepseek-v4-pro
+helpofai --model openrouter/deepseek/deepseek-v4-pro
 
 # Or set it as default in config.toml:
 default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
@@ -156,7 +156,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
       <>
         Yes. Use the <code className="inline">vllm</code>, <code className="inline">sglang</code>, or <code className="inline">ollama</code> providers with your local endpoint.
         For OpenAI-compatible endpoints (llama.cpp server, text-generation-webui, Aphrodite, etc.), you can use the <code className="inline">openai</code> provider with a custom <code className="inline">base_url</code>.
-        CodeWhale also respects <code className="inline">DEEPSEEK_ALLOW_INSECURE_HTTP=true</code> for local HTTP endpoints.
+        HelpOfAi also respects <code className="inline">DEEPSEEK_ALLOW_INSECURE_HTTP=true</code> for local HTTP endpoints.
         Hugging Face Inference Providers are also available through the <code className="inline">huggingface</code> provider. Broader Hub discovery, model cards, datasets, and Jobs belong to Model Lab.
       </>
     ),
@@ -184,13 +184,13 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
     a: (
       <>
         <p className="mb-2">
-          Use <code className="inline">codewhale --model auto</code> or <code className="inline">/model auto</code> to let CodeWhale decide how much model power each turn needs.
+          Use <code className="inline">helpofai --model auto</code> or <code className="inline">/model auto</code> to let HelpOfAi decide how much model power each turn needs.
         </p>
         <p className="mb-2">
           <strong>Fin</strong> is the fast non-thinking path (<code className="inline">deepseek-v4-flash</code> with thinking off) used for routing decisions, summaries, RLM children, context maintenance, and other coordination work. Before the real turn is sent, Fin makes a small routing call to pick the concrete model and thinking level.
         </p>
         <p>
-          Short/simple turns can stay on Flash with thinking off. Coding, debugging, release work, architecture, or security review can move up to Pro and/or higher thinking. Fin is local to CodeWhale — the upstream API never receives <code className="inline">model: "auto"</code>.
+          Short/simple turns can stay on Flash with thinking off. Coding, debugging, release work, architecture, or security review can move up to Pro and/or higher thinking. Fin is local to HelpOfAi — the upstream API never receives <code className="inline">model: "auto"</code>.
         </p>
       </>
     ),
@@ -204,19 +204,19 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
         App-server clients can also persist a thread-scoped goal through the
         <code className="inline">thread/goal/*</code> methods. It does not add another
         app mode; the mode switcher remains Plan, Agent, and YOLO.
-        Track progress in <a href="https://github.com/Hmbown/CodeWhale/issues/891" className="body-link">#891</a>.
+        Track progress in <a href="https://github.com/helpofai/HelpOfAi-Cli/issues/891" className="body-link">#891</a>.
       </>
     ),
     sources: ["#891"],
   },
   {
-    q: "Is my code safe? What sandboxing does CodeWhale use?",
+    q: "Is my code safe? What sandboxing does HelpOfAi use?",
     a: (
       <>
-        CodeWhale runs entirely on your machine. No telemetry, no cloud processing of your code.
+        HelpOfAi runs entirely on your machine. No telemetry, no cloud processing of your code.
         Sandbox backends: <strong>seatbelt</strong> (macOS), <strong>landlock</strong> (Linux), restricted tokens (Windows).
         Workspace boundaries default to <code className="inline">--workspace</code>. <code className="inline">/trust</code> lifts them.
-        Approval mode is configurable per session. All credential/approval/elevation events are written to <code className="inline">~/.codewhale/audit.log</code>.
+        Approval mode is configurable per session. All credential/approval/elevation events are written to <code className="inline">~/.helpofai/audit.log</code>.
       </>
     ),
     sources: ["SECURITY.md", "docs/ARCHITECTURE.md"],
@@ -225,8 +225,8 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
     q: "How do MCP servers work?",
     a: (
       <>
-        CodeWhale is a bidirectional MCP client and server. Define servers in <code className="inline">~/.codewhale/mcp.json</code>.
-        Tools appear as <code className="inline">mcp_&lt;server&gt;_&lt;tool&gt;</code>. You can also expose CodeWhale as an MCP server with <code className="inline">codewhale mcp</code>.
+        HelpOfAi is a bidirectional MCP client and server. Define servers in <code className="inline">~/.helpofai/mcp.json</code>.
+        Tools appear as <code className="inline">mcp_&lt;server&gt;_&lt;tool&gt;</code>. You can also expose HelpOfAi as an MCP server with <code className="inline">helpofai mcp</code>.
         See the <Link href="/docs#mcp" className="body-link">docs page</Link> for configuration examples.
       </>
     ),
@@ -238,7 +238,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
       <>
         No CLA required. Fork, branch with conventional commits (<code className="inline">feat:</code>, <code className="inline">fix:</code>, etc.), run the local checks, open a PR.
         The maintainer reads everything personally. Start with issues labeled <code className="inline">good first issue</code>.
-        See the <Link href="/contribute" className="body-link">contribute page</Link> and <a href="https://github.com/Hmbown/CodeWhale/blob/main/CONTRIBUTING.md" className="body-link">CONTRIBUTING.md</a>.
+        See the <Link href="/contribute" className="body-link">contribute page</Link> and <a href="https://github.com/helpofai/HelpOfAi-Cli/blob/main/CONTRIBUTING.md" className="body-link">CONTRIBUTING.md</a>.
       </>
     ),
     sources: ["CONTRIBUTING.md"],
@@ -251,7 +251,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
         <pre className="code-block my-2">
 {`# npm mirror
 npm config set registry https://registry.npmmirror.com
-npm install -g codewhale
+npm install -g helpofai
 
 # Cargo mirror (Tsinghua TUNA)
 # Add to ~/.cargo/config.toml:
@@ -261,7 +261,7 @@ replace-with = "tuna"
 registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
         </pre>
         <p>
-          Prebuilt binaries are also available from <a href="https://github.com/Hmbown/CodeWhale/releases" className="body-link">GitHub Releases</a>.
+          Prebuilt binaries are also available from <a href="https://github.com/helpofai/HelpOfAi-Cli/releases" className="body-link">GitHub Releases</a>.
           The Gitee mirror and CNB mirror may also be available.
         </p>
       </>
@@ -272,10 +272,10 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     q: "My API key was rejected or I get auth errors on first run.",
     a: (
       <>
-        <p className="mb-2">Run <code className="inline">codewhale doctor</code> — it checks API key, network, sandbox, and MCP servers. Full report is written to <code className="inline">~/.codewhale/doctor.log</code>.</p>
+        <p className="mb-2">Run <code className="inline">helpofai doctor</code> — it checks API key, network, sandbox, and MCP servers. Full report is written to <code className="inline">~/.helpofai/doctor.log</code>.</p>
         <p className="mb-2">Common causes:</p>
         <ul className="list-disc pl-5 space-y-1 text-sm text-ink-soft">
-          <li>Stale <code className="inline">DEEPSEEK_API_KEY</code> in shell startup file — open a fresh shell or use <code className="inline">codewhale auth set</code></li>
+          <li>Stale <code className="inline">DEEPSEEK_API_KEY</code> in shell startup file — open a fresh shell or use <code className="inline">helpofai auth set</code></li>
           <li>Key from wrong provider — make sure the key matches the provider you're using</li>
           <li>Network connectivity — check <code className="inline">curl https://api.deepseek.com/v1/models</code></li>
         </ul>
@@ -289,7 +289,7 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
       <>
         The <code className="inline">huggingface</code> provider is the shipped OpenAI-compatible route for Hugging Face Inference Providers.
         Model Lab is the planned open-model infrastructure layer for Hub discovery, model cards, datasets, safetensors adapters, and Jobs.
-        Track broader progress in <a href="https://github.com/Hmbown/CodeWhale/issues/1977" className="body-link">#1977</a>.
+        Track broader progress in <a href="https://github.com/helpofai/HelpOfAi-Cli/issues/1977" className="body-link">#1977</a>.
       </>
     ),
     sources: ["#1977", "docs/MODEL_LAB.md"],
@@ -298,7 +298,7 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     q: "Why is token consumption so high? / Why is cache hit rate low?",
     a: (
       <>
-        CodeWhale sends substantial context (system prompt, project instructions, tool definitions) with each turn.
+        HelpOfAi sends substantial context (system prompt, project instructions, tool definitions) with each turn.
         DeepSeek's prefix cache is used aggressively — the system prompt is layered to maximize cache hits.
         If you see high token usage, check: are you using <code className="inline">deepseek-v4-pro</code> for simple queries better suited to Flash?
         Model auto-routing (Fin) can help pick the right model per turn.
@@ -308,25 +308,25 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     sources: ["#1177", "#1818", "#743"],
   },
   {
-    q: "How do I update CodeWhale?",
+    q: "How do I update HelpOfAi?",
     a: (
       <>
         <pre className="code-block mb-2">
 {`# Release-binary updater (works for npm/release-binary installs)
-codewhale update
+helpofai update
 
 # npm
-npm install -g codewhale@latest
+npm install -g helpofai@latest
 
 # Cargo
-cargo install codewhale-cli --locked --force
+cargo install helpofai-cli --locked --force
 
 # Homebrew
 brew update && brew upgrade deepseek-tui`}
         </pre>
         <p>
-          If you installed via npm, <code className="inline">codewhale update</code> downloads the latest release binaries.
-          If a mirror is lagging, download directly from <a href="https://github.com/Hmbown/CodeWhale/releases" className="body-link">GitHub Releases</a>.
+          If you installed via npm, <code className="inline">helpofai update</code> downloads the latest release binaries.
+          If a mirror is lagging, download directly from <a href="https://github.com/helpofai/HelpOfAi-Cli/releases" className="body-link">GitHub Releases</a>.
         </p>
       </>
     ),
@@ -336,35 +336,35 @@ brew update && brew upgrade deepseek-tui`}
 
 const faqZh: FaqItem[] = [
   {
-    q: "CodeWhale 是什么？",
+    q: "HelpOfAi 是什么？",
     a: (
       <>
-        CodeWhale 是一个面向开源模型的终端原生编程智能体。通过 <code className="inline">codewhale</code> 命令启动，流式输出推理块，在有审批门槛的情况下编辑本地工作区，并可为每个回合自动选择最合适的模型和推理深度。DeepSeek V4 是一级模型路径；OpenRouter、Hugging Face、自托管运行时和其他 OpenAI 兼容路由都是增量选择。
+        HelpOfAi 是一个面向开源模型的终端原生编程智能体。通过 <code className="inline">helpofai</code> 命令启动，流式输出推理块，在有审批门槛的情况下编辑本地工作区，并可为每个回合自动选择最合适的模型和推理深度。DeepSeek V4 是一级模型路径；OpenRouter、Hugging Face、自托管运行时和其他 OpenAI 兼容路由都是增量选择。
       </>
     ),
     sources: ["README.md", "docs/ARCHITECTURE.md"],
   },
   {
-    q: "如何安装 CodeWhale？",
+    q: "如何安装 HelpOfAi？",
     a: (
       <>
         <p className="mb-2">四种方式，殊途同归：</p>
         <pre className="code-block mb-2">
 {`# npm（推荐 — 无需 Rust 工具链）
-npm install -g codewhale
+npm install -g helpofai
 
 # Cargo（需要 Rust 1.88+）
-cargo install codewhale-cli --locked
-cargo install codewhale-tui --locked
+cargo install helpofai-cli --locked
+cargo install helpofai-tui --locked
 
 # Homebrew（macOS）
-brew tap Hmbown/deepseek-tui && brew install deepseek-tui
+brew tap helpofai/HelpOfAi-Cli && brew install deepseek-tui
 
 # 直接下载
-# https://github.com/Hmbown/CodeWhale/releases`}
+# https://github.com/helpofai/HelpOfAi-Cli/releases`}
         </pre>
         <p>
-          输入 <code className="inline">codewhale</code> 即可启动。首次运行会自动创建 <code className="inline">~/.codewhale/</code>。旧版 <code className="inline">~/.deepseek/</code> 仍会作为兼容回退读取。
+          输入 <code className="inline">helpofai</code> 即可启动。首次运行会自动创建 <code className="inline">~/.helpofai/</code>。旧版 <code className="inline">~/.deepseek/</code> 仍会作为兼容回退读取。
           查看 <Link href="/zh/install" className="body-link">完整安装指南</Link> 了解国内镜像、Docker 和故障排除。
         </p>
       </>
@@ -372,24 +372,24 @@ brew tap Hmbown/deepseek-tui && brew install deepseek-tui
     sources: ["README.md", "#1860", "#1914"],
   },
   {
-    q: "codewhale 和 codewhale-tui 有什么区别？",
+    q: "helpofai 和 helpofai-tui 有什么区别？",
     a: (
       <>
-        <code className="inline">codewhale</code> 是调度 CLI——管理配置、认证、更新，并启动 TUI。
-        <code className="inline">codewhale-tui</code> 是运行智能体循环的终端 UI 二进制文件。
-        当你输入 <code className="inline">codewhale</code> 时，调度器会自动为你启动 <code className="inline">codewhale-tui</code>。
+        <code className="inline">helpofai</code> 是调度 CLI——管理配置、认证、更新，并启动 TUI。
+        <code className="inline">helpofai-tui</code> 是运行智能体循环的终端 UI 二进制文件。
+        当你输入 <code className="inline">helpofai</code> 时，调度器会自动为你启动 <code className="inline">helpofai-tui</code>。
         两者同时安装；通常你不需要关心这个区别。
       </>
     ),
     sources: ["README.md"],
   },
   {
-    q: "CodeWhale 和 DeepSeek TUI 是什么关系？改名是怎么回事？",
+    q: "HelpOfAi 和 DeepSeek TUI 是什么关系？改名是怎么回事？",
     a: (
       <>
-        CodeWhale 是 DeepSeek TUI 的新名称。当前的主命令是 <code className="inline">codewhale</code>。旧的 <code className="inline">deepseek</code> 和 <code className="inline">deepseek-tui</code> 命令作为兼容垫片继续有效。
-        配置存放在 <code className="inline">~/.codewhale/</code>。旧版 <code className="inline">~/.deepseek/</code> 配置仍会作为兼容回退读取，<code className="inline">DEEPSEEK_*</code> 环境变量继续有效。
-        DeepSeek 并未被弃用。改名是为了体现 CodeWhale 更广泛的使命——成为面向所有提供商的开放模型智能体终端，而非弱化 DeepSeek 的地位。
+        HelpOfAi 是 DeepSeek TUI 的新名称。当前的主命令是 <code className="inline">helpofai</code>。旧的 <code className="inline">deepseek</code> 和 <code className="inline">deepseek-tui</code> 命令作为兼容垫片继续有效。
+        配置存放在 <code className="inline">~/.helpofai/</code>。旧版 <code className="inline">~/.deepseek/</code> 配置仍会作为兼容回退读取，<code className="inline">DEEPSEEK_*</code> 环境变量继续有效。
+        DeepSeek 并未被弃用。改名是为了体现 HelpOfAi 更广泛的使命——成为面向所有提供商的开放模型智能体终端，而非弱化 DeepSeek 的地位。
       </>
     ),
     sources: ["docs/REBRAND.md", "README.md"],
@@ -403,36 +403,36 @@ brew tap Hmbown/deepseek-tui && brew install deepseek-tui
 export DEEPSEEK_API_KEY=sk-...
 
 # 方法 2：保存在配置中（推荐 — 重启 Shell 后仍然有效）
-codewhale auth set --provider deepseek --api-key sk-...
+helpofai auth set --provider deepseek --api-key sk-...
 
 # 方法 3：config.toml
-# 在 ~/.codewhale/config.toml 中添加：
+# 在 ~/.helpofai/config.toml 中添加：
 api_key = "sk-..."
 
 # 查看当前状态：
-codewhale auth status    # 显示配置、密钥环和环境变量状态
-codewhale doctor         # 完整连接检查`}
+helpofai auth status    # 显示配置、密钥环和环境变量状态
+helpofai doctor         # 完整连接检查`}
         </pre>
         <p>
           配置中保存的密钥优先于环境变量。
-          使用 <code className="inline">codewhale auth clear --provider deepseek</code> 移除已保存的密钥。
+          使用 <code className="inline">helpofai auth clear --provider deepseek</code> 移除已保存的密钥。
         </p>
       </>
     ),
     sources: ["#907", "#1545", "docs/CONFIGURATION.md"],
   },
   {
-    q: "CodeWhale 支持哪些提供商？",
+    q: "HelpOfAi 支持哪些提供商？",
     a: (
       <>
-        <p className="mb-2">CodeWhale 内建以下提供商：</p>
+        <p className="mb-2">HelpOfAi 内建以下提供商：</p>
         <ul className="list-disc pl-5 space-y-1 text-sm text-ink-soft mb-3">
           <li><strong>DeepSeek</strong> — 一级支持，原生 API。推理流、缓存指标、思考力度控制。</li>
           <li><strong>OpenRouter</strong> — 统一 API，可访问 DeepSeek 和其他开放模型路由。</li>
           <li><strong>OpenAI 兼容</strong>、<strong>NVIDIA NIM</strong>、<strong>AtlasCloud</strong>、<strong>Wanjie Ark</strong>、<strong>Volcengine Ark</strong>、<strong>Xiaomi MiMo</strong>、<strong>Novita</strong>、<strong>Fireworks</strong>、<strong>SiliconFlow</strong>、<strong>SiliconFlow CN</strong>、<strong>Arcee AI</strong>、<strong>Moonshot/Kimi</strong>、<strong>Hugging Face</strong>、<strong>DeepInfra</strong>、<strong>Together AI</strong>、<strong>Z.ai</strong>、<strong>StepFun</strong>、<strong>MiniMax</strong>、<strong>OpenAI Codex</strong>、<strong>Anthropic</strong>、<strong>SGLang</strong>、<strong>vLLM</strong>、<strong>Ollama</strong></li>
         </ul>
         <p>
-          设置对应的环境变量（如 <code className="inline">OPENROUTER_API_KEY</code>）并在 <code className="inline">~/.codewhale/config.toml</code> 中配置你的提供商。
+          设置对应的环境变量（如 <code className="inline">OPENROUTER_API_KEY</code>）并在 <code className="inline">~/.helpofai/config.toml</code> 中配置你的提供商。
           自托管 OpenAI 兼容端点可通过 provider 配置接入。
         </p>
       </>
@@ -447,12 +447,12 @@ codewhale doctor         # 完整连接检查`}
 {`# 1. 设置 OpenRouter 密钥
 export OPENROUTER_API_KEY=sk-or-v1-...
 
-# 2. 在 ~/.codewhale/config.toml 中：
+# 2. 在 ~/.helpofai/config.toml 中：
 [providers.openrouter]
 api_key = "sk-or-v1-..."
 
 # 3. 使用 OpenRouter 模型运行：
-codewhale --model openrouter/deepseek/deepseek-v4-pro
+helpofai --model openrouter/deepseek/deepseek-v4-pro
 
 # 或在 config.toml 中设为默认：
 default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
@@ -471,7 +471,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
       <>
         可以。使用 <code className="inline">vllm</code>、<code className="inline">sglang</code> 或 <code className="inline">ollama</code> 提供商连接本地端点。
         对于 OpenAI 兼容端点（llama.cpp server、text-generation-webui 等），可以使用 <code className="inline">openai</code> 提供商并设置自定义 <code className="inline">base_url</code>。
-        CodeWhale 也支持 <code className="inline">DEEPSEEK_ALLOW_INSECURE_HTTP=true</code> 用于本地 HTTP 端点。
+        HelpOfAi 也支持 <code className="inline">DEEPSEEK_ALLOW_INSECURE_HTTP=true</code> 用于本地 HTTP 端点。
         Hugging Face Inference Providers 也可以通过 <code className="inline">huggingface</code> provider 使用。更完整的 Hub 发现、模型卡片、数据集和 Jobs 属于 Model Lab。
       </>
     ),
@@ -499,13 +499,13 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
     a: (
       <>
         <p className="mb-2">
-          使用 <code className="inline">codewhale --model auto</code> 或 <code className="inline">/model auto</code> 让 CodeWhale 为每个回合自动选择最合适的模型和推理深度。
+          使用 <code className="inline">helpofai --model auto</code> 或 <code className="inline">/model auto</code> 让 HelpOfAi 为每个回合自动选择最合适的模型和推理深度。
         </p>
         <p className="mb-2">
           <strong>Fin</strong> 是快速非推理路径（<code className="inline">deepseek-v4-flash</code>，推理关闭），用于路由决策、摘要、RLM 子任务、上下文维护等协调工作。在真实请求发送前，Fin 会做一个小的路由调用来选择具体的模型和推理级别。
         </p>
         <p>
-          简短简单的请求可以留在 Flash + 推理关闭的状态。编码、调试、发布工作、架构设计或安全审查则会提升到 Pro 和/或更高的推理级别。Fin 是 CodeWhale 本地逻辑——上游 API 永远不会收到 <code className="inline">model: "auto"</code>。
+          简短简单的请求可以留在 Flash + 推理关闭的状态。编码、调试、发布工作、架构设计或安全审查则会提升到 Pro 和/或更高的推理级别。Fin 是 HelpOfAi 本地逻辑——上游 API 永远不会收到 <code className="inline">model: "auto"</code>。
         </p>
       </>
     ),
@@ -518,19 +518,19 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
         Goal 模式是未来的工作流/标签页方向，用于长时间运行的多步目标——不是当前的 <code className="inline">/goal</code> 命令。
         当前的 <code className="inline">/goal</code> 是当前 TUI 会话的目标设置器；app-server 客户端也可以通过 <code className="inline">thread/goal/*</code> 方法持久化线程目标。
         完整的 Goal 工作区（自主多回合任务执行，带更完整的检查点/恢复 UI）仍在规划中。
-        关注 <a href="https://github.com/Hmbown/CodeWhale/issues/891" className="body-link">#891</a> 的进展。
+        关注 <a href="https://github.com/helpofai/HelpOfAi-Cli/issues/891" className="body-link">#891</a> 的进展。
       </>
     ),
     sources: ["#891"],
   },
   {
-    q: "我的代码安全吗？CodeWhale 使用什么沙箱机制？",
+    q: "我的代码安全吗？HelpOfAi 使用什么沙箱机制？",
     a: (
       <>
-        CodeWhale 完全在你的机器上运行。无遥测，不会将你的代码上传到云端处理。
+        HelpOfAi 完全在你的机器上运行。无遥测，不会将你的代码上传到云端处理。
         沙箱后端：<strong>seatbelt</strong>（macOS）、<strong>landlock</strong>（Linux）、受限令牌（Windows）。
         工作区边界默认为 <code className="inline">--workspace</code>。<code className="inline">/trust</code> 可解除边界。
-        审批模式可按会话配置。所有凭证/审批/提权事件写入 <code className="inline">~/.codewhale/audit.log</code>。
+        审批模式可按会话配置。所有凭证/审批/提权事件写入 <code className="inline">~/.helpofai/audit.log</code>。
       </>
     ),
     sources: ["SECURITY.md", "docs/ARCHITECTURE.md"],
@@ -539,8 +539,8 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
     q: "MCP 服务器如何工作？",
     a: (
       <>
-        CodeWhale 是双向 MCP 客户端和服务器。在 <code className="inline">~/.codewhale/mcp.json</code> 中定义服务器。
-        工具以 <code className="inline">mcp_&lt;server&gt;_&lt;tool&gt;</code> 形式呈现。你也可以通过 <code className="inline">codewhale mcp</code> 将 CodeWhale 暴露为 MCP 服务器。
+        HelpOfAi 是双向 MCP 客户端和服务器。在 <code className="inline">~/.helpofai/mcp.json</code> 中定义服务器。
+        工具以 <code className="inline">mcp_&lt;server&gt;_&lt;tool&gt;</code> 形式呈现。你也可以通过 <code className="inline">helpofai mcp</code> 将 HelpOfAi 暴露为 MCP 服务器。
         查看 <Link href="/zh/docs#mcp" className="body-link">文档页面</Link> 了解配置示例。
       </>
     ),
@@ -552,7 +552,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
       <>
         无需签署 CLA。Fork、用约定式提交（<code className="inline">feat:</code>、<code className="inline">fix:</code> 等）创建分支、通过本地检查、提交 PR。
         维护者亲自阅读每一条内容。从标记为 <code className="inline">good first issue</code> 的议题开始。
-        查看 <Link href="/zh/contribute" className="body-link">贡献页面</Link> 和 <a href="https://github.com/Hmbown/CodeWhale/blob/main/CONTRIBUTING.md" className="body-link">CONTRIBUTING.md</a>。
+        查看 <Link href="/zh/contribute" className="body-link">贡献页面</Link> 和 <a href="https://github.com/helpofai/HelpOfAi-Cli/blob/main/CONTRIBUTING.md" className="body-link">CONTRIBUTING.md</a>。
       </>
     ),
     sources: ["CONTRIBUTING.md"],
@@ -565,7 +565,7 @@ default_text_model = "openrouter/deepseek/deepseek-v4-pro"`}
         <pre className="code-block my-2">
 {`# npm 镜像
 npm config set registry https://registry.npmmirror.com
-npm install -g codewhale
+npm install -g helpofai
 
 # Cargo 镜像（清华 TUNA）
 # 在 ~/.cargo/config.toml 中添加：
@@ -575,7 +575,7 @@ replace-with = "tuna"
 registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
         </pre>
         <p>
-          也可以从 <a href="https://github.com/Hmbown/CodeWhale/releases" className="body-link">GitHub Releases</a> 直接下载预编译二进制。
+          也可以从 <a href="https://github.com/helpofai/HelpOfAi-Cli/releases" className="body-link">GitHub Releases</a> 直接下载预编译二进制。
           Gitee 镜像和 CNB 镜像也可能可用。
         </p>
       </>
@@ -586,10 +586,10 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     q: "首次运行时提示 API 密钥被拒绝或认证错误？",
     a: (
       <>
-        <p className="mb-2">运行 <code className="inline">codewhale doctor</code>——它会检查 API 密钥、网络、沙箱和 MCP 服务器。完整报告写入 <code className="inline">~/.codewhale/doctor.log</code>。</p>
+        <p className="mb-2">运行 <code className="inline">helpofai doctor</code>——它会检查 API 密钥、网络、沙箱和 MCP 服务器。完整报告写入 <code className="inline">~/.helpofai/doctor.log</code>。</p>
         <p className="mb-2">常见原因：</p>
         <ul className="list-disc pl-5 space-y-1 text-sm text-ink-soft">
-          <li>Shell 启动文件中的 <code className="inline">DEEPSEEK_API_KEY</code> 已过期——打开新 Shell 或使用 <code className="inline">codewhale auth set</code></li>
+          <li>Shell 启动文件中的 <code className="inline">DEEPSEEK_API_KEY</code> 已过期——打开新 Shell 或使用 <code className="inline">helpofai auth set</code></li>
           <li>密钥来自错误的提供商——确保密钥与你使用的提供商匹配</li>
           <li>网络连接问题——检查 <code className="inline">curl https://api.deepseek.com/v1/models</code></li>
         </ul>
@@ -603,7 +603,7 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
       <>
         <code className="inline">huggingface</code> provider 是已经接入的 OpenAI 兼容 Hugging Face Inference Providers 路由。
         Model Lab 是规划中的开放模型基础设施层：Hub 发现、模型卡片、数据集、safetensors 适配器和 Jobs。
-        更完整的进展见 <a href="https://github.com/Hmbown/CodeWhale/issues/1977" className="body-link">#1977</a>。
+        更完整的进展见 <a href="https://github.com/helpofai/HelpOfAi-Cli/issues/1977" className="body-link">#1977</a>。
       </>
     ),
     sources: ["#1977", "docs/MODEL_LAB.md"],
@@ -612,7 +612,7 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     q: "为什么 token 消耗这么大？/ 缓存命中率为什么低？",
     a: (
       <>
-        CodeWhale 每次请求都会发送大量上下文（系统提示、项目说明、工具定义）。
+        HelpOfAi 每次请求都会发送大量上下文（系统提示、项目说明、工具定义）。
         DeepSeek 的前缀缓存被积极使用——系统提示按最稳定的层级排列以最大化缓存命中。
         如果你发现 token 使用量很高，请检查：是否在简单查询中使用了 <code className="inline">deepseek-v4-pro</code>（更适合用 Flash）？
         模型自动路由（Fin）可以帮助为每个回合选择合适的模型。
@@ -622,25 +622,25 @@ registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`}
     sources: ["#1177", "#1818", "#743"],
   },
   {
-    q: "如何更新 CodeWhale？",
+    q: "如何更新 HelpOfAi？",
     a: (
       <>
         <pre className="code-block mb-2">
 {`# 发布二进制更新器（适用于 npm/二进制安装）
-codewhale update
+helpofai update
 
 # npm
-npm install -g codewhale@latest
+npm install -g helpofai@latest
 
 # Cargo
-cargo install codewhale-cli --locked --force
+cargo install helpofai-cli --locked --force
 
 # Homebrew
 brew update && brew upgrade deepseek-tui`}
         </pre>
         <p>
-          如果通过 npm 安装，<code className="inline">codewhale update</code> 会下载最新发布二进制。
-          如果镜像延迟，请从 <a href="https://github.com/Hmbown/CodeWhale/releases" className="body-link">GitHub Releases</a> 直接下载。
+          如果通过 npm 安装，<code className="inline">helpofai update</code> 会下载最新发布二进制。
+          如果镜像延迟，请从 <a href="https://github.com/helpofai/HelpOfAi-Cli/releases" className="body-link">GitHub Releases</a> 直接下载。
         </p>
       </>
     ),
@@ -711,7 +711,7 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
               : "Didn't find your question?"}
           </p>
           <a
-            href="https://github.com/Hmbown/CodeWhale/issues/new/choose"
+            href="https://github.com/helpofai/HelpOfAi-Cli/issues/new/choose"
             className="inline-flex items-center gap-2 px-5 py-3 bg-ink text-paper font-mono text-sm uppercase tracking-wider hover:bg-indigo transition-colors"
           >
             {isZh ? "提交 Issue →" : "Open an issue →"}

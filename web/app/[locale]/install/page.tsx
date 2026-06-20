@@ -11,55 +11,55 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildPageMetadata({
     path: "/install",
     locale,
-    title: isZh ? "安装 · CodeWhale" : "Install · CodeWhale",
+    title: isZh ? "安装 · HelpOfAi" : "Install · HelpOfAi",
     description: isZh
-      ? "一行 npm install -g codewhale 安装 CodeWhale，也支持 Cargo、GitHub Releases、CNB 镜像、Homebrew、预编译二进制、Docker 和源码编译。"
-      : "Install CodeWhale with npm install -g codewhale — or via cargo, GitHub Releases, the CNB mirror, Homebrew, prebuilt binaries, Docker, or from source.",
+      ? "一行 npm install -g helpofai 安装 HelpOfAi，也支持 Cargo、GitHub Releases、CNB 镜像、Homebrew、预编译二进制、Docker 和源码编译。"
+      : "Install HelpOfAi with npm install -g helpofai — or via cargo, GitHub Releases, the CNB mirror, Homebrew, prebuilt binaries, Docker, or from source.",
   });
 }
 
-const NPM_INSTALL = `npm install -g codewhale`;
-const CARGO_INSTALL = `cargo install codewhale-cli --locked
-cargo install codewhale-tui --locked`;
-const FIRST_RUN = `codewhale`;
+const NPM_INSTALL = `npm install -g helpofai`;
+const CARGO_INSTALL = `cargo install helpofai-cli --locked
+cargo install helpofai-tui --locked`;
+const FIRST_RUN = `helpofai`;
 
-const UPDATE = `codewhale update`;
+const UPDATE = `helpofai update`;
 
 const SET_KEY_BASH = `export DEEPSEEK_API_KEY=sk-...`;
-const SET_KEY_AUTH = `codewhale auth set --provider deepseek --api-key sk-...`;
+const SET_KEY_AUTH = `helpofai auth set --provider deepseek --api-key sk-...`;
 
 const RELEASE_DOWNLOAD = `# Download your platform archive (incl. Linux riscv64):
-https://github.com/Hmbown/CodeWhale/releases/latest`;
-const cnbInstall = (tag: string) => `cargo install --git https://cnb.cool/codewhale.net/codewhale --tag ${tag} codewhale-cli --locked --force
-cargo install --git https://cnb.cool/codewhale.net/codewhale --tag ${tag} codewhale-tui --locked --force`;
+https://github.com/helpofai/HelpOfAi-Cli/releases/latest`;
+const cnbInstall = (tag: string) => `cargo install --git https://cnb.cool/helpofai.net/helpofai --tag ${tag} helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag ${tag} helpofai-tui --locked --force`;
 const TUNA_CONFIG = `# ~/.cargo/config.toml
 [source.crates-io]
 replace-with = "tuna"
 
 [source.tuna]
 registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"`;
-const TUNA_INSTALL = `cargo install codewhale-cli --locked
-cargo install codewhale-tui --locked`;
+const TUNA_INSTALL = `cargo install helpofai-cli --locked
+cargo install helpofai-tui --locked`;
 
-const BREW = `brew tap Hmbown/deepseek-tui
+const BREW = `brew tap helpofai/HelpOfAi-Cli
 brew install deepseek-tui`;
 
-const DOCKER = `docker volume create codewhale-home
+const DOCKER = `docker volume create helpofai-home
 docker run --rm -it \\
   -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY \\
-  -v codewhale-home:/home/codewhale/.codewhale \\
+  -v helpofai-home:/home/helpofai/.helpofai \\
   -v "$PWD:/workspace" -w /workspace \\
-  ghcr.io/hmbown/codewhale:latest`;
+  ghcr.io/helpofai/helpofai:latest`;
 
-const FROM_SOURCE = `git clone https://github.com/Hmbown/CodeWhale
-cd codewhale
+const FROM_SOURCE = `git clone https://github.com/helpofai/HelpOfAi-Cli
+cd helpofai
 cargo build --release --locked
 
 # Install both binaries from the local checkout
-cargo install --path crates/cli --locked   # codewhale
-cargo install --path crates/tui --locked   # codewhale-tui`;
+cargo install --path crates/cli --locked   # helpofai
+cargo install --path crates/tui --locked   # helpofai-tui`;
 
-const CONFIG_TREE = `~/.codewhale/
+const CONFIG_TREE = `~/.helpofai/
 ├── config.toml      api keys, model, hooks, profiles
 ├── mcp.json         MCP server definitions
 ├── skills/          user skills (each with SKILL.md)
@@ -67,9 +67,9 @@ const CONFIG_TREE = `~/.codewhale/
 ├── tasks/           background task store
 └── audit.log        credential / approval / elevation audit trail
 
-./.codewhale/        project-scoped config (optional, per-repo)`;
+./.helpofai/        project-scoped config (optional, per-repo)`;
 
-const CONFIG_TREE_ZH = `~/.codewhale/
+const CONFIG_TREE_ZH = `~/.helpofai/
 ├── config.toml      API 密钥、模型、钩子、配置集
 ├── mcp.json         MCP 服务器定义
 ├── skills/          用户技能（每个含 SKILL.md）
@@ -77,15 +77,15 @@ const CONFIG_TREE_ZH = `~/.codewhale/
 ├── tasks/           后台任务存储
 └── audit.log        凭证 / 审批 / 提权审计日志
 
-./.codewhale/        项目级配置（可选，每个仓库）`;
+./.helpofai/        项目级配置（可选，每个仓库）`;
 
 export default async function InstallPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const isZh = locale === "zh";
   const facts = await getFacts();
   const tag = facts.version ? `v${facts.version}` : "v0.8.x";
-  const verify = `codewhale --version   # ${facts.version ?? "prints the installed version"}
-codewhale doctor`;
+  const verify = `helpofai --version   # ${facts.version ?? "prints the installed version"}
+helpofai doctor`;
 
   const copyLabel = isZh ? "复制" : "Copy";
   const copiedLabel = isZh ? "已复制 ✓" : "Copied ✓";
@@ -115,16 +115,16 @@ codewhale doctor`;
           {isZh ? (
             <>
               npm wrapper（Node 18+）会从 GitHub Releases 下载经 SHA-256 校验的二进制，并安装{" "}
-              <code className="inline">codewhale</code>、<code className="inline">codew</code> 和{" "}
-              <code className="inline">codewhale-tui</code> 三个命令。
+              <code className="inline">helpofai</code>、<code className="inline">hoa</code> 和{" "}
+              <code className="inline">helpofai-tui</code> 三个命令。
               下方「其他安装方式」列出 Cargo、GitHub Releases、CNB、国内镜像、Homebrew、预编译二进制和 Docker。
             </>
           ) : (
             <>
               The npm wrapper (Node 18+) downloads SHA-256-verified binaries from GitHub Releases
-              and installs <code className="inline">codewhale</code>,{" "}
-              <code className="inline">codew</code>, and{" "}
-              <code className="inline">codewhale-tui</code>. See{" "}
+              and installs <code className="inline">helpofai</code>,{" "}
+              <code className="inline">hoa</code>, and{" "}
+              <code className="inline">helpofai-tui</code>. See{" "}
               <a href="#other-ways" className="body-link">Other ways to install</a> below for
               cargo, GitHub Releases, CNB, Homebrew, prebuilt binaries, Docker, or mainland China
               mirrors.
@@ -145,15 +145,15 @@ codewhale doctor`;
         <p className="mt-4 text-sm text-ink-soft leading-relaxed max-w-2xl">
           {isZh ? (
             <>
-              <code className="inline">codewhale doctor</code> 检查 API 密钥、网络、沙箱可用性、
+              <code className="inline">helpofai doctor</code> 检查 API 密钥、网络、沙箱可用性、
               MCP 服务器，并将完整报告写入{" "}
-              <code className="inline">~/.codewhale/doctor.log</code>。
+              <code className="inline">~/.helpofai/doctor.log</code>。
             </>
           ) : (
             <>
-              <code className="inline">codewhale doctor</code> checks your API key, network,
+              <code className="inline">helpofai doctor</code> checks your API key, network,
               sandbox availability, and MCP servers. Full report is written to{" "}
-              <code className="inline">~/.codewhale/doctor.log</code>.
+              <code className="inline">~/.helpofai/doctor.log</code>.
             </>
           )}
         </p>
@@ -173,7 +173,7 @@ codewhale doctor`;
             <>
               检查 GitHub Releases 是否有新版本并就地替换二进制。
               通过包管理器安装的话，用包管理器升级更稳：npm 安装的运行{" "}
-              <code className="inline">npm update -g codewhale</code>；
+              <code className="inline">npm update -g helpofai</code>；
               Cargo 安装的重跑两个 <code className="inline">cargo install</code> 命令并加{" "}
               <code className="inline">--force</code>；
               旧版 Homebrew tap 用 <code className="inline">brew upgrade deepseek-tui</code>。
@@ -182,7 +182,7 @@ codewhale doctor`;
             <>
               Checks GitHub Releases for a newer version and replaces the binary in place. If you
               installed via a package manager, prefer it instead: npm users run{" "}
-              <code className="inline">npm update -g codewhale</code>; cargo users re-run both{" "}
+              <code className="inline">npm update -g helpofai</code>; cargo users re-run both{" "}
               <code className="inline">cargo install</code> commands with{" "}
               <code className="inline">--force</code>; the legacy Homebrew tap updates with{" "}
               <code className="inline">brew upgrade deepseek-tui</code>.
@@ -231,7 +231,7 @@ codewhale doctor`;
             <div className="space-y-2">
               <InstallCodeBlock cmd={SET_KEY_BASH} copyLabel={copyLabel} copiedLabel={copiedLabel} />
               <p className="text-xs text-ink-mute">
-                {isZh ? "或保存到 ~/.codewhale/config.toml：" : "Or persist it to ~/.codewhale/config.toml:"}
+                {isZh ? "或保存到 ~/.helpofai/config.toml：" : "Or persist it to ~/.helpofai/config.toml:"}
               </p>
               <InstallCodeBlock cmd={SET_KEY_AUTH} copyLabel={copyLabel} copiedLabel={copiedLabel} />
             </div>
@@ -241,7 +241,7 @@ codewhale doctor`;
             <div className="font-display text-lg mb-2">
               {isZh ? "③ 在项目目录中运行" : "③ Run it in a project"}
             </div>
-            <InstallCodeBlock cmd={`cd path/to/project\ncodewhale`} copyLabel={copyLabel} copiedLabel={copiedLabel} />
+            <InstallCodeBlock cmd={`cd path/to/project\nhelpofai`} copyLabel={copyLabel} copiedLabel={copiedLabel} />
             <p className="mt-3 text-sm text-ink-soft leading-relaxed">
               {isZh ? (
                 <>
@@ -274,8 +274,8 @@ codewhale doctor`;
           </h2>
           <p className="text-sm text-ink-soft max-w-2xl mb-10">
             {isZh
-              ? "如果上面的 npm 路径不适合你，从下面找到匹配你情况的一条。每条都安装同一组 codewhale / codewhale-tui 二进制。"
-              : "If the npm path above doesn't fit your setup, pick the row that matches your situation. Every path installs the same codewhale / codewhale-tui binary pair."}
+              ? "如果上面的 npm 路径不适合你，从下面找到匹配你情况的一条。每条都安装同一组 helpofai / helpofai-tui 二进制。"
+              : "If the npm path above doesn't fit your setup, pick the row that matches your situation. Every path installs the same helpofai / helpofai-tui binary pair."}
           </p>
 
           <div className="space-y-10">
@@ -288,13 +288,13 @@ codewhale doctor`;
               <p className="mt-3 text-sm text-ink-soft leading-relaxed max-w-2xl">
                 {isZh ? (
                   <>
-                    编译并安装 <code className="inline">codewhale</code> 和 <code className="inline">codewhale-tui</code> 到 <code className="inline">~/.cargo/bin</code>。
+                    编译并安装 <code className="inline">helpofai</code> 和 <code className="inline">helpofai-tui</code> 到 <code className="inline">~/.cargo/bin</code>。
                     需要 Rust 1.88+；如未安装可访问 <a href="https://rustup.rs" className="body-link">rustup.rs</a>。
                   </>
                 ) : (
                   <>
-                    Compiles and installs <code className="inline">codewhale</code> and{" "}
-                    <code className="inline">codewhale-tui</code> to{" "}
+                    Compiles and installs <code className="inline">helpofai</code> and{" "}
+                    <code className="inline">helpofai-tui</code> to{" "}
                     <code className="inline">~/.cargo/bin</code>. Requires Rust 1.88+; install via{" "}
                     <a href="https://rustup.rs" className="body-link">rustup.rs</a> if you don&apos;t have it.
                   </>
@@ -339,7 +339,7 @@ codewhale doctor`;
               <p className="mt-4 text-sm text-ink-soft leading-relaxed max-w-2xl">
                 {isZh ? (
                   <>
-                    npm 安装时设置 <code className="inline">CODEWHALE_USE_CNB_MIRROR=1</code>，
+                    npm 安装时设置 <code className="inline">HELPOFAI_USE_CNB_MIRROR=1</code>，
                     wrapper 会改从 CNB 镜像下载二进制而不是 GitHub。Cargo + Tuna 或 CNB
                     路径同样可以绕开 GitHub 下载瓶颈。
                     DeepSeek API（<code className="inline">api.deepseek.com</code>）在国内直连，无需代理。
@@ -347,7 +347,7 @@ codewhale doctor`;
                 ) : (
                   <>
                     For the npm path, set{" "}
-                    <code className="inline">CODEWHALE_USE_CNB_MIRROR=1</code> and the wrapper
+                    <code className="inline">HELPOFAI_USE_CNB_MIRROR=1</code> and the wrapper
                     downloads binaries from the CNB mirror instead of GitHub. Cargo + Tuna or the
                     CNB path also routes around GitHub download bottlenecks. The DeepSeek API at{" "}
                     <code className="inline">api.deepseek.com</code> is reachable from mainland China
@@ -368,8 +368,8 @@ codewhale doctor`;
               <InstallCodeBlock cmd={BREW} copyLabel={copyLabel} copiedLabel={copiedLabel} />
               <p className="mt-3 text-sm text-ink-soft leading-relaxed max-w-2xl">
                 {isZh
-                  ? "这是旧版 deepseek-tui tap，在 formula 重命名为 codewhale 期间保留以保证兼容，安装的同样是当前版本的二进制。"
-                  : "This is the legacy deepseek-tui tap, kept for compatibility while the formula is renamed to codewhale. It installs the same current-release binaries."}
+                  ? "这是旧版 deepseek-tui tap，在 formula 重命名为 helpofai 期间保留以保证兼容，安装的同样是当前版本的二进制。"
+                  : "This is the legacy deepseek-tui tap, kept for compatibility while the formula is renamed to helpofai. It installs the same current-release binaries."}
               </p>
             </div>
 
@@ -425,13 +425,13 @@ codewhale doctor`;
         <p className="mt-4 text-sm text-ink-soft leading-relaxed max-w-2xl">
           {isZh ? (
             <>
-              项目级 <code className="inline">./.codewhale/</code> 目录是可选的——每个仓库可有独立的 MCP 服务器、钩子、
+              项目级 <code className="inline">./.helpofai/</code> 目录是可选的——每个仓库可有独立的 MCP 服务器、钩子、
               技能和配置覆盖（例如提供商密钥）。
               首次运行时，如果缺少配置文件，系统会询问是否交互式创建。旧版 <code className="inline">~/.deepseek</code> 和 <code className="inline">./.deepseek</code> 路径仍会作为兼容回退读取。
             </>
           ) : (
             <>
-              The project-scoped <code className="inline">./.codewhale/</code> directory is optional —
+              The project-scoped <code className="inline">./.helpofai/</code> directory is optional —
               each repo can carry its own MCP servers, hooks, skills, and config overrides (e.g.
               provider keys). On first run the app asks whether to interactively create a config
               file if one is missing. Legacy <code className="inline">~/.deepseek</code> and{" "}

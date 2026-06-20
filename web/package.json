@@ -1,8 +1,8 @@
 {
-  "name": "codewhale-web",
+  "name": "helpofai-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Community site for CodeWhale — codewhale.net",
+  "description": "Community site for HelpOfAi — helpofai.net",
   "scripts": {
     "dev": "node scripts/derive-facts.mjs && next dev",
     "prebuild": "node scripts/derive-facts.mjs",

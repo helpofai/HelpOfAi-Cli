@@ -1,4 +1,4 @@
-# `codewhale remote-setup` — Design & Implementation Plan
+# `helpofai remote-setup` — Design & Implementation Plan
 
 Status: **design** (do not implement against the 0.8.48 release wrap; land on a
 branch or after 0.8.48 ships). Author handoff doc, mirrors the style of
@@ -6,8 +6,8 @@ branch or after 0.8.48 ships). Author handoff doc, mirrors the style of
 
 ## Goal
 
-One command — `codewhale remote-setup` — that guides a user through standing up
-a remote CodeWhale agent they can talk to from a phone chat app, across:
+One command — `helpofai remote-setup` — that guides a user through standing up
+a remote HelpOfAi agent they can talk to from a phone chat app, across:
 
 - **Cloud target:** Tencent Lighthouse **or** Azure (extensible to GCP/Hetzner/bare).
 - **Chat bridge:** Feishu/Lark **or** Telegram (extensible to Slack/Discord).
@@ -23,7 +23,7 @@ Decisions locked with the user:
 ## Prior art: Hermes Agent (reference only — do not copy)
 
 Nous Research's Hermes Agent (Python) solves the
-same problem and **validates this design**. Use it for ideas; keep CodeWhale's
+same problem and **validates this design**. Use it for ideas; keep HelpOfAi's
 style (Rust core, zero-dep Node bridges, plain-text replies).
 
 - Its `gateway/platform_registry.py` is exactly the table-driven approach here: a
@@ -70,7 +70,7 @@ the matrix grows by data, not by new control flow.
 
 Clean separation that the architecture already implies:
 - **Provider = a `runtime.env` concern.** The runtime resolves the provider from
-  `CODEWHALE_PROVIDER` and the provider's own key var. The bridge never needs to
+  `HELPOFAI_PROVIDER` and the provider's own key var. The bridge never needs to
   know which provider is behind the runtime — it only forwards `model` to
   `/v1/threads`. So "multi-provider" only touches `runtime.env` generation.
 - **Cloud = where it runs + where secrets live.**
@@ -81,7 +81,7 @@ Clean separation that the architecture already implies:
 New variant in `crates/cli/src/lib.rs` `Commands`:
 
 ```rust
-/// Provision and configure a remote CodeWhale agent (cloud + chat bridge).
+/// Provision and configure a remote HelpOfAi agent (cloud + chat bridge).
 RemoteSetup(RemoteSetupArgs),
 ```
 
@@ -92,7 +92,7 @@ RemoteSetup(RemoteSetupArgs),
 | `--cloud <azure\|lighthouse>` | Skip the cloud prompt. |
 | `--bridge <telegram\|feishu>` | Skip the bridge prompt. |
 | `--provider <slug>` | Provider slug; validated against `PROVIDERS`. |
-| `--out <dir>` | Bundle output dir (default `./codewhale-deploy/<cloud>-<bridge>`). |
+| `--out <dir>` | Bundle output dir (default `./helpofai-deploy/<cloud>-<bridge>`). |
 | `--generate-only` | Emit the bundle, do not provision (default). |
 | `--apply` | Run the cloud CLI to actually provision (the auto-provision path). |
 | `--yes` | Skip the final confirmation gate (CI/non-interactive). |
@@ -126,7 +126,7 @@ pub struct BridgeSpec {
     pub slug: &'static str,            // "telegram"
     pub display: &'static str,         // "Telegram"
     pub package_dir: &'static str,     // "integrations/telegram-bridge"
-    pub service_unit: &'static str,    // "codewhale-telegram-bridge.service"
+    pub service_unit: &'static str,    // "helpofai-telegram-bridge.service"
     pub env_template: &'static str,    // templates/telegram.env
     /// Bridge-specific secret env keys to prompt for (token, etc.).
     pub secret_keys: &'static [&'static str], // ["TELEGRAM_BOT_TOKEN"]
@@ -158,7 +158,7 @@ already-printed plan.
 3. **Provider** — list `PROVIDERS` (canonical names), pick (or `--provider`).
    Look up `spec.env_keys[0]` as the key var to prompt for.
 4. **Secrets** — prompt for: provider API key, bridge token(s) from
-   `secret_keys`, allowlist (chat ids). Generate a random `CODEWHALE_RUNTIME_TOKEN`.
+   `secret_keys`, allowlist (chat ids). Generate a random `HELPOFAI_RUNTIME_TOKEN`.
 5. **Mode** — generate-only vs `--apply`.
 6. **Render bundle** to `--out` (always, even with `--apply`).
 7. **Confirm + provision** (only if `--apply`): print the full ordered command
@@ -167,22 +167,22 @@ already-printed plan.
 
 ## Generated bundle
 
-Written to `./codewhale-deploy/<cloud>-<bridge>/`:
+Written to `./helpofai-deploy/<cloud>-<bridge>/`:
 
 - `runtime.env` — **provider config lives here**:
   ```
-  CODEWHALE_PROVIDER=openai
+  HELPOFAI_PROVIDER=openai
   OPENAI_API_KEY=…              # the provider's own key var, from registry
-  CODEWHALE_MODEL=auto
-  CODEWHALE_RUNTIME_TOKEN=<random>
-  CODEWHALE_RUNTIME_PORT=7878
-  CODEWHALE_RUNTIME_WORKERS=2
+  HELPOFAI_MODEL=auto
+  HELPOFAI_RUNTIME_TOKEN=<random>
+  HELPOFAI_RUNTIME_PORT=7878
+  HELPOFAI_RUNTIME_WORKERS=2
   RUST_LOG=info
   ```
-- `<bridge>.env` — transport only: `CODEWHALE_RUNTIME_URL=http://127.0.0.1:7878`,
-  matching `CODEWHALE_RUNTIME_TOKEN`, allowlist, `TELEGRAM_BOT_TOKEN` (or Feishu
-  app id/secret), `CODEWHALE_WORKSPACE`, `CODEWHALE_MODEL`.
-- `codewhale-runtime.service`, `codewhale-<bridge>.service`.
+- `<bridge>.env` — transport only: `HELPOFAI_RUNTIME_URL=http://127.0.0.1:7878`,
+  matching `HELPOFAI_RUNTIME_TOKEN`, allowlist, `TELEGRAM_BOT_TOKEN` (or Feishu
+  app id/secret), `HELPOFAI_WORKSPACE`, `HELPOFAI_MODEL`.
+- `helpofai-runtime.service`, `helpofai-<bridge>.service`.
 - Cloud artifact: `cloud-init.yaml` + `provision.sh` (Azure) or `cnb.yml` +
   `tag_deploy.yml` (Lighthouse).
 - `RUNBOOK.md` — the exact remaining commands + first-pairing steps.
@@ -196,8 +196,8 @@ Preflight: `az account show` (fail with "run `az login`" if absent). Then the
 2. `az keyvault create` + `az keyvault secret set` for the provider key and the
    runtime token (secrets via stdin, not argv).
 3. `az vm create` with `--custom-data cloud-init.yaml` and a **system-assigned
-   managed identity**; cloud-init pulls `ghcr.io/hmbown/codewhale:latest`, reads
-   the secrets from Key Vault via the identity, writes `/etc/codewhale/*.env`,
+   managed identity**; cloud-init pulls `ghcr.io/helpofai/helpofai:latest`, reads
+   the secrets from Key Vault via the identity, writes `/etc/helpofai/*.env`,
    installs both systemd units, `enable --now`.
 4. NSG: SSH (22) only, scoped to the caller's IP; **7878 stays on `127.0.0.1`**.
 5. Print the SSH tunnel command for `/status` from a laptop if desired.
@@ -206,45 +206,45 @@ Preflight: `az account show` (fail with "run `az login`" if absent). Then the
 Reuse the existing `deploy/tencent-lighthouse/cnb/*.example` pipeline: render
 `cnb.yml` + `tag_deploy.yml` from inputs and walk the user through the CNB
 trigger (CNB does the VM-side work). Systemd units mirror the existing
-`codewhale-runtime.service`.
+`helpofai-runtime.service`.
 
 Safety (matches the harness rules for outward-facing actions):
 - Every command printed before execution; `y` gate unless `--yes`.
 - Secrets never in argv or shell history.
 - `--generate-only` is the default; `--apply` is explicit.
 
-## Namespace migration: `DEEPSEEK_*` → `CODEWHALE_*`
+## Namespace migration: `DEEPSEEK_*` → `HELPOFAI_*`
 
 Follow the convention already in `crates/config/src/lib.rs`: **read
-`CODEWHALE_X` first, fall back to `DEEPSEEK_X`.** Nothing breaks for existing
+`HELPOFAI_X` first, fall back to `DEEPSEEK_X`.** Nothing breaks for existing
 deployments.
 
 Touch list:
 1. **Bridges** (`integrations/feishu-bridge`, `integrations/telegram-bridge`):
-   in `lib.mjs`/`index.mjs`, read `process.env.CODEWHALE_X ?? process.env.DEEPSEEK_X`
+   in `lib.mjs`/`index.mjs`, read `process.env.HELPOFAI_X ?? process.env.DEEPSEEK_X`
    for `RUNTIME_URL`, `RUNTIME_TOKEN`, `WORKSPACE`, `MODEL`, `MODE`, `ALLOW_SHELL`,
    `TRUST_MODE`, `AUTO_APPROVE`, `CHAT_ALLOWLIST`, `ALLOW_UNLISTED`, `TURN_TIMEOUT_MS`.
-   Validators accept either; templates emit `CODEWHALE_*`.
+   Validators accept either; templates emit `HELPOFAI_*`.
 2. **Deploy units** (`deploy/tencent-lighthouse/systemd/*`,
-   `integrations/*/deploy/*`): `DEEPSEEK_RUNTIME_*` → `CODEWHALE_RUNTIME_*`,
-   env file paths `/etc/deepseek/` → `/etc/codewhale/` (keep reading the old path
+   `integrations/*/deploy/*`): `DEEPSEEK_RUNTIME_*` → `HELPOFAI_RUNTIME_*`,
+   env file paths `/etc/deepseek/` → `/etc/helpofai/` (keep reading the old path
    if present).
-3. **`.env.example` files + `config.example.toml`**: lead with `CODEWHALE_*`,
+3. **`.env.example` files + `config.example.toml`**: lead with `HELPOFAI_*`,
    document `DEEPSEEK_*` as legacy aliases.
 4. **Drop DeepSeek-shaped defaults** in the bridge: no hardcoded
    `DEEPSEEK_MODEL=auto`; the provider lives in `runtime.env` via
-   `CODEWHALE_PROVIDER` + the registry's key var.
+   `HELPOFAI_PROVIDER` + the registry's key var.
 
 Note: items 1–3 touch **tracked** files, so they are part of the same
 "don't ship during 0.8.48" hold. The brand-new (untracked) Telegram bridge can
-be converted to `CODEWHALE_*` first as the reference implementation.
+be converted to `HELPOFAI_*` first as the reference implementation.
 
 ## Tests
 
 - `registry.rs`: every `CloudTarget`/`BridgeSpec` slug is unique; each bridge's
   `package_dir`/`service_unit`/`env_template` exists.
 - `bundle.rs`: rendering a bundle for each cloud×bridge×provider triple produces
-  files with `CODEWHALE_*` keys, a matching runtime/bridge token, and a non-empty
+  files with `HELPOFAI_*` keys, a matching runtime/bridge token, and a non-empty
   RUNBOOK.
 - `provision`: `plan()` returns the expected ordered steps; **commands are built
   but never executed** in tests (assert on program+args, secrets redacted).
@@ -257,7 +257,7 @@ No changes to the wizard control flow — it iterates the registries.
 
 ## Suggested sequencing (given the 0.8.48 freeze)
 
-1. **Now (safe, untracked):** convert the new Telegram bridge to `CODEWHALE_* ??
+1. **Now (safe, untracked):** convert the new Telegram bridge to `HELPOFAI_* ??
    DEEPSEEK_*`; finalize this design.
 2. **Post-0.8.48, branch:** namespace migration on tracked bridges + deploy units.
 3. **Then:** implement `remote-setup` (registry → bundle → Azure provisioner →

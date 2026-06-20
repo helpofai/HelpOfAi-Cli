@@ -1,11 +1,11 @@
 # Agent Runner Protocol
 
-How a headless agent (DeepSeek V4 on a DigitalOcean droplet, or any codewhale exec caller) picks up, implements, verifies, and delivers a milestone issue — fully autonomously.
+How a headless agent (DeepSeek V4 on a DigitalOcean droplet, or any helpofai exec caller) picks up, implements, verifies, and delivers a milestone issue — fully autonomously.
 
 ## Prerequisites
 
-- `gh` CLI authenticated with a fine-grained PAT scoped to `Hmbown/CodeWhale` (Contents RW, Issues RW, PRs RW, Metadata R)
-- `codewhale` binary on `$PATH` (v0.8.57+)
+- `gh` CLI authenticated with a fine-grained PAT scoped to `helpofai/HelpOfAi-Cli` (Contents RW, Issues RW, PRs RW, Metadata R)
+- `helpofai` binary on `$PATH` (v0.8.57+)
 - `DEEPSEEK_API_KEY` (or equivalent provider key) exported in the agent user's shell
 - A `git worktree` per issue (never commit directly to `main`)
 
@@ -17,7 +17,7 @@ How a headless agent (DeepSeek V4 on a DigitalOcean droplet, or any codewhale ex
 
 ```bash
 gh issue list \
-  --repo Hmbown/CodeWhale \
+  --repo helpofai/HelpOfAi-Cli \
   --milestone v0.8.58 \
   --label agent-ready \
   --state open \
@@ -38,7 +38,7 @@ This prevents other agents from picking the same issue.
 ### 3. Isolate
 
 ```bash
-cd /opt/whalebro/codewhale
+cd /opt/whalebro/helpofai
 git fetch origin
 git worktree add ../worktrees/issue-<N> -b agent/<N>-<slug> origin/main
 cd ../worktrees/issue-<N>
@@ -50,7 +50,7 @@ Every issue gets its own branch and worktree.  The branch name convention is `ag
 
 ```bash
 gh issue view <N> --json body -q .body | \
-  codewhale exec --auto --output-format stream-json "$(cat)"
+  helpofai exec --auto --output-format stream-json "$(cat)"
 ```
 
 The agent reads the issue body and implements the fix.  Use a tmux session per issue so the run survives SSH disconnects:
@@ -58,7 +58,7 @@ The agent reads the issue body and implements the fix.  Use a tmux session per i
 ```bash
 tmux new-session -d -s "issue-<N>" \
   "gh issue view <N> --json body -q .body | \
-   codewhale exec --auto --output-format stream-json \"\$(cat)\" 2>&1 | tee /tmp/issue-<N>.log"
+   helpofai exec --auto --output-format stream-json \"\$(cat)\" 2>&1 | tee /tmp/issue-<N>.log"
 ```
 
 For resuming an interrupted run (`--continue` picks up the most recent
@@ -66,7 +66,7 @@ session for this workspace; `--resume latest` only exists in the interactive
 TUI):
 
 ```bash
-codewhale exec --auto --output-format stream-json --continue "..."
+helpofai exec --auto --output-format stream-json --continue "..."
 ```
 
 ### 5. Verify
@@ -77,7 +77,7 @@ Run the exact commands from the issue's **Verification** section.  If they pass,
 
 ```bash
 gh pr create \
-  --repo Hmbown/CodeWhale \
+  --repo helpofai/HelpOfAi-Cli \
   --base main \
   --title "<descriptive title>" \
   --body "Closes #<N>" \
@@ -115,7 +115,7 @@ New work uses `agent-ready`.
 
 1. **PR-only delivery.**  Never commit to `main`.  Every change is a branch + PR.
 2. **No force-push.**  `git push --force` is forbidden.
-3. **Secrets never in argv, history, or logs.**  API keys, PATs, and credentials live in `/etc/codewhale/*.env` and are sourced into the agent user's shell.  The runtime API listens on `127.0.0.1:7878` only.  Telegram bridge chats are allowlisted.
+3. **Secrets never in argv, history, or logs.**  API keys, PATs, and credentials live in `/etc/helpofai/*.env` and are sourced into the agent user's shell.  The runtime API listens on `127.0.0.1:7878` only.  Telegram bridge chats are allowlisted.
 4. **Human reviews every PR.**  The droplet loop delivers PRs; a human on the laptop reviews and merges.
 5. **One issue per worktree.**  No cross-contamination between concurrent agent runs.
 

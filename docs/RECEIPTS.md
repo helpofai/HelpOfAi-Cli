@@ -5,7 +5,7 @@ turns. It is a protocol note, not an implemented endpoint.
 
 The goal is to let a local supervisor audit one completed turn without
 screen-scraping the terminal transcript. A receipt should summarize the durable
-runtime records that CodeWhale already owns: thread metadata, turn status, turn
+runtime records that HelpOfAi already owns: thread metadata, turn status, turn
 items, event sequence lineage, usage when available, approval decisions, and
 side-effect boundaries.
 
@@ -24,7 +24,7 @@ explicit `unavailable` fields rather than raw hidden content.
 Potential local-only surfaces:
 
 ```text
-codewhale receipt export --thread <thread_id> --turn <turn_id> --format json
+helpofai receipt export --thread <thread_id> --turn <turn_id> --format json
 GET /v1/threads/{thread_id}/turns/{turn_id}/receipt
 ```
 
@@ -53,7 +53,7 @@ store does not persist a value, the receipt should say `available: false` or
 
 ```json
 {
-  "schema_id": "codewhale.conformance-receipt/v0",
+  "schema_id": "helpofai.conformance-receipt/v0",
   "thread": {
     "id": "thr_...",
     "model": "deepseek-v4-pro",

@@ -14,8 +14,8 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::{HeaderMap, HeaderName, StatusCode};
 use axum::response::IntoResponse;
-use codewhale_agent::ModelRegistry;
-use codewhale_config::{ConfigToml, ProviderKind, provider::WireFormat};
+use helpofai_agent::ModelRegistry;
+use helpofai_config::{ConfigToml, ProviderKind, provider::WireFormat};
 use serde_json::Value;
 
 use super::AppState;
@@ -317,7 +317,7 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::{Method, Request};
-    use codewhale_config::provider::WireFormat;
+    use helpofai_config::provider::WireFormat;
     use std::fs;
     use std::sync::OnceLock;
     use tower::ServiceExt;

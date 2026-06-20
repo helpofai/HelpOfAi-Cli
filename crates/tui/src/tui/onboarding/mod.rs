@@ -44,7 +44,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App) {
     if !lines.is_empty() {
         let mut panel = Block::default()
             .title(Line::from(Span::styled(
-                " CodeWhale ",
+                " HelpOfAi ",
                 Style::default()
                     .fg(palette::WHALE_ACCENT_PRIMARY)
                     .add_modifier(Modifier::BOLD),
@@ -129,7 +129,7 @@ pub fn tips_lines(app: &App) -> Vec<ratatui::text::Line<'static>> {
 
 pub fn default_marker_path() -> Option<PathBuf> {
     dirs::home_dir().map(|home| {
-        let primary = home.join(".codewhale").join(".onboarded");
+        let primary = home.join(".helpofai").join(".onboarded");
         if primary.exists() {
             return primary;
         }

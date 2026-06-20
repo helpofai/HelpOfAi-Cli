@@ -38,7 +38,7 @@ use crate::tools::plan::new_shared_plan_state;
 use crate::tools::subagent::SubAgentStatus;
 use crate::tools::todo::new_shared_todo_list;
 use crate::tui::app::AppMode;
-use codewhale_protocol::runtime::{
+use helpofai_protocol::runtime::{
     DynamicToolCallContent, DynamicToolCallParams, DynamicToolCallResult, DynamicToolSpec,
     TurnEnvironmentParams,
 };
@@ -2149,7 +2149,7 @@ impl RuntimeThreadManager {
             notes_path: self.config.notes_path(),
             mcp_config_path: self.config.mcp_config_path(),
             skills_dir: self.config.skills_dir(),
-            skills_scan_codewhale_only: self.config.skills_config().scan_codewhale_only(),
+            skills_scan_helpofai_only: self.config.skills_config().scan_helpofai_only(),
             instructions: self
                 .config
                 .instructions_paths()
@@ -4035,8 +4035,8 @@ mod tests {
     #[tokio::test]
     async fn update_thread_workspace_persists_event_and_evicts_idle_engine() -> Result<()> {
         let manager = test_manager(test_runtime_dir())?;
-        let old_workspace = std::env::temp_dir().join("codewhale-runtime-old-workspace");
-        let new_workspace = std::env::temp_dir().join("codewhale-runtime-new-workspace");
+        let old_workspace = std::env::temp_dir().join("helpofai-runtime-old-workspace");
+        let new_workspace = std::env::temp_dir().join("helpofai-runtime-new-workspace");
         let thread = manager
             .create_thread(CreateThreadRequest {
                 model: None,
@@ -4136,8 +4136,8 @@ mod tests {
     #[tokio::test]
     async fn update_thread_workspace_rejects_active_turn() -> Result<()> {
         let manager = test_manager(test_runtime_dir())?;
-        let old_workspace = std::env::temp_dir().join("codewhale-runtime-active-old");
-        let new_workspace = std::env::temp_dir().join("codewhale-runtime-active-new");
+        let old_workspace = std::env::temp_dir().join("helpofai-runtime-active-old");
+        let new_workspace = std::env::temp_dir().join("helpofai-runtime-active-new");
         let thread = manager
             .create_thread(CreateThreadRequest {
                 model: None,

@@ -18,7 +18,7 @@ use ratatui::{
 
 use crate::palette::{self, ColorDepth, PaletteMode, ThemeId, UiTheme};
 
-const RENDER_DEBUG_ENV: &str = "CODEWHALE_TUI_DEBUG";
+const RENDER_DEBUG_ENV: &str = "HELPOFAI_TUI_DEBUG";
 const RENDER_DEBUG_SAMPLE_LIMIT: usize = 24;
 
 #[derive(Debug)]
@@ -546,7 +546,7 @@ mod tests {
 
         let log_path = tmp
             .path()
-            .join(".codewhale")
+            .join(".helpofai")
             .join("logs")
             .join("tui-render.log");
         let body = fs::read_to_string(log_path).expect("render debug log");

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-swebench.sh — Batch driver for CodeWhale SWE-bench runs.
+# run-swebench.sh — Batch driver for HelpOfAi SWE-bench runs.
 #
 # Usage:
 #   ./scripts/benchmarks/run-swebench.sh --help
@@ -7,7 +7,7 @@
 #   ./scripts/benchmarks/run-swebench.sh --instance-id django__django-12345 --issue-file issue.md
 #
 # Prerequisites:
-#   - codewhale installed and on PATH
+#   - helpofai installed and on PATH
 #   - DEEPSEEK_API_KEY set (or appropriate provider key)
 #   - swebench pip package installed (for evaluation step)
 #   - Docker running (for evaluation step)
@@ -32,7 +32,7 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run CodeWhale on SWE-bench instances and produce prediction JSONL.
+Run HelpOfAi on SWE-bench instances and produce prediction JSONL.
 
 Options:
   --dataset DATASET       HuggingFace dataset name (e.g. princeton-nlp/SWE-bench_Lite)
@@ -40,7 +40,7 @@ Options:
   --instance-id ID        Run a single instance by ID
   --issue-file PATH       Issue text file for single-instance mode
   --predictions-path PATH Output JSONL file (default: ./results/swebench_preds.jsonl)
-  --model MODEL           Model override for CodeWhale
+  --model MODEL           Model override for HelpOfAi
   --workspace-base DIR    Base dir for instance workspaces (default: /tmp/swebench-workspaces)
   --eval-only             Skip runs; just evaluate existing predictions file
   --max-workers N         Parallel workers for evaluation (default: 1)
@@ -81,7 +81,7 @@ mkdir -p "$(dirname "$PREDICTIONS_PATH")" "$WORKSPACE_BASE"
 METADATA_FILE="$(dirname "$PREDICTIONS_PATH")/run_metadata.json"
 cat > "$METADATA_FILE" <<META
 {
-    "codewhale_version": "$(codewhale --version 2>/dev/null || echo unknown)",
+    "helpofai_version": "$(helpofai --version 2>/dev/null || echo unknown)",
     "git_commit": "$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)",
     "model": "${MODEL:-default}",
     "dataset": "${DATASET:-single-instance}",
@@ -113,7 +113,7 @@ run_single_instance() {
         cp "$ISSUE_FILE" "$workspace/issue.md"
     fi
 
-    # Build the codewhale command
+    # Build the helpofai command
     local cw_args=("swebench" "run"
         "--instance-id" "$id"
         "--predictions-path" "$PREDICTIONS_PATH"
@@ -123,7 +123,7 @@ run_single_instance() {
         cw_args+=("--model" "$MODEL")
     fi
 
-    codewhale "${cw_args[@]}"
+    helpofai "${cw_args[@]}"
     echo "  Prediction written for $id"
 }
 
@@ -133,7 +133,7 @@ if [[ "$EVAL_ONLY" == true ]]; then
         --dataset_name "${DATASET:-princeton-nlp/SWE-bench_Lite}" \
         --predictions_path "$PREDICTIONS_PATH" \
         --max_workers "$MAX_WORKERS" \
-        --run_id "codewhale-$(date -u +%Y%m%d-%H%M%S)"
+        --run_id "helpofai-$(date -u +%Y%m%d-%H%M%S)"
     exit 0
 fi
 

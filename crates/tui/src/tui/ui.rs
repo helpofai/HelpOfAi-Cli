@@ -186,23 +186,23 @@ const SESSION_TITLE_MAX_CHARS: usize = 32;
 const VERSION_HINT_TOAST_TTL_MS: u64 = 12_000;
 
 const REQUIRED_RELEASE_ASSETS: &[&str] = &[
-    "codewhale-artifacts-sha256.txt",
-    "codewhale-linux-arm64",
-    "codewhale-linux-arm64.tar.gz",
-    "codewhale-linux-x64",
-    "codewhale-linux-x64.tar.gz",
-    "codewhale-macos-arm64",
-    "codewhale-macos-arm64.tar.gz",
-    "codewhale-macos-x64",
-    "codewhale-macos-x64.tar.gz",
-    "codewhale-tui-linux-arm64",
-    "codewhale-tui-linux-x64",
-    "codewhale-tui-macos-arm64",
-    "codewhale-tui-macos-x64",
-    "codewhale-tui-windows-x64.exe",
-    "codewhale-windows-x64.exe",
-    "codewhale-windows-x64-portable.zip",
-    "codewhale-windows-x64.zip",
+    "helpofai-artifacts-sha256.txt",
+    "helpofai-linux-arm64",
+    "helpofai-linux-arm64.tar.gz",
+    "helpofai-linux-x64",
+    "helpofai-linux-x64.tar.gz",
+    "helpofai-macos-arm64",
+    "helpofai-macos-arm64.tar.gz",
+    "helpofai-macos-x64",
+    "helpofai-macos-x64.tar.gz",
+    "helpofai-tui-linux-arm64",
+    "helpofai-tui-linux-x64",
+    "helpofai-tui-macos-arm64",
+    "helpofai-tui-macos-x64",
+    "helpofai-tui-windows-x64.exe",
+    "helpofai-windows-x64.exe",
+    "helpofai-windows-x64-portable.zip",
+    "helpofai-windows-x64.zip",
 ];
 
 fn is_session_approved_for_tool(app: &App, tool_name: &str, grouping_key: &str) -> bool {
@@ -314,7 +314,7 @@ impl TerminalInputPump {
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = Arc::clone(&stop);
         let handle = thread::Builder::new()
-            .name("codewhale-terminal-input".to_string())
+            .name("helpofai-terminal-input".to_string())
             .spawn(move || {
                 let mut last_heartbeat = Instant::now();
                 while !thread_stop.load(Ordering::Acquire) {
@@ -542,7 +542,7 @@ pub async fn run_tui(config: &Config, options: TuiOptions) -> Result<()> {
     };
     if use_alt_screen {
         execute!(stdout, EnterAlternateScreen)?;
-        // Windows also suppresses CodeWhale's own verbose CLI logger while
+        // Windows also suppresses HelpOfAi's own verbose CLI logger while
         // the alt-screen is active. The stderr redirect above catches raw
         // writes; this prevents the known verbose source at the origin.
         #[cfg(windows)]
@@ -844,7 +844,7 @@ fn should_show_resume_hint(session_id: Option<&str>) -> bool {
 }
 
 fn resume_hint_text() -> &'static str {
-    "To continue this session, execute codewhale run --continue"
+    "To continue this session, execute helpofai run --continue"
 }
 
 fn terminal_probe_timeout(config: &Config) -> Duration {
@@ -953,8 +953,8 @@ fn bounded_subagent_hook_preview(text: &str) -> (String, bool) {
 }
 
 fn subagent_completion_status(result: &str) -> Option<String> {
-    const START: &str = "<codewhale:subagent.done>";
-    const END: &str = "</codewhale:subagent.done>";
+    const START: &str = "<helpofai:subagent.done>";
+    const END: &str = "</helpofai:subagent.done>";
 
     if let Some(start) = result.find(START).map(|idx| idx + START.len())
         && let Some(end) = result[start..].find(END).map(|idx| idx + start)
@@ -1067,7 +1067,7 @@ fn build_engine_config(app: &App, config: &Config) -> EngineConfig {
         notes_path: config.notes_path(),
         mcp_config_path: config.mcp_config_path(),
         skills_dir: app.skills_dir.clone(),
-        skills_scan_codewhale_only: app.skills_scan_codewhale_only,
+        skills_scan_helpofai_only: app.skills_scan_helpofai_only,
         instructions: config
             .instructions_paths()
             .into_iter()
@@ -3131,7 +3131,7 @@ async fn run_event_loop(
                     Err(err) => {
                         tracing::warn!(error = %err, "failed to restart terminal input pump");
                         app.push_status_toast(
-                            "Terminal input stalled; recovery failed. Restart CodeWhale if keys stop responding.",
+                            "Terminal input stalled; recovery failed. Restart HelpOfAi if keys stop responding.",
                             StatusToastLevel::Error,
                             None,
                         );
@@ -3613,7 +3613,7 @@ async fn run_event_loop(
                     .push(CommandPaletteView::new(build_command_palette_entries(
                         app.ui_locale,
                         &app.skills_dir,
-                        app.skills_scan_codewhale_only,
+                        app.skills_scan_helpofai_only,
                         &app.workspace,
                         &app.mcp_config_path,
                         app.mcp_snapshot.as_ref(),
@@ -5254,7 +5254,7 @@ fn recover_engine_event_disconnect(app: &mut App) -> bool {
     }
 
     app.add_message(HistoryCell::Error {
-        message: "Engine stopped before completing the turn. Check ~/.codewhale/crashes and retry."
+        message: "Engine stopped before completing the turn. Check ~/.helpofai/crashes and retry."
             .to_string(),
         severity: crate::error_taxonomy::ErrorSeverity::Error,
     });
@@ -5372,7 +5372,7 @@ pub(crate) fn apply_engine_error_to_app(
         app.onboarding_needs_api_key = true;
         app.onboarding = OnboardingState::ApiKey;
         app.status_message = Some(
-            "The API key from DEEPSEEK_API_KEY was rejected. Paste a valid key to save it to ~/.codewhale/config.toml, or update the environment variable.".to_string(),
+            "The API key from DEEPSEEK_API_KEY was rejected. Paste a valid key to save it to ~/.helpofai/config.toml, or update the environment variable.".to_string(),
         );
         return;
     }
@@ -5926,7 +5926,7 @@ fn paused_command_note(title: &str, resume: bool) -> String {
         "The user is not resuming that paused command. Answer only the new message and do not continue the paused command."
     };
     format!(
-        "\n\nCodeWhale paused custom slash command context:\n\
+        "\n\nHelpOfAi paused custom slash command context:\n\
 Paused custom slash command: {title}\n\
 Paused command: {title}\n\
 {instruction}"
@@ -6088,7 +6088,7 @@ async fn dispatch_user_message(
                 ),
                 show_thinking: app.show_thinking,
                 verbosity: app.verbosity.as_deref(),
-                skills_scan_codewhale_only: app.skills_scan_codewhale_only,
+                skills_scan_helpofai_only: app.skills_scan_helpofai_only,
             },
         ),
     );
@@ -6393,7 +6393,7 @@ async fn drain_web_config_events(
 
 /// Apply the choice made in the `/model` picker (#39): mutate App state so
 /// the next turn uses the new model/effort, persist the selection to
-/// `~/.codewhale/settings.toml` (legacy: `~/.deepseek/settings.toml`) so it survives a restart, push the change to
+/// `~/.helpofai/settings.toml` (legacy: `~/.deepseek/settings.toml`) so it survives a restart, push the change to
 /// the running engine via `Op::SetModel`/`Op::SetCompaction`, and surface
 /// a one-line status describing what changed.
 // The model/effort transition needs both the previous and next model+effort
@@ -6672,7 +6672,7 @@ async fn switch_provider(
     app.api_provider = target;
     app.provider_chain = target
         .kind()
-        .map(|kind| codewhale_config::ProviderChain::new(kind, &config.fallback_providers))
+        .map(|kind| helpofai_config::ProviderChain::new(kind, &config.fallback_providers))
         .filter(|chain| chain.providers().len() > 1);
     app.last_fallback_reason = None;
     app.model_ids_passthrough = config.model_ids_pass_through();
@@ -7438,7 +7438,7 @@ fn apply_workspace_runtime_state(app: &mut App, config: &Config, workspace: Path
         workspace.clone(),
     );
     app.skills_dir = crate::tui::app::resolve_skills_dir(&workspace, &config.skills_dir(), config);
-    app.skills_scan_codewhale_only = config.skills_config().scan_codewhale_only();
+    app.skills_scan_helpofai_only = config.skills_config().scan_helpofai_only();
     app.refresh_skill_cache();
     app.workspace_context = None;
     if let Ok(mut cell) = app.workspace_context_cell.lock() {
@@ -9211,7 +9211,7 @@ fn apply_backtrack(app: &mut App, depth: usize) {
     app.needs_redraw = true;
 }
 
-/// Persist the typed API key to `~/.codewhale/config.toml`, refresh the
+/// Persist the typed API key to `~/.helpofai/config.toml`, refresh the
 /// in-memory config so the engine can see it, then switch to the provider.
 async fn apply_provider_picker_api_key(
     app: &mut App,
@@ -10961,8 +10961,8 @@ async fn version_hint_from_startup_source(
                 return version_hint_from_release_mirror_env(current).await;
             }
 
-            let body = codewhale_release::fetch_release_json_async(
-                codewhale_release::LATEST_RELEASE_URL,
+            let body = helpofai_release::fetch_release_json_async(
+                helpofai_release::LATEST_RELEASE_URL,
                 "latest release",
             )
             .await
@@ -10978,23 +10978,23 @@ async fn version_hint_from_release_mirror_env(current: &str) -> Option<String> {
         return None;
     }
     let tag =
-        codewhale_release::latest_release_tag_async(codewhale_release::ReleaseChannel::Stable)
+        helpofai_release::latest_release_tag_async(helpofai_release::ReleaseChannel::Stable)
             .await
             .ok()?;
     version_hint_from_latest_tag(&tag, current)
 }
 
 fn release_mirror_env_configured() -> bool {
-    let version = codewhale_release::update_version_from_env()
+    let version = helpofai_release::update_version_from_env()
         .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
-    codewhale_release::release_base_url_from_env(&version).is_some()
+    helpofai_release::release_base_url_from_env(&version).is_some()
 }
 
 async fn version_hint_from_configured_update_uri(
     update_uri: &str,
     current: &str,
 ) -> Result<Option<String>> {
-    let body = codewhale_release::fetch_release_json_async(update_uri, "configured latest release")
+    let body = helpofai_release::fetch_release_json_async(update_uri, "configured latest release")
         .await?;
     let json: serde_json::Value = serde_json::from_str(&body).with_context(|| {
         format!("failed to parse release JSON from configured URI {update_uri}")
@@ -11032,7 +11032,7 @@ fn version_hint_from_latest_tag(tag: &str, current: &str) -> Option<String> {
     }
 
     Some(format!(
-        "v{latest} available - run `codewhale update` and restart"
+        "v{latest} available - run `helpofai update` and restart"
     ))
 }
 

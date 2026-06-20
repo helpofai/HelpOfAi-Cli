@@ -121,7 +121,7 @@ impl Drop for SettingsHomeGuard {
 fn resume_hint_uses_canonical_resume_command() {
     assert_eq!(
         resume_hint_text(),
-        "To continue this session, execute codewhale run --continue"
+        "To continue this session, execute helpofai run --continue"
     );
     assert!(should_show_resume_hint(Some(
         "019dd9d6-4f44-7c83-9863-59674a12b827"
@@ -2235,7 +2235,7 @@ fn active_tool_status_label_strips_shell_wrappers_from_ci_polling() {
     active.push_tool(
         "exec-1",
         HistoryCell::Tool(ToolCell::Exec(ExecCell {
-            command: "cd /tmp/repo && sleep 15 && gh pr checks 1611 --repo Hmbown/CodeWhale"
+            command: "cd /tmp/repo && sleep 15 && gh pr checks 1611 --repo helpofai/HelpOfAi-Cli"
                 .to_string(),
             status: ToolStatus::Running,
             output: None,
@@ -3560,7 +3560,7 @@ fn init_git_repo() -> TempDir {
     let commit = Command::new("git")
         .args([
             "-c",
-            "user.name=codewhale Tests",
+            "user.name=helpofai Tests",
             "-c",
             "user.email=tests@example.com",
             "-c",
@@ -3676,7 +3676,7 @@ fn hotbar_dispatches_slash_command_slot() {
     let mut app = create_test_app();
     app.onboarding = OnboardingState::None;
     let config = Config {
-        hotbar: Some(vec![codewhale_config::HotbarBindingToml {
+        hotbar: Some(vec![helpofai_config::HotbarBindingToml {
             slot: 1,
             label: Some("mode".to_string()),
             action: "slash.mode".to_string(),
@@ -4066,7 +4066,7 @@ fn subagent_hook_preview_is_bounded_on_char_boundaries() {
 #[test]
 fn subagent_completion_status_reads_done_sentinel() {
     let result = r#"done
-<codewhale:subagent.done>{"agent_id":"agent_x","status":"completed"}</codewhale:subagent.done>"#;
+<helpofai:subagent.done>{"agent_id":"agent_x","status":"completed"}</helpofai:subagent.done>"#;
 
     assert_eq!(
         subagent_completion_status(result).as_deref(),
@@ -4646,7 +4646,7 @@ fn version_hint_requires_complete_release_assets() {
             .iter()
             .filter(|asset| {
                 asset.get("name").and_then(serde_json::Value::as_str)
-                    != Some("codewhale-artifacts-sha256.txt")
+                    != Some("helpofai-artifacts-sha256.txt")
             })
             .cloned()
             .collect(),
@@ -5518,7 +5518,7 @@ fn visible_slash_menu_entries_excludes_removed_commands() {
     assert!(entries.iter().any(|entry| entry.name == "/config"));
     assert!(entries.iter().any(|entry| entry.name == "/links"));
     assert!(!entries.iter().any(|entry| entry.name == "/set"));
-    assert!(!entries.iter().any(|entry| entry.name == "/codewhale"));
+    assert!(!entries.iter().any(|entry| entry.name == "/helpofai"));
 }
 
 #[test]
@@ -8517,7 +8517,7 @@ fn approval_prompt_uses_event_input_after_message_complete_drain() {
     app.pending_tool_uses.clear();
 
     let event_input = serde_json::json!({
-        "command": "cargo test -p codewhale-tui approval",
+        "command": "cargo test -p helpofai-tui approval",
         "workdir": "/repo",
     });
     push_approval_request_view(
@@ -8540,7 +8540,7 @@ fn approval_prompt_uses_event_input_after_message_complete_drain() {
         panic!("expected approval params pager");
     };
 
-    assert!(content.contains("cargo test -p codewhale-tui approval"));
+    assert!(content.contains("cargo test -p helpofai-tui approval"));
     assert!(content.contains("/repo"));
     assert!(!content.contains("stale value from drained list"));
     assert_ne!(content.trim(), "{}");
@@ -8739,9 +8739,9 @@ fn recoverable_provider_error_advances_fallback_chain() {
 
     let mut app = create_test_app();
     app.api_provider = ApiProvider::Deepseek;
-    app.provider_chain = Some(codewhale_config::ProviderChain::new(
-        codewhale_config::ProviderKind::Deepseek,
-        &[codewhale_config::ProviderKind::Openrouter],
+    app.provider_chain = Some(helpofai_config::ProviderChain::new(
+        helpofai_config::ProviderKind::Deepseek,
+        &[helpofai_config::ProviderKind::Openrouter],
     ));
 
     apply_engine_error_to_app(
@@ -9269,7 +9269,7 @@ fn render_footer_from_surfaces_background_shell_even_without_tasks_panel() {
     app.task_panel = vec![crate::tui::app::TaskPanelEntry {
         id: "shell_abc".to_string(),
         status: "running".to_string(),
-        prompt_summary: "shell: cargo test -p codewhale-tui".to_string(),
+        prompt_summary: "shell: cargo test -p helpofai-tui".to_string(),
         duration_ms: Some(5_000),
         kind: crate::tui::app::TaskPanelEntryKind::Background,
         stale: false,
@@ -10104,7 +10104,7 @@ fn subagent_completion_notification_uses_summary_line_not_sentinel() {
     let msg = crate::tui::notifications::subagent_completion_message(
         crate::localization::Locale::En,
         "agent_live",
-        "Finished the docs audit.\n<codewhale:subagent.done>{}</codewhale:subagent.done>",
+        "Finished the docs audit.\n<helpofai:subagent.done>{}</helpofai:subagent.done>",
         false,
         Duration::from_secs(42),
     );
@@ -10113,7 +10113,7 @@ fn subagent_completion_notification_uses_summary_line_not_sentinel() {
         msg,
         "Sub-agent complete\nagent_live: Finished the docs audit."
     );
-    assert!(!msg.contains("codewhale:subagent.done"));
+    assert!(!msg.contains("helpofai:subagent.done"));
 }
 
 #[test]
@@ -10462,7 +10462,7 @@ mod work_sidebar_projection_tests {
         // the list of running jobs, so the task panel refresh picks up the
         // correct state.
         let temp_dir = std::env::temp_dir().join(format!(
-            "codewhale-test-shell-cancel-{}",
+            "helpofai-test-shell-cancel-{}",
             std::process::id()
         ));
         let _ = std::fs::create_dir_all(&temp_dir);

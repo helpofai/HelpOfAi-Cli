@@ -11,18 +11,18 @@ const EN_COLS = [
       { label: "Documentation", href: "/en/docs" },
       { label: "Roadmap", href: "/en/roadmap" },
       { label: "FAQ", href: "/en/faq" },
-      { label: "Releases", href: "https://github.com/Hmbown/CodeWhale/releases" },
+      { label: "Releases", href: "https://github.com/helpofai/HelpOfAi-Cli/releases" },
     ],
   },
   {
     title: "Community",
     cn: "社区",
     items: [
-      { label: "Issues", href: "https://github.com/Hmbown/CodeWhale/issues" },
-      { label: "Pull Requests", href: "https://github.com/Hmbown/CodeWhale/pulls" },
-      { label: "Discussions", href: "https://github.com/Hmbown/CodeWhale/discussions" },
+      { label: "Issues", href: "https://github.com/helpofai/HelpOfAi-Cli/issues" },
+      { label: "Pull Requests", href: "https://github.com/helpofai/HelpOfAi-Cli/pulls" },
+      { label: "Discussions", href: "https://github.com/helpofai/HelpOfAi-Cli/discussions" },
       { label: "Contribute", href: "/en/contribute" },
-      { label: "Sponsor CodeWhale", href: "https://github.com/sponsors/Hmbown" },
+      { label: "Sponsor HelpOfAi", href: "https://github.com/sponsors/helpofai" },
     ],
   },
   {
@@ -30,11 +30,11 @@ const EN_COLS = [
     cn: "资源",
     items: [
       { label: "Activity Feed", href: "/en/feed" },
-      { label: "npm package", href: "https://www.npmjs.com/package/codewhale" },
-      { label: "crates.io (codewhale-cli)", href: "https://crates.io/crates/codewhale-cli" },
-      { label: "Code of Conduct", href: "https://github.com/Hmbown/CodeWhale/blob/main/CODE_OF_CONDUCT.md" },
-      { label: "Security", href: "https://github.com/Hmbown/CodeWhale/blob/main/SECURITY.md" },
-      { label: "License (MIT)", href: "https://github.com/Hmbown/CodeWhale/blob/main/LICENSE" },
+      { label: "npm package", href: "https://www.npmjs.com/package/helpofai" },
+      { label: "crates.io (helpofai-cli)", href: "https://crates.io/crates/helpofai-cli" },
+      { label: "Code of Conduct", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/CODE_OF_CONDUCT.md" },
+      { label: "Security", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/SECURITY.md" },
+      { label: "License (MIT)", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/LICENSE" },
     ],
   },
 ];
@@ -47,28 +47,28 @@ const ZH_COLS = [
       { label: "使用文档", href: "/zh/docs" },
       { label: "路线图", href: "/zh/roadmap" },
       { label: "常见问题", href: "/zh/faq" },
-      { label: "版本发布", href: "https://github.com/Hmbown/CodeWhale/releases" },
+      { label: "版本发布", href: "https://github.com/helpofai/HelpOfAi-Cli/releases" },
     ],
   },
   {
     title: "社区",
     items: [
-      { label: "议题", href: "https://github.com/Hmbown/CodeWhale/issues" },
-      { label: "合并请求", href: "https://github.com/Hmbown/CodeWhale/pulls" },
-      { label: "讨论区", href: "https://github.com/Hmbown/CodeWhale/discussions" },
+      { label: "议题", href: "https://github.com/helpofai/HelpOfAi-Cli/issues" },
+      { label: "合并请求", href: "https://github.com/helpofai/HelpOfAi-Cli/pulls" },
+      { label: "讨论区", href: "https://github.com/helpofai/HelpOfAi-Cli/discussions" },
       { label: "参与贡献", href: "/zh/contribute" },
-      { label: "支持 CodeWhale", href: "https://github.com/sponsors/Hmbown" },
+      { label: "支持 HelpOfAi", href: "https://github.com/sponsors/helpofai" },
     ],
   },
   {
     title: "资源",
     items: [
       { label: "活动动态", href: "/zh/feed" },
-      { label: "npm 包", href: "https://www.npmjs.com/package/codewhale" },
-      { label: "crates.io（codewhale-cli）", href: "https://crates.io/crates/codewhale-cli" },
-      { label: "行为准则", href: "https://github.com/Hmbown/CodeWhale/blob/main/CODE_OF_CONDUCT.md" },
-      { label: "安全策略", href: "https://github.com/Hmbown/CodeWhale/blob/main/SECURITY.md" },
-      { label: "MIT 许可证", href: "https://github.com/Hmbown/CodeWhale/blob/main/LICENSE" },
+      { label: "npm 包", href: "https://www.npmjs.com/package/helpofai" },
+      { label: "crates.io（helpofai-cli）", href: "https://crates.io/crates/helpofai-cli" },
+      { label: "行为准则", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/CODE_OF_CONDUCT.md" },
+      { label: "安全策略", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/SECURITY.md" },
+      { label: "MIT 许可证", href: "https://github.com/helpofai/HelpOfAi-Cli/blob/main/LICENSE" },
     ],
   },
 ];
@@ -84,7 +84,7 @@ export function Footer({ locale = "en" }: { locale?: Locale }) {
           <div className="flex items-center gap-3">
             <Seal char="深" size="md" />
             <div>
-              <div className="font-display text-xl font-semibold">CodeWhale</div>
+              <div className="font-display text-xl font-semibold">HelpOfAi</div>
               <div className="font-cjk text-[0.7rem] text-ink-mute tracking-widest">
                 {isZh ? "任何模型 · 开源模型优先" : "any model, open models first"}
               </div>
@@ -103,9 +103,9 @@ export function Footer({ locale = "en" }: { locale?: Locale }) {
             <div className="pt-2 border-t border-paper-line/20">
               <div className="eyebrow mb-2 text-ink-mute">镜像源 / Mirror</div>
               <div className="flex flex-wrap gap-3 text-xs">
-                {GITEE_ENABLED && <a href="https://gitee.com/Hmbown/CodeWhale" className="text-indigo hover:underline" target="_blank" rel="noopener">Gitee 镜像</a>}
-                <a href="https://cnb.cool/codewhale.net/codewhale" className="text-indigo hover:underline" target="_blank" rel="noopener">CNB 镜像</a>
-                <a href="https://npmmirror.com/package/codewhale" className="text-indigo hover:underline" target="_blank" rel="noopener">npmmirror</a>
+                {GITEE_ENABLED && <a href="https://gitee.com/helpofai/HelpOfAi-Cli" className="text-indigo hover:underline" target="_blank" rel="noopener">Gitee 镜像</a>}
+                <a href="https://cnb.cool/helpofai.net/helpofai" className="text-indigo hover:underline" target="_blank" rel="noopener">CNB 镜像</a>
+                <a href="https://npmmirror.com/package/helpofai" className="text-indigo hover:underline" target="_blank" rel="noopener">npmmirror</a>
                 <a href="https://mirrors.tuna.tsinghua.edu.cn/help/crates.io-index.html" className="text-indigo hover:underline" target="_blank" rel="noopener">Tuna crates.io</a>
               </div>
             </div>
@@ -135,10 +135,10 @@ export function Footer({ locale = "en" }: { locale?: Locale }) {
         <div className="mx-auto max-w-[1400px] px-6 py-4 flex flex-col gap-2 text-[0.78rem] text-ink-soft">
           <div>
             {isZh ? "安全报告、负责任披露、漏洞协调 — " : "For security reports, responsible disclosure, or vulnerability coordination — "}
-            <a href="mailto:security@codewhale.net" className="font-mono text-ink hover:text-indigo">security@codewhale.net</a>
+            <a href="mailto:security@helpofai.net" className="font-mono text-ink hover:text-indigo">security@helpofai.net</a>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 font-mono text-[0.7rem] text-ink-mute uppercase tracking-widest">
-            <span>© {new Date().getFullYear()} · CodeWhale · Hmbown</span>
+            <span>© {new Date().getFullYear()} · HelpOfAi · helpofai</span>
             <span className="font-cjk normal-case tracking-normal">
               {isZh ? "本网站由 DeepSeek V4-Flash 协助维护" : "Maintained with DeepSeek V4-Flash"}
             </span>

@@ -1,0 +1,62 @@
+{
+  "name": "helpofai",
+  "version": "0.8.62",
+  "helpofaiBinaryVersion": "0.8.62",
+  "description": "Install and run HelpOfAi, the agentic terminal for open-source and open-weight coding models, from GitHub release artifacts.",
+  "author": "helpofai",
+  "license": "MIT",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/helpofai"
+    },
+    {
+      "type": "buymeacoffee",
+      "url": "https://www.buymeacoffee.com/helpofai"
+    }
+  ],
+  "homepage": "https://github.com/helpofai/HelpOfAi-Cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/helpofai/HelpOfAi-Cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/helpofai/HelpOfAi-Cli/issues"
+  },
+  "keywords": [
+    "helpofai",
+    "deepseek",
+    "cli",
+    "tui",
+    "rust",
+    "binary",
+    "terminal"
+  ],
+  "type": "commonjs",
+  "bin": {
+    "helpofai": "bin/helpofai.js",
+    "hoa": "bin/hoa.js",
+    "helpofai-tui": "bin/helpofai-tui.js"
+  },
+  "scripts": {
+    "release:check": "node scripts/verify-release-assets.js",
+    "postinstall": "node scripts/install.js --optional",
+    "prepublishOnly": "node scripts/verify-release-assets.js",
+    "prepack": "node scripts/install.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "preferGlobal": true,
+  "files": [
+    "bin/*.js",
+    "scripts/*.js",
+    "test/*.js",
+    "README.md",
+    "package.json"
+  ]
+}

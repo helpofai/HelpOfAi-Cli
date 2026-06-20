@@ -40,8 +40,8 @@ export interface RuntimeConfig {
 }
 
 export function readRuntimeConfig(): RuntimeConfig {
-  const config = vscode.workspace.getConfiguration("codewhale");
-  const commandPath = config.get<string>("commandPath", "codewhale").trim() || "codewhale";
+  const config = vscode.workspace.getConfiguration("helpofai");
+  const commandPath = config.get<string>("commandPath", "helpofai").trim() || "helpofai";
   const host = config.get<string>("runtimeHost", "127.0.0.1").trim() || "127.0.0.1";
   const port = config.get<number>("runtimePort", 7878);
   const token = config.get<string>("runtimeToken", "").trim();
@@ -85,7 +85,7 @@ export async function checkRuntime(config: RuntimeConfig): Promise<RuntimeState>
   return {
     kind: "connected",
     baseUrl,
-    detail: version ? `Connected to CodeWhale ${version}.` : "Connected to CodeWhale runtime.",
+    detail: version ? `Connected to HelpOfAi ${version}.` : "Connected to HelpOfAi runtime.",
     version,
   };
 }
@@ -128,7 +128,7 @@ export async function listSnapshots(config: RuntimeConfig, limit = 8): Promise<S
 }
 
 export function startRuntimeTerminal(config: RuntimeConfig): vscode.Terminal {
-  const terminal = vscode.window.createTerminal("CodeWhale Runtime");
+  const terminal = vscode.window.createTerminal("HelpOfAi Runtime");
   const args = [
     "serve",
     "--http",
@@ -145,8 +145,8 @@ export function startRuntimeTerminal(config: RuntimeConfig): vscode.Terminal {
   return terminal;
 }
 
-export function openCodeWhaleTerminal(config: RuntimeConfig): vscode.Terminal {
-  const terminal = vscode.window.createTerminal("CodeWhale");
+export function openHelpOfAiTerminal(config: RuntimeConfig): vscode.Terminal {
+  const terminal = vscode.window.createTerminal("HelpOfAi");
   terminal.sendText(shellQuote(config.commandPath));
   terminal.show();
   return terminal;

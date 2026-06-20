@@ -193,8 +193,8 @@ impl DeepSeekClient {
             Err(_elapsed) => {
                 anyhow::bail!(
                     "SSE stream request did not receive response headers after {}s. \
-                     `codewhale doctor` can still pass when non-streaming requests work; \
-                     on Windows or proxy networks, try `DEEPSEEK_FORCE_HTTP1=1` and rerun `codewhale`.",
+                     `helpofai doctor` can still pass when non-streaming requests work; \
+                     on Windows or proxy networks, try `DEEPSEEK_FORCE_HTTP1=1` and rerun `helpofai`.",
                     open_timeout.as_secs()
                 );
             }
@@ -641,9 +641,9 @@ impl<'a> PromptBuilder<'a> {
     }
 }
 
-const SYSTEM_PROMPT_DUMP_ENV: &str = "CODEWHALE_DUMP_SYSTEM_PROMPT";
-const SYSTEM_PROMPT_DUMP_BEGIN: &str = "<<<CODEWHALE_SYSTEM_PROMPT_BEGIN>>>";
-const SYSTEM_PROMPT_DUMP_END: &str = "<<<CODEWHALE_SYSTEM_PROMPT_END>>>";
+const SYSTEM_PROMPT_DUMP_ENV: &str = "HELPOFAI_DUMP_SYSTEM_PROMPT";
+const SYSTEM_PROMPT_DUMP_BEGIN: &str = "<<<HELPOFAI_SYSTEM_PROMPT_BEGIN>>>";
+const SYSTEM_PROMPT_DUMP_END: &str = "<<<HELPOFAI_SYSTEM_PROMPT_END>>>";
 const ARCEE_WAF_TEXT_SPLIT_TRIGGERS: &[(&str, &str, &str)] = &[("python -c", "python ", "-c")];
 
 fn dump_system_prompt_if_requested(messages: &[Value]) {
@@ -1854,7 +1854,7 @@ fn map_tool_choice_for_chat(choice: &Value) -> Option<Value> {
 /// reasoning can stay omitted once a later user text turn begins.
 ///
 /// Also tallies the size of all replayed `reasoning_content` and logs it, so
-/// users on `RUST_LOG=codewhale_tui=debug` can see how much of their input
+/// users on `RUST_LOG=helpofai_tui=debug` can see how much of their input
 /// budget is being spent re-sending prior thinking traces.
 pub(super) fn sanitize_thinking_mode_messages(
     body: &mut Value,

@@ -561,7 +561,7 @@ mod tests {
         app.system_prompt = Some(SystemPrompt::Blocks(vec![
             SystemBlock {
                 block_type: "text".to_string(),
-                text: "## Stable Base\n\nYou are CodeWhale.".to_string(),
+                text: "## Stable Base\n\nYou are HelpOfAi.".to_string(),
                 cache_control: None,
             },
             SystemBlock {
@@ -621,7 +621,7 @@ mod tests {
     fn inspector_text_prompt_shows_layer_map() {
         let mut app = test_app();
         app.system_prompt = Some(SystemPrompt::Text(
-            "You are CodeWhale.\n\n<project_instructions source=\"AGENTS.md\">\nRules\n</project_instructions>\n\n## Project Context Pack\n{}\n\n## Environment\n- lang: en\n\n## Skills\n- rust\n\n## Context Management\nKeep compact\n\n## Compact\nTemplate\n\n## Repo Working Set\nsrc/".to_string(),
+            "You are HelpOfAi.\n\n<project_instructions source=\"AGENTS.md\">\nRules\n</project_instructions>\n\n## Project Context Pack\n{}\n\n## Environment\n- lang: en\n\n## Skills\n- rust\n\n## Context Management\nKeep compact\n\n## Compact\nTemplate\n\n## Repo Working Set\nsrc/".to_string(),
         ));
 
         let text = build_context_inspector_text(&app, Locale::En);
@@ -641,7 +641,7 @@ mod tests {
     #[test]
     fn inspector_text_prompt_without_markers_shows_single_blob() {
         let mut app = test_app();
-        app.system_prompt = Some(SystemPrompt::Text("You are CodeWhale.".to_string()));
+        app.system_prompt = Some(SystemPrompt::Text("You are HelpOfAi.".to_string()));
 
         let text = build_context_inspector_text(&app, Locale::En);
         assert!(text.contains("Single text blob"));
@@ -655,7 +655,7 @@ mod tests {
         app.system_prompt = Some(SystemPrompt::Blocks(vec![
             SystemBlock {
                 block_type: "text".to_string(),
-                text: "## Base\nYou are CodeWhale.".to_string(),
+                text: "## Base\nYou are HelpOfAi.".to_string(),
                 cache_control: None,
             },
             SystemBlock {

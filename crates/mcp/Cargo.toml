@@ -1,5 +1,5 @@
 [package]
-name = "codewhale-mcp"
+name = "helpofai-mcp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

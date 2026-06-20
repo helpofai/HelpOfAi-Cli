@@ -47,11 +47,11 @@ test("parseEnvText handles comments, export, and quoted values", () => {
     parseEnvText(`
       # ignored
       export TELEGRAM_GROUP_PREFIX="/cw"
-      CODEWHALE_WORKSPACE='/opt/whalebro'
+      HELPOFAI_WORKSPACE='/opt/whalebro'
     `),
     {
       TELEGRAM_GROUP_PREFIX: "/cw",
-      CODEWHALE_WORKSPACE: "/opt/whalebro"
+      HELPOFAI_WORKSPACE: "/opt/whalebro"
     }
   );
 });
@@ -111,7 +111,7 @@ test("stripGroupPrefix accepts private chat text without group prefix", () => {
 
 test("parseCommand handles Telegram bot mentions", () => {
   assert.deepEqual(parseCommand("hello"), { name: "prompt", args: "hello" });
-  assert.deepEqual(parseCommand("/allow@CodeWhaleBot abc remember"), {
+  assert.deepEqual(parseCommand("/allow@HelpOfAiBot abc remember"), {
     name: "allow",
     args: "abc remember"
   });
@@ -252,21 +252,21 @@ test("validateBridgeConfig accepts locked-down whalebro DM config", () => {
   const result = validateBridgeConfig(
     {
       TELEGRAM_BOT_TOKEN: "123456:token",
-      CODEWHALE_RUNTIME_URL: "http://127.0.0.1:7878",
-      CODEWHALE_RUNTIME_TOKEN: "token-a",
-      CODEWHALE_WORKSPACE: "/opt/whalebro",
+      HELPOFAI_RUNTIME_URL: "http://127.0.0.1:7878",
+      HELPOFAI_RUNTIME_TOKEN: "token-a",
+      HELPOFAI_WORKSPACE: "/opt/whalebro",
       TELEGRAM_CHAT_ALLOWLIST: "42",
       TELEGRAM_ALLOW_UNLISTED: "false",
-      TELEGRAM_THREAD_MAP_PATH: "/var/lib/codewhale-telegram-bridge/thread-map.json",
+      TELEGRAM_THREAD_MAP_PATH: "/var/lib/helpofai-telegram-bridge/thread-map.json",
       TELEGRAM_ALLOW_GROUPS: "false",
       TELEGRAM_REQUIRE_PREFIX_IN_GROUP: "true"
     },
     {
       workspaceRoot: "/opt/whalebro",
       runtimeEnv: {
-        CODEWHALE_RUNTIME_TOKEN: "token-a",
-        CODEWHALE_PROVIDER: "arcee",
-        CODEWHALE_RUNTIME_PORT: "7878"
+        HELPOFAI_RUNTIME_TOKEN: "token-a",
+        HELPOFAI_PROVIDER: "arcee",
+        HELPOFAI_RUNTIME_PORT: "7878"
       }
     }
   );
@@ -278,19 +278,19 @@ test("validateBridgeConfig rejects unsafe group pairing and token mismatch", () 
   const result = validateBridgeConfig(
     {
       TELEGRAM_BOT_TOKEN: "123456:token",
-      CODEWHALE_RUNTIME_URL: "http://127.0.0.1:7878",
-      CODEWHALE_RUNTIME_TOKEN: "bridge-token",
-      CODEWHALE_WORKSPACE: "/opt/whalebro",
+      HELPOFAI_RUNTIME_URL: "http://127.0.0.1:7878",
+      HELPOFAI_RUNTIME_TOKEN: "bridge-token",
+      HELPOFAI_WORKSPACE: "/opt/whalebro",
       TELEGRAM_ALLOW_UNLISTED: "true",
-      TELEGRAM_THREAD_MAP_PATH: "/var/lib/codewhale-telegram-bridge/thread-map.json",
+      TELEGRAM_THREAD_MAP_PATH: "/var/lib/helpofai-telegram-bridge/thread-map.json",
       TELEGRAM_ALLOW_GROUPS: "true",
       TELEGRAM_REQUIRE_PREFIX_IN_GROUP: "false"
     },
     {
       workspaceRoot: "/opt/whalebro",
       runtimeEnv: {
-        CODEWHALE_RUNTIME_TOKEN: "runtime-token",
-        CODEWHALE_PROVIDER: "arcee"
+        HELPOFAI_RUNTIME_TOKEN: "runtime-token",
+        HELPOFAI_PROVIDER: "arcee"
       }
     }
   );

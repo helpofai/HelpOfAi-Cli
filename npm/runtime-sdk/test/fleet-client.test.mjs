@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  CodeWhaleRuntimeClient,
+  HelpOfAiRuntimeClient,
   RuntimeApiError,
   RuntimeCapabilityError,
   createRuntimeClient,
@@ -61,7 +61,7 @@ test("worker and run actions use POST endpoints", async () => {
           },
     ),
   );
-  const client = new CodeWhaleRuntimeClient({ fetch });
+  const client = new HelpOfAiRuntimeClient({ fetch });
 
   await client.interruptWorker("w1");
   await client.restartWorker("w1");
@@ -79,7 +79,7 @@ test("worker and run actions use POST endpoints", async () => {
 
 test("unsupported fleet capabilities raise typed errors", async () => {
   const fetch = fakeFetch(() => jsonResponse({ error: "not found" }, { status: 404 }));
-  const client = new CodeWhaleRuntimeClient({ fetch });
+  const client = new HelpOfAiRuntimeClient({ fetch });
 
   await assert.rejects(
     () => client.createFleetRun({ name: "future" }),
@@ -118,7 +118,7 @@ test("fleetEvents can replay JSON event fixtures when the API exposes them", asy
       ],
     }),
   );
-  const client = new CodeWhaleRuntimeClient({ fetch });
+  const client = new HelpOfAiRuntimeClient({ fetch });
 
   const events = [];
   for await (const event of client.fleetEvents("run-1", { path: "/v1/fleet/runs/run-1/events" })) {
@@ -148,7 +148,7 @@ test("fleetEvents parses text/event-stream frames", async () => {
         headers: { "content-type": "text/event-stream" },
       }),
   );
-  const client = new CodeWhaleRuntimeClient({ fetch });
+  const client = new HelpOfAiRuntimeClient({ fetch });
 
   const events = [];
   for await (const event of client.fleetEvents("run-1")) {
@@ -162,7 +162,7 @@ test("fleetEvents parses text/event-stream frames", async () => {
 
 test("ordinary HTTP errors remain RuntimeApiError", async () => {
   const fetch = fakeFetch(() => jsonResponse({ error: "bad" }, { status: 500 }));
-  const client = new CodeWhaleRuntimeClient({ fetch });
+  const client = new HelpOfAiRuntimeClient({ fetch });
 
   await assert.rejects(
     () => client.getFleetRun("run-1"),

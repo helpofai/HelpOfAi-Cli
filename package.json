@@ -1,7 +1,7 @@
 {
   "private": true,
   "workspaces": [
-    "npm/codewhale",
+    "npm/helpofai",
     "npm/deepseek-tui",
     "npm/runtime-sdk"
   ],

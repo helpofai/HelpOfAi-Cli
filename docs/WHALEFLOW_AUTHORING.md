@@ -1,6 +1,6 @@
-# WhaleFlow Authoring
+# HelpFlow Authoring
 
-WhaleFlow has one runtime boundary: authored workflow source lowers to typed
+HelpFlow has one runtime boundary: authored workflow source lowers to typed
 Rust `WorkflowSpec`, Rust validates the IR, and the scheduler/headless worker
 runtime executes leaves. Authoring languages do not get hidden authority to own
 files, shell, network, providers, cancellation, or TUI state.
@@ -53,7 +53,7 @@ a familiar declaration format, not a second execution runtime.
 
 ## Verification
 
-- `cargo test -p codewhale-whaleflow --locked javascript`
-- `cargo test -p codewhale-whaleflow --locked starlark`
+- `cargo test -p helpofai-helpflow --locked javascript`
+- `cargo test -p helpofai-helpflow --locked starlark`
 
 Current example: `workflows/issue_audit.workflow.js`.

@@ -439,7 +439,7 @@ impl Renderable for ChatWidget {
 
         let area = _area;
 
-        // Repaint the full chat area with the codewhale-ink background each
+        // Repaint the full chat area with the helpofai-ink background each
         // frame. Ratatui's `Paragraph` only writes cells that contain text,
         // so cells the current frame's paragraph doesn't touch would
         // otherwise hold the *previous* frame's contents (the `:24Z`
@@ -2146,7 +2146,7 @@ fn build_empty_state_lines(app: &App, area: Rect) -> Vec<Line<'static>> {
     }
 
     let workspace = crate::utils::display_path(&app.workspace);
-    let title = format!(">_ codewhale (v{})", env!("CARGO_PKG_VERSION"));
+    let title = format!(">_ helpofai (v{})", env!("CARGO_PKG_VERSION"));
     let model = format!("model: {}  /model to switch", app.model);
     let directory = format!("directory: {workspace}");
     let block_width = [&title, &model, &directory]
@@ -3360,7 +3360,7 @@ mod tests {
     fn slash_completion_hints_exclude_set_and_deepseek_commands() {
         let hints = slash_completion_hints("/", 128, &[], Locale::En, None, ApiProvider::Deepseek);
         assert!(!hints.iter().any(|hint| hint.name == "/set"));
-        assert!(!hints.iter().any(|hint| hint.name == "/codewhale"));
+        assert!(!hints.iter().any(|hint| hint.name == "/helpofai"));
     }
 
     #[test]
@@ -3418,7 +3418,7 @@ mod tests {
     #[test]
     fn slash_completion_hints_exclude_hidden_user_commands() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let commands_dir = tmp.path().join(".codewhale").join("commands");
+        let commands_dir = tmp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         std::fs::write(
             commands_dir.join("secret.md"),
@@ -3441,7 +3441,7 @@ mod tests {
     #[test]
     fn slash_completion_hints_match_user_command_aliases() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let commands_dir = tmp.path().join(".codewhale").join("commands");
+        let commands_dir = tmp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         std::fs::write(
             commands_dir.join("deploy-target.md"),
@@ -3469,7 +3469,7 @@ mod tests {
     #[test]
     fn slash_completion_hints_keep_builtin_canonical_when_only_builtin_alias_is_shadowed() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let commands_dir = tmp.path().join(".codewhale").join("commands");
+        let commands_dir = tmp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         std::fs::write(
             commands_dir.join("attach-review.md"),
@@ -3513,7 +3513,7 @@ mod tests {
     #[test]
     fn slash_completion_hints_prefer_user_metadata_for_shadowed_builtin() {
         let tmp = tempfile::TempDir::new().unwrap();
-        let commands_dir = tmp.path().join(".codewhale").join("commands");
+        let commands_dir = tmp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         std::fs::write(
             commands_dir.join("help.md"),
@@ -3986,7 +3986,7 @@ mod tests {
     #[test]
     fn empty_state_shows_startup_context() {
         let mut app = create_test_app();
-        app.workspace = PathBuf::from("/tmp/codewhale-test-workspace");
+        app.workspace = PathBuf::from("/tmp/helpofai-test-workspace");
         app.model = "deepseek-v4-pro".to_string();
 
         let lines = build_empty_state_lines(&app, Rect::new(0, 0, 100, 20));
@@ -4001,15 +4001,15 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n");
 
-        assert!(rendered.contains(&format!(">_ codewhale (v{})", env!("CARGO_PKG_VERSION"))));
+        assert!(rendered.contains(&format!(">_ helpofai (v{})", env!("CARGO_PKG_VERSION"))));
         assert!(rendered.contains("model: deepseek-v4-pro  /model to switch"));
-        assert!(rendered.contains("directory: /tmp/codewhale-test-workspace"));
+        assert!(rendered.contains("directory: /tmp/helpofai-test-workspace"));
     }
 
     #[test]
     fn empty_state_centers_startup_block_by_actual_text_width() {
         let mut app = create_test_app();
-        app.workspace = PathBuf::from("/tmp/codewhale-test-workspace");
+        app.workspace = PathBuf::from("/tmp/helpofai-test-workspace");
         app.model = "deepseek-v4-pro".to_string();
 
         let lines = build_empty_state_lines(&app, Rect::new(0, 0, 100, 20));
@@ -4022,9 +4022,9 @@ mod tests {
                     .collect::<String>()
             })
             .collect::<Vec<_>>();
-        let title = format!(">_ codewhale (v{})", env!("CARGO_PKG_VERSION"));
+        let title = format!(">_ helpofai (v{})", env!("CARGO_PKG_VERSION"));
         let model = "model: deepseek-v4-pro  /model to switch";
-        let directory = "directory: /tmp/codewhale-test-workspace";
+        let directory = "directory: /tmp/helpofai-test-workspace";
         let block_width = [title.as_str(), model, directory]
             .into_iter()
             .map(UnicodeWidthStr::width)
@@ -4616,7 +4616,7 @@ mod tests {
     /// pays the wrap cost; subsequent calls at different offsets should hit
     /// the per-cell cache and be ~constant time regardless of offset.
     ///
-    /// Run with: `cargo test -p codewhale-tui --release bench_transcript_scroll
+    /// Run with: `cargo test -p helpofai-tui --release bench_transcript_scroll
     /// -- --ignored --nocapture`
     // Perf bench prints timing rows to stdout — runs in `cargo test`,
     // never inside the TUI alt-screen.

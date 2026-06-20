@@ -1,8 +1,8 @@
-//! Worker runtime profile — the per-role capability contract for a CodeWhale
+//! Worker runtime profile — the per-role capability contract for a HelpOfAi
 //! worker (#3217, #3211, #3213, and the child-permission-intersection issues
 //! #414 / #426 / #1186).
 //!
-//! This is the **WhaleFlow substrate**: every detached worker — whether launched
+//! This is the **HelpFlow substrate**: every detached worker — whether launched
 //! as an `agent` sub-agent or a Fleet worker — should run under a profile
 //! that bounds what it may do (permissions, shell access, tool scope, model
 //! route, recursion budget, foreground/background). A child profile is always
@@ -170,7 +170,7 @@ impl WorkerRuntimeProfile {
             tools: ToolScope::Inherit,
             model: ModelRoute::Inherit,
             provider: None,
-            max_spawn_depth: codewhale_config::DEFAULT_SPAWN_DEPTH,
+            max_spawn_depth: helpofai_config::DEFAULT_SPAWN_DEPTH,
             background: true,
         }
     }
@@ -211,7 +211,7 @@ impl WorkerRuntimeProfile {
         let max_spawn_depth = requested
             .max_spawn_depth
             .min(self.max_spawn_depth.saturating_sub(1))
-            .min(codewhale_config::MAX_SPAWN_DEPTH_CEILING);
+            .min(helpofai_config::MAX_SPAWN_DEPTH_CEILING);
         WorkerRuntimeProfile {
             role: requested.role.clone(),
             permissions,

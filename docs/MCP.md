@@ -1,15 +1,15 @@
 # MCP (External Tool Servers)
 
-codewhale can load additional tools via MCP (Model Context Protocol). MCP servers are local processes that the TUI starts and communicates with over stdio.
+helpofai can load additional tools via MCP (Model Context Protocol). MCP servers are local processes that the TUI starts and communicates with over stdio.
 
 Browsing note:
 - `web.run` is the canonical built-in browsing tool.
 - `web_search` remains available as a compatibility alias for older prompts and integrations.
 
 Server mode note:
-- `codewhale-tui serve --mcp` runs the MCP stdio server.
-- `codewhale-tui serve --http` runs the runtime HTTP/SSE API (separate mode).
-- The `codewhale` dispatcher exposes `codewhale mcp-server` as an equivalent stdio
+- `helpofai-tui serve --mcp` runs the MCP stdio server.
+- `helpofai-tui serve --http` runs the runtime HTTP/SSE API (separate mode).
+- The `helpofai` dispatcher exposes `helpofai mcp-server` as an equivalent stdio
   entrypoint used by the split CLI.
 
 ## Bootstrap MCP Config
@@ -17,22 +17,22 @@ Server mode note:
 Create a starter MCP config at your resolved MCP path:
 
 ```bash
-codewhale-tui mcp init
+helpofai-tui mcp init
 ```
 
-`codewhale-tui setup --mcp` performs the same MCP bootstrap alongside skills setup.
+`helpofai-tui setup --mcp` performs the same MCP bootstrap alongside skills setup.
 
 Common management commands:
 
 ```bash
-codewhale-tui mcp list
-codewhale-tui mcp tools [server]
-codewhale-tui mcp add <name> --command "<cmd>" --arg "<arg>"
-codewhale-tui mcp add <name> --url "http://localhost:3000/mcp"
-codewhale-tui mcp enable <name>
-codewhale-tui mcp disable <name>
-codewhale-tui mcp remove <name>
-codewhale-tui mcp validate
+helpofai-tui mcp list
+helpofai-tui mcp tools [server]
+helpofai-tui mcp add <name> --command "<cmd>" --arg "<arg>"
+helpofai-tui mcp add <name> --url "http://localhost:3000/mcp"
+helpofai-tui mcp enable <name>
+helpofai-tui mcp disable <name>
+helpofai-tui mcp remove <name>
+helpofai-tui mcp validate
 ```
 
 ## In-TUI Manager
@@ -64,20 +64,20 @@ restart-required until the TUI is restarted.
 ## Hugging Face MCP
 
 Hugging Face provides a hosted MCP server for Hub resources, documentation,
-datasets, Spaces, and community tools. CodeWhale does not call Hugging Face's
+datasets, Spaces, and community tools. HelpOfAi does not call Hugging Face's
 Hub HTTP APIs from `/hf`; it only helps you inspect and set up the MCP config
 that the regular MCP manager will load.
 
 The recommended setup path is Hugging Face's settings-generated configuration:
 
 1. Visit <https://huggingface.co/settings/mcp> while signed in.
-2. Choose the MCP client closest to your CodeWhale config shape and copy the
+2. Choose the MCP client closest to your HelpOfAi config shape and copy the
    generated server snippet.
 3. Paste the Hugging Face server entry into your resolved MCP config file.
-4. Restart CodeWhale, or run `/mcp reload` for the manager snapshot and restart
+4. Restart HelpOfAi, or run `/mcp reload` for the manager snapshot and restart
    if the model-visible tool pool still needs to rebuild.
 
-CodeWhale reads both `servers` and `mcpServers`, so settings-generated snippets
+HelpOfAi reads both `servers` and `mcpServers`, so settings-generated snippets
 can be adapted without changing the rest of the MCP file. A placeholder-only
 shape looks like this:
 
@@ -115,14 +115,14 @@ Official docs: <https://huggingface.co/docs/hub/hf-mcp-server>
 
 Default path:
 
-- `~/.codewhale/mcp.json` (`~/.deepseek/mcp.json` is still read when the CodeWhale file is absent)
+- `~/.helpofai/mcp.json` (`~/.deepseek/mcp.json` is still read when the HelpOfAi file is absent)
 
 Overrides:
 
 - Config: `mcp_config_path = "/path/to/mcp.json"`
 - Env: `DEEPSEEK_MCP_CONFIG=/path/to/mcp.json`
 
-`codewhale-tui mcp init` (and `codewhale-tui setup --mcp`) writes to this resolved path.
+`helpofai-tui mcp init` (and `helpofai-tui setup --mcp`) writes to this resolved path.
 
 The interactive `/config` editor also exposes `mcp_config_path`. Changing it in
 the TUI updates the path used by `/mcp`, and requires a restart before the
@@ -180,25 +180,25 @@ You can register your local DeepSeek binary as an MCP server so other DeepSeek s
 ### Quick Setup
 
 ```bash
-codewhale-tui mcp add-self
+helpofai-tui mcp add-self
 ```
 
-This resolves the current binary path, generates a config entry that runs `codewhale-tui serve --mcp`, and writes it to your MCP config file. The default server name is `codewhale`.
+This resolves the current binary path, generates a config entry that runs `helpofai-tui serve --mcp`, and writes it to your MCP config file. The default server name is `helpofai`.
 
 Options:
 
-- `--name <NAME>` — custom server name (default: `codewhale`)
+- `--name <NAME>` — custom server name (default: `helpofai`)
 - `--workspace <PATH>` — workspace directory for the server
 
 ### Manual Config
 
-Equivalent manual entry in `~/.codewhale/mcp.json`:
+Equivalent manual entry in `~/.helpofai/mcp.json`:
 
 ```json
 {
   "servers": {
-    "codewhale": {
-      "command": "/path/to/codewhale",
+    "helpofai": {
+      "command": "/path/to/helpofai",
       "args": ["serve", "--mcp"],
       "env": {}
     }
@@ -206,9 +206,9 @@ Equivalent manual entry in `~/.codewhale/mcp.json`:
 }
 ```
 
-The `codewhale-tui` binary supports `serve --mcp` directly. The `codewhale`
-dispatcher offers the equivalent `codewhale mcp-server` stdio entrypoint. Use
-whichever is on your `PATH` (run `which codewhale` or `which codewhale-tui` to
+The `helpofai-tui` binary supports `serve --mcp` directly. The `helpofai`
+dispatcher offers the equivalent `helpofai mcp-server` stdio entrypoint. Use
+whichever is on your `PATH` (run `which helpofai` or `which helpofai-tui` to
 find the full path). The `mcp add-self` command automatically resolves the
 correct binary.
 
@@ -222,17 +222,17 @@ correct binary.
 
 Tools from a self-hosted DeepSeek server follow the standard naming convention:
 
-- `mcp_deepseek_<tool>` (if the server is named `codewhale`)
+- `mcp_deepseek_<tool>` (if the server is named `helpofai`)
 
 For example, the `shell` tool becomes `mcp_deepseek_shell`.
 
 ### MCP Server vs HTTP/SSE API vs ACP
 
-| | `codewhale-tui serve --mcp` | `codewhale-tui serve --http` | `codewhale-tui serve --acp` |
+| | `helpofai-tui serve --mcp` | `helpofai-tui serve --http` | `helpofai-tui serve --acp` |
 |---|---|---|---|
 | **Protocol** | MCP stdio | HTTP/SSE JSON-RPC | ACP stdio |
 | **Use case** | Tool server for MCP clients | Runtime API for apps | Editor agent for Zed/custom ACP clients |
-| **Config** | `~/.codewhale/mcp.json` entry | Direct URL connection | Editor `agent_servers` custom command |
+| **Config** | `~/.helpofai/mcp.json` entry | Direct URL connection | Editor `agent_servers` custom command |
 | **Lifecycle** | Spawned per client session | Long-running daemon | Spawned per editor agent session |
 
 Use `mcp add-self` when you want DeepSeek tools available to other MCP clients.
@@ -244,8 +244,8 @@ Use `serve --acp` when an editor wants to talk to DeepSeek as an ACP agent.
 After adding, test the connection:
 
 ```bash
-codewhale-tui mcp validate
-codewhale-tui mcp tools codewhale
+helpofai-tui mcp validate
+helpofai-tui mcp tools helpofai
 ```
 
 ## Server Fields
@@ -270,7 +270,7 @@ You should still only configure MCP servers you trust, and treat MCP server conf
 
 ## Troubleshooting
 
-- Run `codewhale-tui doctor` to confirm the MCP config path it resolved and whether it exists.
+- Run `helpofai-tui doctor` to confirm the MCP config path it resolved and whether it exists.
 - In the TUI, run `/mcp validate` to refresh the visible server/tool snapshot.
-- If the MCP config is missing, run `codewhale-tui mcp init --force` to regenerate it.
+- If the MCP config is missing, run `helpofai-tui mcp init --force` to regenerate it.
 - If tools don’t appear, verify the server command works from your shell and that the server supports MCP `tools/list`.

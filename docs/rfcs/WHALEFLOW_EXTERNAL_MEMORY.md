@@ -1,18 +1,18 @@
-# WhaleFlow External Memory Cutline
+# HelpFlow External Memory Cutline
 
 This note resolves the v0.9.0 cutline for Aleph-style external memory in
-WhaleFlow. It is a design boundary, not a runtime implementation.
+HelpFlow. It is a design boundary, not a runtime implementation.
 
 ## Decision
 
-External memory should be optional and explicit for v0.9.0. Normal CodeWhale
-operation must not depend on it, and WhaleFlow must not silently enable it for
+External memory should be optional and explicit for v0.9.0. Normal HelpOfAi
+operation must not depend on it, and HelpFlow must not silently enable it for
 long-running runs.
 
 For v0.9.0, external memory can appear only as:
 
 - an explicit workflow node whose inputs, outputs, scope, and permissions are
-  visible in the typed WhaleFlow IR;
+  visible in the typed HelpFlow IR;
 - an optional plugin or skill-backed tool that the user enables deliberately;
 - a documented experiment whose state can be inspected, cleared, and exported.
 
@@ -62,7 +62,7 @@ External memory must inherit the strictest relevant scope:
 
 The following remain out of scope for the v0.9.0 cutline:
 
-- default-on Aleph-style memory for all WhaleFlow runs;
+- default-on Aleph-style memory for all HelpFlow runs;
 - automatic promotion from external memory into cached-main overlay;
 - hidden retrieval behind ordinary prompts;
 - hosted or shared external-memory services;

@@ -35,8 +35,8 @@ struct ToolLifecycleWorld {
     requests: Vec<Value>,
 }
 
-#[given("an offline CodeWhale workspace containing:")]
-fn offline_codewhale_workspace_containing(world: &mut ToolLifecycleWorld, step: &Step) {
+#[given("an offline HelpOfAi workspace containing:")]
+fn offline_helpofai_workspace_containing(world: &mut ToolLifecycleWorld, step: &Step) {
     let workspace = TempDir::new().expect("workspace tempdir");
     let home = TempDir::new().expect("home tempdir");
 
@@ -85,13 +85,13 @@ fn mocked_llm_will_answer_after_tool_result(world: &mut ToolLifecycleWorld, step
 #[when(regex = r#"^the user asks "([^"]+)"$"#)]
 async fn user_asks(world: &mut ToolLifecycleWorld, prompt: String) {
     let server = start_mock_llm(world).await;
-    let output = run_codewhale_exec(world, &server, &prompt);
+    let output = run_helpofai_exec(world, &server, &prompt);
 
     world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     world.stderr = String::from_utf8_lossy(&output.stderr).into_owned();
     assert!(
         output.status.success(),
-        "codewhale-tui exec failed\nstdout:\n{}\nstderr:\n{}",
+        "helpofai-tui exec failed\nstdout:\n{}\nstderr:\n{}",
         world.stdout,
         world.stderr
     );
@@ -112,8 +112,8 @@ async fn user_asks(world: &mut ToolLifecycleWorld, prompt: String) {
     world.llm_server = Some(server);
 }
 
-#[then("CodeWhale should send the user request to the mocked LLM")]
-fn codewhale_should_send_user_request_to_mocked_llm(world: &mut ToolLifecycleWorld) {
+#[then("HelpOfAi should send the user request to the mocked LLM")]
+fn helpofai_should_send_user_request_to_mocked_llm(world: &mut ToolLifecycleWorld) {
     let first_request = world
         .requests
         .first()
@@ -165,8 +165,8 @@ fn public_tool_result_should_return_directory_entries(world: &mut ToolLifecycleW
     }
 }
 
-#[then("CodeWhale should send the tool result back to the mocked LLM")]
-fn codewhale_should_send_tool_result_back_to_mocked_llm(world: &mut ToolLifecycleWorld) {
+#[then("HelpOfAi should send the tool result back to the mocked LLM")]
+fn helpofai_should_send_tool_result_back_to_mocked_llm(world: &mut ToolLifecycleWorld) {
     let request = world
         .requests
         .iter()
@@ -276,7 +276,7 @@ async fn start_mock_llm(world: &ToolLifecycleWorld) -> MockServer {
     server
 }
 
-fn run_codewhale_exec(
+fn run_helpofai_exec(
     world: &ToolLifecycleWorld,
     server: &MockServer,
     prompt: &str,
@@ -289,7 +289,7 @@ fn run_codewhale_exec(
         .to_path_buf();
     let home = world.home.as_ref().expect("home").path().to_path_buf();
 
-    let mut command = Command::new(codewhale_tui_binary());
+    let mut command = Command::new(helpofai_tui_binary());
     preserve_host_env(&mut command);
     command
         .current_dir(&workspace)
@@ -309,8 +309,8 @@ fn run_codewhale_exec(
         .env("XDG_DATA_HOME", home.join(".local").join("share"))
         .env("XDG_CACHE_HOME", home.join(".cache"))
         .env(
-            "CODEWHALE_CONFIG_PATH",
-            home.join(".codewhale").join("config.toml"),
+            "HELPOFAI_CONFIG_PATH",
+            home.join(".helpofai").join("config.toml"),
         )
         .env(
             "DEEPSEEK_CONFIG_PATH",
@@ -318,25 +318,25 @@ fn run_codewhale_exec(
         )
         .env("DEEPSEEK_API_KEY", "ci-test-key-not-real")
         .env("DEEPSEEK_BASE_URL", server.uri())
-        .env("CODEWHALE_BASE_URL", server.uri())
+        .env("HELPOFAI_BASE_URL", server.uri())
         .env("DEEPSEEK_MODEL", TEST_MODEL)
-        .env("CODEWHALE_MODEL", TEST_MODEL)
+        .env("HELPOFAI_MODEL", TEST_MODEL)
         .env("RUST_LOG", "warn")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    std::fs::create_dir_all(home.join(".codewhale")).expect("create codewhale home config dir");
+    std::fs::create_dir_all(home.join(".helpofai")).expect("create helpofai home config dir");
     std::fs::create_dir_all(home.join(".deepseek")).expect("create deepseek home config dir");
 
     run_with_timeout(command, Duration::from_secs(45))
 }
 
 fn run_with_timeout(mut command: Command, timeout: Duration) -> std::process::Output {
-    let mut child = command.spawn().expect("spawn codewhale-tui exec");
+    let mut child = command.spawn().expect("spawn helpofai-tui exec");
     let stdout_reader = read_pipe_in_background(child.stdout.take().expect("stdout pipe"));
     let stderr_reader = read_pipe_in_background(child.stderr.take().expect("stderr pipe"));
 
-    let status = match child.wait_timeout(timeout).expect("wait for codewhale-tui") {
+    let status = match child.wait_timeout(timeout).expect("wait for helpofai-tui") {
         Some(status) => status,
         None => {
             let _ = child.kill();
@@ -344,7 +344,7 @@ fn run_with_timeout(mut command: Command, timeout: Duration) -> std::process::Ou
             let stdout = join_pipe_reader(stdout_reader, "stdout");
             let stderr = join_pipe_reader(stderr_reader, "stderr");
             panic!(
-                "codewhale-tui exec timed out after {timeout:?}\nstdout:\n{}\nstderr:\n{}",
+                "helpofai-tui exec timed out after {timeout:?}\nstdout:\n{}\nstderr:\n{}",
                 String::from_utf8_lossy(&stdout),
                 String::from_utf8_lossy(&stderr)
             );
@@ -638,11 +638,11 @@ fn row_value(row: &[(String, String)], header: &str) -> String {
         .unwrap_or_else(|| panic!("data table row missing {header} value"))
 }
 
-fn codewhale_tui_binary() -> PathBuf {
-    if let Some(path) = option_env!("CARGO_BIN_EXE_codewhale-tui") {
+fn helpofai_tui_binary() -> PathBuf {
+    if let Some(path) = option_env!("CARGO_BIN_EXE_helpofai-tui") {
         return PathBuf::from(path);
     }
-    if let Ok(path) = std::env::var("CARGO_BIN_EXE_codewhale-tui") {
+    if let Ok(path) = std::env::var("CARGO_BIN_EXE_helpofai-tui") {
         return PathBuf::from(path);
     }
 
@@ -651,6 +651,6 @@ fn codewhale_tui_binary() -> PathBuf {
     if path.ends_with("deps") {
         path.pop();
     }
-    path.push(format!("codewhale-tui{}", std::env::consts::EXE_SUFFIX));
+    path.push(format!("helpofai-tui{}", std::env::consts::EXE_SUFFIX));
     path
 }

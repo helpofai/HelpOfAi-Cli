@@ -1,26 +1,26 @@
 [package]
-name = "codewhale-app-server"
+name = "helpofai-app-server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Codex-style app-server transport for DeepSeek workspace architecture"
-# `codewhale app-server` is owned by codewhale-cli; this crate is library-only.
+# `helpofai app-server` is owned by helpofai-cli; this crate is library-only.
 autobins = false
 
 [dependencies]
 anyhow.workspace = true
 axum.workspace = true
 clap.workspace = true
-codewhale-agent = { path = "../agent", version = "0.8.62" }
-codewhale-config = { path = "../config", version = "0.8.62" }
-codewhale-core = { path = "../core", version = "0.8.62" }
-codewhale-execpolicy = { path = "../execpolicy", version = "0.8.62" }
-codewhale-hooks = { path = "../hooks", version = "0.8.62" }
-codewhale-mcp = { path = "../mcp", version = "0.8.62" }
-codewhale-protocol = { path = "../protocol", version = "0.8.62" }
-codewhale-state = { path = "../state", version = "0.8.62" }
-codewhale-tools = { path = "../tools", version = "0.8.62" }
+helpofai-agent = { path = "../agent", version = "0.8.62" }
+helpofai-config = { path = "../config", version = "0.8.62" }
+helpofai-core = { path = "../core", version = "0.8.62" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.62" }
+helpofai-hooks = { path = "../hooks", version = "0.8.62" }
+helpofai-mcp = { path = "../mcp", version = "0.8.62" }
+helpofai-protocol = { path = "../protocol", version = "0.8.62" }
+helpofai-state = { path = "../state", version = "0.8.62" }
+helpofai-tools = { path = "../tools", version = "0.8.62" }
 serde.workspace = true
 serde_json.workspace = true
 rustls.workspace = true

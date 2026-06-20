@@ -1,21 +1,21 @@
 # Contributors
 
-CodeWhale is built in the open with a growing community of contributors. Every
+HelpOfAi is built in the open with a growing community of contributors. Every
 issue report and pull request is real project work — welcome at any experience
 level. This is the full per-PR contributor record in **chronological order**
 (newest first), collapsed into time bands so it stays scannable. Expand any band
 to see everyone.
 
 For the live list, see the
-[GitHub contributors page](https://github.com/Hmbown/CodeWhale/graphs/contributors),
-[`AUTHOR_MAP`](https://github.com/Hmbown/CodeWhale/blob/main/.github/AUTHOR_MAP),
+[GitHub contributors page](https://github.com/helpofai/HelpOfAi-Cli/graphs/contributors),
+[`AUTHOR_MAP`](https://github.com/helpofai/HelpOfAi-Cli/blob/main/.github/AUTHOR_MAP),
 and [CHANGELOG.md](../CHANGELOG.md).
 
 ## Organizational thanks
 
 - **[DeepSeek](https://github.com/deepseek-ai)** — the models and support that got this project started. 感谢 DeepSeek 提供模型与支持。
 - **[DataWhale](https://github.com/datawhalechina)** 🐋 — for the support and for welcoming us into the Whale Brother family. 感谢 DataWhale 的支持。
-- **[OpenWarp](https://github.com/zerx-lab/warp)** — for prioritizing codewhale support and collaborating on a better terminal-agent experience.
+- **[OpenWarp](https://github.com/zerx-lab/warp)** — for prioritizing helpofai support and collaborating on a better terminal-agent experience.
 - **[Open Design](https://github.com/nexu-io/open-design)** — for support and collaboration around design-forward agent workflows.
 
 The maintainer rule: reports and PRs are real project work, even when the final
@@ -59,7 +59,7 @@ patches, and TUI fixes landed alongside first-time and returning contributor wor
 <summary><strong>Forward track — recent v0.9 work (newest)</strong></summary>
 
 
-- **[xyuai](https://github.com/xyuai)** — canonical CodeWhale settings path,
+- **[xyuai](https://github.com/xyuai)** — canonical HelpOfAi settings path,
   provider persistence, provider picker, logout-scope, and MiMo auth cleanup
   work (#2730, #2714, #2715, #2717, #2718)
 - **[shenjackyuanjie](https://github.com/shenjackyuanjie)** — HarmonyOS /
@@ -79,8 +79,8 @@ patches, and TUI fixes landed alongside first-time and returning contributor wor
   pausable custom-command lifecycle direction harvested into the forward track,
   plus the directly merged command-support boundary cleanup and broader command
   layer design direction (#2788, #2732, #2871, #2851, #2791)
-- **[AdityaVG13](https://github.com/AdityaVG13)** — WhaleFlow orchestration and
-  cost-tracking drafts that shaped the maintained WhaleFlow IR and
+- **[AdityaVG13](https://github.com/AdityaVG13)** — HelpFlow orchestration and
+  cost-tracking drafts that shaped the maintained HelpFlow IR and
   TraceStore foundation (#2482, #2486)
 - **[lbcheng888](https://github.com/lbcheng888)**,
   **[AiurArtanis](https://github.com/AiurArtanis)**, and
@@ -148,7 +148,7 @@ patches, and TUI fixes landed alongside first-time and returning contributor wor
 - **[xieshutao](https://github.com/xieshutao)** — plain Markdown skill fallback (#869)
 - **[GK012](https://github.com/GK012)** — npm wrapper `--version` fallback (#885)
 - **[y0sif](https://github.com/y0sif)** — parent turn-loop wakeup after direct child sub-agent completion (#901)
-- **[mac119](https://github.com/mac119)** and **[leo119](https://github.com/leo119)** — `codewhale update` command documentation (#838, #917)
+- **[mac119](https://github.com/mac119)** and **[leo119](https://github.com/leo119)** — `helpofai update` command documentation (#838, #917)
 - **[dumbjack](https://github.com/dumbjack)** / **浩淼的mac** — command-safety null-byte hardening (#706, #918)
 - **macworkers** — fork confirmation with the new session id (#600, #919)
 - **zero** and **[zerx-lab](https://github.com/zerx-lab)** — notification condition config and richer OSC 9 notification body (#820, #920)
@@ -176,7 +176,7 @@ patches, and TUI fixes landed alongside first-time and returning contributor wor
 - **[mdrkrg](https://github.com/mdrkrg)** — first-run onboarding crash fix when the API key is missing (#1598)
 - **[Aitensa](https://github.com/Aitensa)** — CJK wrapping propagation for diff and pager output (#1622)
 - **[qiyan233](https://github.com/qiyan233)** — legacy DeepSeek CN provider alias compatibility (#1645)
-- **[zlh124](https://github.com/zlh124)** — WSL2/headless startup report, clipboard-init fix, CodeWhale tab-title polish, localized context-menu labels, and approval-dialog fixes (#1772, #1773, #2319, #2320, #2325)
+- **[zlh124](https://github.com/zlh124)** — WSL2/headless startup report, clipboard-init fix, HelpOfAi tab-title polish, localized context-menu labels, and approval-dialog fixes (#1772, #1773, #2319, #2320, #2325)
 - **[aboimpinto](https://github.com/aboimpinto)** — Windows alt-screen
   logging, Home/End composer, runtime log follow-ups, sidebar command polish,
   and pausable command lifecycle work (#1774, #1776, #1748, #1749, #1782,
@@ -189,11 +189,11 @@ patches, and TUI fixes landed alongside first-time and returning contributor wor
 - **[sximelon](https://github.com/sximelon)** — paste Enter suppression, key handler extraction (#2174, #2042)
 - **[nanookclaw](https://github.com/nanookclaw)** — search provider in doctor output (#2135)
 - **[Sskift](https://github.com/Sskift)** — CLI default env override prevention and statusline footer clearing (#2119, #2248)
-- **[xin1104](https://github.com/xin1104)** — Homebrew codewhale binary install (#2105)
+- **[xin1104](https://github.com/xin1104)** — Homebrew helpofai binary install (#2105)
 - **[mrluanma](https://github.com/mrluanma)** — Metaso search provider (#2059)
 - **[Lellansin](https://github.com/Lellansin)** — skip config merge at home dir (#2055)
 - **[zhuangbiaowei](https://github.com/zhuangbiaowei)** — update release channels and legacy MCP SSE fixes (#2145, #2301)
-- **[cy2311](https://github.com/cy2311)** — Windows `.bat` launcher for CodeWhale (#1861)
+- **[cy2311](https://github.com/cy2311)** — Windows `.bat` launcher for HelpOfAi (#1861)
 - **[LING71671](https://github.com/LING71671)** — effective cost currency context, custom provider docs, and core tool taxonomy prompt block (#1902, #2287, #2292)
 - **[dzyuan](https://github.com/dzyuan)** — Volcengine provider support with DeepSeek V4 Pro/Flash models (#1993)
 - **[mvanhorn](https://github.com/mvanhorn)** — live request-shape test factories and global `~/.agents/AGENTS.md` fallback (#2107, #2236)

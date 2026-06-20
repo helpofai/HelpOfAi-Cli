@@ -18,7 +18,7 @@ on:
     branches: [main]
     paths:
       - 'Cargo.toml'
-      - 'npm/codewhale/package.json'
+      - 'npm/helpofai/package.json'
   workflow_dispatch:
 
 permissions:

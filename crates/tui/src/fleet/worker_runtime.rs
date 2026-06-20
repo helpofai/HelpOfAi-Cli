@@ -13,7 +13,7 @@
 
 #![allow(dead_code)]
 
-use codewhale_protocol::fleet::{
+use helpofai_protocol::fleet::{
     FleetHostSpec, FleetTaskSpec, FleetTaskWorkerProfile, FleetWorkerEventPayload, FleetWorkerSpec,
 };
 
@@ -59,7 +59,7 @@ pub fn fleet_task_to_worker_spec(
     let tool_profile = fleet_tool_profile(task_spec.worker.as_ref());
 
     let objective = fleet_task_prompt(task_spec);
-    let max_spawn_depth = codewhale_config::FleetExecConfig::default().max_spawn_depth;
+    let max_spawn_depth = helpofai_config::FleetExecConfig::default().max_spawn_depth;
     let runtime_profile =
         fleet_worker_runtime_profile(&agent_type, &tool_profile, model, 0, max_spawn_depth);
 
@@ -175,15 +175,15 @@ fn fleet_worker_runtime_profile(
 
 /// Create a fleet artifact ref from a worker output.
 ///
-/// Uses the fleet artifact conventions: logs go under `.codewhale/fleet/`,
-/// reports under `.codewhale/fleet/reports/`.
+/// Uses the fleet artifact conventions: logs go under `.helpofai/fleet/`,
+/// reports under `.helpofai/fleet/reports/`.
 pub fn fleet_artifact_ref(
     _run_id: &str,
     _worker_id: &str,
-    kind: codewhale_protocol::fleet::FleetArtifactKind,
+    kind: helpofai_protocol::fleet::FleetArtifactKind,
     path: std::path::PathBuf,
-) -> codewhale_protocol::fleet::FleetArtifactRef {
-    codewhale_protocol::fleet::FleetArtifactRef {
+) -> helpofai_protocol::fleet::FleetArtifactRef {
+    helpofai_protocol::fleet::FleetArtifactRef {
         kind,
         path,
         checksum: None,
@@ -233,7 +233,7 @@ pub fn agent_status_to_fleet_event(
 /// appended when configured.
 pub fn apply_exec_hardening(
     mut spec: AgentWorkerSpec,
-    exec: &codewhale_config::FleetExecConfig,
+    exec: &helpofai_config::FleetExecConfig,
 ) -> AgentWorkerSpec {
     // Cap max_steps to config max_turns
     if exec.max_turns > 0 && exec.max_turns != u32::MAX {
@@ -241,7 +241,7 @@ pub fn apply_exec_hardening(
     }
     spec.max_spawn_depth = exec
         .max_spawn_depth
-        .min(codewhale_config::MAX_SPAWN_DEPTH_CEILING);
+        .min(helpofai_config::MAX_SPAWN_DEPTH_CEILING);
     spec.runtime_profile.max_spawn_depth = spec.max_spawn_depth.saturating_sub(spec.spawn_depth);
 
     // Apply tool filtering
@@ -267,7 +267,7 @@ pub fn apply_exec_hardening(
 /// Filter a tool profile against allowed/disallowed lists.
 fn filter_tool_profile(
     profile: &AgentWorkerToolProfile,
-    exec: &codewhale_config::FleetExecConfig,
+    exec: &helpofai_config::FleetExecConfig,
 ) -> AgentWorkerToolProfile {
     match profile {
         AgentWorkerToolProfile::Explicit(tools) => {
@@ -468,14 +468,14 @@ mod tests {
         // sub-agent default (3) so fleet and sub-agents are one substrate and
         // at least 3 nested delegation levels are afforded.
         assert_eq!(spec.spawn_depth, 0);
-        assert_eq!(spec.max_spawn_depth, codewhale_config::DEFAULT_SPAWN_DEPTH);
+        assert_eq!(spec.max_spawn_depth, helpofai_config::DEFAULT_SPAWN_DEPTH);
         assert_eq!(spec.max_spawn_depth, 3);
 
         // End-to-end reachability: walk the SAME gate the SubAgentRuntime
         // enforces (`would_exceed_depth` = `spawn_depth + 1 > max_spawn_depth`).
         // A depth-0 root must reach 3 nested levels, then stop. This fails if
         // anyone lowers the shared default below 3 (Hunter: afford >= 3).
-        let hardened = apply_exec_hardening(spec, &codewhale_config::FleetExecConfig::default());
+        let hardened = apply_exec_hardening(spec, &helpofai_config::FleetExecConfig::default());
         let would_exceed = |spawn_depth: u32| spawn_depth + 1 > hardened.max_spawn_depth;
         assert!(
             !would_exceed(0),
@@ -510,7 +510,7 @@ mod tests {
             spawn_depth: 0,
             max_spawn_depth: 0,
         };
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             max_turns: 50,
             ..Default::default()
         };
@@ -540,21 +540,21 @@ mod tests {
             max_spawn_depth: 0,
         };
 
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             max_spawn_depth: 2,
             ..Default::default()
         };
         let hardened = apply_exec_hardening(spec.clone(), &exec);
         assert_eq!(hardened.max_spawn_depth, 2);
 
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             max_spawn_depth: 99,
             ..Default::default()
         };
         let hardened = apply_exec_hardening(spec.clone(), &exec);
         assert_eq!(hardened.max_spawn_depth, 3);
 
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             max_spawn_depth: 0,
             ..Default::default()
         };
@@ -569,7 +569,7 @@ mod tests {
             "exec_shell".to_string(),
             "git_diff".to_string(),
         ]);
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             disallowed_tools: vec!["exec_shell".to_string()],
             ..Default::default()
         };
@@ -589,7 +589,7 @@ mod tests {
             "exec_shell".to_string(),
             "git_diff".to_string(),
         ]);
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             allowed_tools: vec!["read_file".to_string(), "git_diff".to_string()],
             ..Default::default()
         };
@@ -608,7 +608,7 @@ mod tests {
             "read_file".to_string(),
             "exec_shell".to_string(),
         ]);
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             allowed_tools: vec!["read_file".to_string(), "exec_shell".to_string()],
             disallowed_tools: vec!["exec_shell".to_string()],
             ..Default::default()
@@ -658,7 +658,7 @@ mod tests {
             spawn_depth: 0,
             max_spawn_depth: 0,
         };
-        let exec = codewhale_config::FleetExecConfig {
+        let exec = helpofai_config::FleetExecConfig {
             append_system_prompt: "never push to main".to_string(),
             ..Default::default()
         };

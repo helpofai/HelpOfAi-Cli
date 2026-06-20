@@ -1,21 +1,21 @@
 # Modes and Approvals
 
-codewhale has two related concepts:
+helpofai has two related concepts:
 
 - **TUI mode**: what kind of visible interaction you're in (Plan/Agent/YOLO).
 - **Approval mode**: how aggressively the UI asks before executing tools.
-- **WhaleFlow overlay**: optional long-running workflow orchestration that can
+- **HelpFlow overlay**: optional long-running workflow orchestration that can
   run on top of any TUI mode when a task needs many coordinated workers.
 
 Model selection is separate. `--model auto` and `/model auto` route each turn to
 a concrete model and thinking level; they are not TUI modes and are not part of
 the `Tab` cycle.
 
-WhaleFlow is also separate from the `Tab` mode cycle. It is the visible
+HelpFlow is also separate from the `Tab` mode cycle. It is the visible
 continuous-work layer for repeatable workflows and fleet workers. Swarm-style
 high-fanout remains gated in v0.8.61 until it routes through durable
 Fleet-backed workers instead of prompt-only sub-agent fanout. The active mode
-still controls permissions; WhaleFlow controls whether a large task is planned
+still controls permissions; HelpFlow controls whether a large task is planned
 into a resumable workflow with its own progress view.
 
 ## TUI Modes
@@ -61,9 +61,9 @@ the turn, `/goal complete` marks it done, `/goal blocked` marks it blocked, and
 approval mode, or model route. This remains distinct from `--model auto`, which
 only controls model and thinking selection.
 
-WhaleFlow builds on the same separation: a goal can ask the agent to keep
-working, while WhaleFlow supplies the repeatable workflow/progress surface for
-large fanout. In the UI, a WhaleFlow run should be shown as an overlay on the
+HelpFlow builds on the same separation: a goal can ask the agent to keep
+working, while HelpFlow supplies the repeatable workflow/progress surface for
+large fanout. In the UI, a HelpFlow run should be shown as an overlay on the
 main screen, not as a fourth mode next to Agent, Plan, and YOLO.
 
 App-server clients can persist a thread-scoped goal with `thread/goal/set`, read
@@ -127,15 +127,15 @@ See `MCP.md`.
 
 ## Related CLI Flags
 
-Run `codewhale --help` for the canonical list. Common flags:
+Run `helpofai --help` for the canonical list. Common flags:
 
 - `-p, --prompt <TEXT>`: one-shot prompt mode (prints and exits)
-- `codewhale exec --auto --output-format stream-json <PROMPT>`: run the tool-backed non-interactive agent and emit one JSON object per line for harnesses and backend wrappers
-- `codewhale exec --resume <ID|PREFIX> <PROMPT>` / `--session-id <ID|PREFIX>`: continue a saved session non-interactively
-- `codewhale exec --continue <PROMPT>`: continue the most recent saved session for this workspace non-interactively
-- `codewhale swebench run --instance-id <ID> --issue-file <PATH>`: run the tool-backed agent on one SWE-bench task and write/update a prediction JSONL row
-- `codewhale fork <ID|PREFIX>` / `codewhale fork --last`: copy a saved session into a new sibling session; forked sessions retain additive parent-session metadata and show that lineage in session listings
-- `--model <MODEL>`: when using the `codewhale` facade, forward a DeepSeek model override to the TUI
+- `helpofai exec --auto --output-format stream-json <PROMPT>`: run the tool-backed non-interactive agent and emit one JSON object per line for harnesses and backend wrappers
+- `helpofai exec --resume <ID|PREFIX> <PROMPT>` / `--session-id <ID|PREFIX>`: continue a saved session non-interactively
+- `helpofai exec --continue <PROMPT>`: continue the most recent saved session for this workspace non-interactively
+- `helpofai swebench run --instance-id <ID> --issue-file <PATH>`: run the tool-backed agent on one SWE-bench task and write/update a prediction JSONL row
+- `helpofai fork <ID|PREFIX>` / `helpofai fork --last`: copy a saved session into a new sibling session; forked sessions retain additive parent-session metadata and show that lineage in session listings
+- `--model <MODEL>`: when using the `helpofai` facade, forward a DeepSeek model override to the TUI
 - `--workspace <DIR>`: workspace root for file tools
 - `--yolo`: start in YOLO mode
 - `-r, --resume <ID|PREFIX|latest>`: resume a saved session
@@ -150,7 +150,7 @@ Run `codewhale --help` for the canonical list. Common flags:
 
 DeepSeek-TUI has three related but intentionally separate recovery paths:
 
-- `codewhale fork <ID>` creates a new saved session from an existing saved
+- `helpofai fork <ID>` creates a new saved session from an existing saved
   conversation and records the source session id. This is the safe way to
   explore a different answer path without overwriting the original session.
 - Esc-Esc backtrack rewinds the live transcript to a previous user prompt and

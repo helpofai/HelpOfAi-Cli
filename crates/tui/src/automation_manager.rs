@@ -2,7 +2,7 @@
 //!
 //! Automations are local-first recurring jobs that enqueue standard background
 //! tasks. This module stores automation definitions and run history under
-//! `~/.codewhale/automations` (or `DEEPSEEK_AUTOMATIONS_DIR` override).
+//! `~/.helpofai/automations` (or `DEEPSEEK_AUTOMATIONS_DIR` override).
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -795,24 +795,24 @@ pub fn default_automations_dir() -> PathBuf {
             return PathBuf::from(trimmed);
         }
     }
-    // $CODEWHALE_HOME is a hard override of the base data directory
+    // $HELPOFAI_HOME is a hard override of the base data directory
     // (docs/CONFIGURATION.md): when SET, automations live under it and we do
     // NOT fall back to the legacy ~/.deepseek path — silent fallback would
     // defeat the isolation the override promises. Check the env var directly
-    // (not codewhale_home()'s Ok/Err, which succeeds for the default home too).
-    if let Some(home) = std::env::var_os("CODEWHALE_HOME").filter(|value| !value.is_empty()) {
+    // (not helpofai_home()'s Ok/Err, which succeeds for the default home too).
+    if let Some(home) = std::env::var_os("HELPOFAI_HOME").filter(|value| !value.is_empty()) {
         return PathBuf::from(home).join("automations");
     }
     dirs::home_dir()
         .map(|home| {
-            let primary = home.join(".codewhale").join("automations");
+            let primary = home.join(".helpofai").join("automations");
             let legacy = home.join(".deepseek").join("automations");
             if primary.exists() || !legacy.exists() {
                 return primary;
             }
             legacy
         })
-        .unwrap_or_else(|| PathBuf::from(".codewhale").join("automations"))
+        .unwrap_or_else(|| PathBuf::from(".helpofai").join("automations"))
 }
 
 pub type SharedAutomationManager = Arc<Mutex<AutomationManager>>;
@@ -952,38 +952,38 @@ mod tests {
     }
 
     #[test]
-    fn default_automations_dir_honors_codewhale_home_as_hard_override() {
+    fn default_automations_dir_honors_helpofai_home_as_hard_override() {
         let _lock = crate::test_support::lock_test_env();
         let tmp = tempfile::TempDir::new().unwrap();
         // SAFETY: serialised by lock_test_env.
         unsafe {
             std::env::remove_var("DEEPSEEK_AUTOMATIONS_DIR");
-            std::env::set_var("CODEWHALE_HOME", tmp.path());
+            std::env::set_var("HELPOFAI_HOME", tmp.path());
         }
-        // $CODEWHALE_HOME IS the home dir (no ".codewhale" appended); the
+        // $HELPOFAI_HOME IS the home dir (no ".helpofai" appended); the
         // legacy ~/.deepseek fallback is bypassed entirely.
         assert_eq!(default_automations_dir(), tmp.path().join("automations"));
         // SAFETY: cleanup under the same lock.
         unsafe {
-            std::env::remove_var("CODEWHALE_HOME");
+            std::env::remove_var("HELPOFAI_HOME");
         }
     }
 
     #[test]
-    fn default_automations_dir_prefers_deepseek_automations_dir_over_codewhale_home() {
+    fn default_automations_dir_prefers_deepseek_automations_dir_over_helpofai_home() {
         let _lock = crate::test_support::lock_test_env();
         let tmp = tempfile::TempDir::new().unwrap();
         // SAFETY: serialised by lock_test_env.
         unsafe {
             std::env::set_var("DEEPSEEK_AUTOMATIONS_DIR", tmp.path());
-            std::env::set_var("CODEWHALE_HOME", "/should/not/be/used");
+            std::env::set_var("HELPOFAI_HOME", "/should/not/be/used");
         }
         // The most-specific override wins over the base-data-dir override.
         assert_eq!(default_automations_dir(), tmp.path());
         // SAFETY: cleanup under the same lock.
         unsafe {
             std::env::remove_var("DEEPSEEK_AUTOMATIONS_DIR");
-            std::env::remove_var("CODEWHALE_HOME");
+            std::env::remove_var("HELPOFAI_HOME");
         }
     }
 }

@@ -18,7 +18,7 @@ cutover completes. It can still be useful for short in-session delegation, but
 if a child fails once on a transient provider timeout while an equivalent fleet
 worker would retry from the ledger, that is a runtime unification gap. For work
 that must survive provider hiccups, process restarts, sleep, or remote
-execution, prefer Fleet or a WhaleFlow-backed fleet run.
+execution, prefer Fleet or a HelpFlow-backed fleet run.
 
 Sub-agents inherit the parent's tool registry by default, but child agents are
 leaf workers: they do not receive `agent` or nested lifecycle tools. `agent`
@@ -38,7 +38,7 @@ stance toward the work — not just a different label.
 
 ## Maintainer posture
 
-Sub-agents help CodeWhale move faster, but the parent agent still owns the
+Sub-agents help HelpOfAi move faster, but the parent agent still owns the
 maintainer decision. Use children to gather evidence, review patches, and run
 verification while keeping the community posture in
 [`AGENT_ETHOS.md`](AGENT_ETHOS.md): issues are open intake, PR gates are
@@ -123,7 +123,7 @@ OUTPUT: VERDICT, EVIDENCE, GAPS, NEXT.
 
 ```text
 QUESTION: Is the focused prompt/subagent test filter valid, and what fails if not?
-SCOPE: cargo test -p codewhale-tui --bin codewhale-tui --locked prompt; subagent filter if needed.
+SCOPE: cargo test -p helpofai-tui --bin helpofai-tui --locked prompt; subagent filter if needed.
 ALREADY_KNOWN: Do not fix failures; capture exact command, exit code, and first relevant assertion.
 EFFORT: medium
 STOP_CONDITION: Stop after one clean PASS or one reproducible failing assertion with command evidence.
@@ -182,7 +182,7 @@ the next turn.
 ## Concurrency cap
 
 Up to **20** sub-agents run concurrently by default (configurable via
-`[subagents].max_concurrent` in `~/.codewhale/config.toml`; the default equals
+`[subagents].max_concurrent` in `~/.helpofai/config.toml`; the default equals
 the hard ceiling of 20). When the parent hits the cap, `agent` returns an error
 with the cap value; the parent should wait for background completion events
 before opening more agents, or ask the user.
@@ -250,7 +250,7 @@ per-step timeout so a single stuck request can't pin the parent's
 completion wakeup channel indefinitely. The default is `120` seconds,
 which matches the legacy hardcoded value. Long-thinking children that
 legitimately exceed that, for example heavy plan or review work behind
-`agent`, can extend the timeout in `~/.codewhale/config.toml`:
+`agent`, can extend the timeout in `~/.helpofai/config.toml`:
 
 ```toml
 [subagents]
@@ -286,7 +286,7 @@ Pending → Running → (Completed | Failed(reason) | Cancelled | Interrupted(re
 
 `Interrupted` fires when the manager detects a `Running` agent whose task
 handle is gone — typically after a process restart that loaded the workspace's
-persisted state from `.codewhale/state/subagents.v1.json`. The parent can open a
+persisted state from `.helpofai/state/subagents.v1.json`. The parent can open a
 replacement session with the same assignment or treat it as a terminal state.
 
 ### Session boundaries (#405)
@@ -306,7 +306,7 @@ manager can't match them to the current boot.
 ## Run receipts, follow-up, and takeover
 
 Each compatibility sub-agent has a persisted worker record in
-`.codewhale/state/subagents.v1.json`. The record is the current run-ledger
+`.helpofai/state/subagents.v1.json`. The record is the current run-ledger
 slice for sub-agent lanes until those lanes are backed directly by the fleet
 ledger: it stores `run_id`, objective, role/model,
 workspace/branch, lifecycle events, artifact refs, follow-up target, takeover
@@ -359,7 +359,7 @@ don't go through the standard write-approval flow.
 ## Implementation notes
 
 - Source: `crates/tui/src/tools/subagent/mod.rs`.
-- Persisted state: `<workspace>/.codewhale/state/subagents.v1.json`. Schema
+- Persisted state: `<workspace>/.helpofai/state/subagents.v1.json`. Schema
   version `1` (forward-compatible — new optional fields use
   `#[serde(default)]`).
 - `SubAgentRuntime::background_runtime()` starts from `child_runtime()` but

@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
-use codewhale_protocol::fleet::{
+use helpofai_protocol::fleet::{
     FleetAlertEventClass, FleetReceipt, FleetRunId, FleetTaskFailureKind, FleetWorkerEvent,
     FleetWorkerEventPayload,
 };
@@ -250,9 +250,9 @@ impl FleetAlertEvent {
     }
 
     pub fn inspection_commands(&self) -> Vec<String> {
-        let mut commands = vec!["codewhale fleet status".to_string()];
+        let mut commands = vec!["helpofai fleet status".to_string()];
         if let Some(worker_id) = &self.worker_id {
-            commands.push(format!("codewhale fleet inspect {worker_id}"));
+            commands.push(format!("helpofai fleet inspect {worker_id}"));
         }
         commands
     }
@@ -294,7 +294,7 @@ fn prepare_alert(
             secret_env,
         } => {
             let body = json!({
-                "source": "codewhale",
+                "source": "helpofai",
                 "event": safe_event,
             });
             let redacted_payload = json!({
@@ -362,7 +362,7 @@ where
             let mut request = client.post(url).json(redacted_body);
             if let Some(secret_env) = secret_env {
                 request = request.header(
-                    "X-CodeWhale-Webhook-Secret",
+                    "X-HelpOfAi-Webhook-Secret",
                     required_secret(resolver, secret_env)?,
                 );
             }
@@ -414,7 +414,7 @@ fn safe_event_payload(event: &FleetAlertEvent) -> Value {
 
 fn slack_body(event: &FleetAlertEvent, channel: Option<&str>) -> Value {
     let text = format!(
-        "CodeWhale fleet {}: run={} task={} reason={}",
+        "HelpOfAi fleet {}: run={} task={} reason={}",
         alert_class_label(event.class),
         event.run_id.0,
         event.task_id.as_deref().unwrap_or("-"),
@@ -454,9 +454,9 @@ fn pagerduty_body(event: &FleetAlertEvent, severity: &str, routing_key: String) 
         "routing_key": routing_key,
         "event_action": "trigger",
         "payload": {
-            "summary": format!("CodeWhale fleet {}: {}", alert_class_label(event.class), short_reason(&event.reason)),
+            "summary": format!("HelpOfAi fleet {}: {}", alert_class_label(event.class), short_reason(&event.reason)),
             "severity": severity,
-            "source": "codewhale",
+            "source": "helpofai",
             "custom_details": safe_event_payload(event),
         }
     })
@@ -479,7 +479,7 @@ fn alert_class_label(class: FleetAlertEventClass) -> &'static str {
 
 fn redacted_secret_header(secret_env: Option<&str>) -> Value {
     match secret_env {
-        Some(name) => json!({ "X-CodeWhale-Webhook-Secret": redacted_env(name) }),
+        Some(name) => json!({ "X-HelpOfAi-Webhook-Secret": redacted_env(name) }),
         None => json!({}),
     }
 }
@@ -509,7 +509,7 @@ fn default_pagerduty_severity() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codewhale_protocol::fleet::{FleetScore, FleetTaskResult};
+    use helpofai_protocol::fleet::{FleetScore, FleetTaskResult};
 
     #[derive(Default)]
     struct MapResolver {
@@ -627,7 +627,7 @@ mod tests {
 
         assert!(payload.contains("<redacted:env:FLEET_PD_ROUTING_KEY>"));
         assert!(!payload.contains("real-routing-key-secret"));
-        assert!(payload.contains("codewhale fleet inspect worker-1"));
+        assert!(payload.contains("helpofai fleet inspect worker-1"));
     }
 
     #[test]
@@ -652,8 +652,8 @@ mod tests {
         assert_eq!(
             alert.inspection_commands(),
             vec![
-                "codewhale fleet status".to_string(),
-                "codewhale fleet inspect worker-1".to_string()
+                "helpofai fleet status".to_string(),
+                "helpofai fleet inspect worker-1".to_string()
             ]
         );
     }

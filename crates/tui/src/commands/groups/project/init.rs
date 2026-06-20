@@ -54,11 +54,11 @@ pub fn init(app: &mut App) -> CommandResult {
     CommandResult::with_message_and_action(msg, AppAction::SendMessage(prompt))
 }
 
-/// If `workspace` is inside a git repository, ensure workspace-local CodeWhale
+/// If `workspace` is inside a git repository, ensure workspace-local HelpOfAi
 /// state is listed in the nearest `.gitignore` so snapshots, auto-generated
 /// instructions, and other runtime state are not accidentally committed — while
-/// keeping the authored `.codewhale/constitution.json` repo authority policy
-/// committable (a directory exclude cannot be overridden, so `.codewhale/*` plus
+/// keeping the authored `.helpofai/constitution.json` repo authority policy
+/// committable (a directory exclude cannot be overridden, so `.helpofai/*` plus
 /// a negation is required).
 fn ensure_deepseek_gitignored(workspace: &Path) {
     let Some(git_root) = git_root(workspace) else {
@@ -67,8 +67,8 @@ fn ensure_deepseek_gitignored(workspace: &Path) {
 
     let gitignore = git_root.join(".gitignore");
     let entries = [
-        "**/.codewhale/*",
-        "!**/.codewhale/constitution.json",
+        "**/.helpofai/*",
+        "!**/.helpofai/constitution.json",
         ".deepseek/",
     ];
 
@@ -1322,10 +1322,10 @@ mod tests {
         ensure_deepseek_gitignored(tmpdir.path());
         let content = std::fs::read_to_string(tmpdir.path().join(".gitignore")).unwrap();
         assert!(content.contains(".deepseek/"));
-        // .codewhale/ is ignored at any depth, but the committed
+        // .helpofai/ is ignored at any depth, but the committed
         // constitution.json is kept.
-        assert!(content.contains("**/.codewhale/*"));
-        assert!(content.contains("!**/.codewhale/constitution.json"));
+        assert!(content.contains("**/.helpofai/*"));
+        assert!(content.contains("!**/.helpofai/constitution.json"));
     }
 
     #[test]

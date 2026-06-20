@@ -6,7 +6,7 @@ cycle; the implementation target is **0.9.0**. This document describes what
 
 Related design docs: `TOOL_LIFECYCLE.md` (tool lifecycle states + per-skill tool
 restriction), command-surface taxonomy notes for `/memory`, `/context`,
-`/rules`, `/workflow` (`/whaleflow`), `/overlay`. Open PRs on `codex/v0.8.53`:
+`/rules`, `/workflow` (`/helpflow`), `/overlay`. Open PRs on `codex/v0.8.53`:
 #2684 (subagent role vocab / lifecycle signals / eval ergonomics) and #2685
 (git history active + RLM/field errors). Nothing here contradicts those.
 
@@ -19,13 +19,13 @@ surfaces all compete with each other:
 
 - A `/skill` slash command, a `load_skill`-style tool, plugin/namespace naming
   (`superpowers:systematic-debugging`, `github:gh-fix-ci`), and the long-running
-  workflow commands (`/workflow` / `/whaleflow`) all *could* be "the way you
+  workflow commands (`/workflow` / `/helpflow`) all *could* be "the way you
   start a skill." None of them is canonical.
 - Slash commands are already overloaded. `/memory`, `/context`, `/rules`,
   `/config`, `/provider`, `/workflow`, `/overlay` each map to one subsystem;
   jamming skill invocation into `/`-space forces a weaker model to disambiguate
   "is this a command or a skill?" on every keystroke.
-- Weaker / smaller models (the cheaper providers CodeWhale targets) do not
+- Weaker / smaller models (the cheaper providers HelpOfAi targets) do not
   reliably pick the right mechanism. They will free-text "let me use systematic
   debugging" instead of actually loading the skill body, so the guidance never
   enters the context window.

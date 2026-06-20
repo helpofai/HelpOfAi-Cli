@@ -3,29 +3,29 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::Result;
-use codewhale_agent::ModelRegistry;
-use codewhale_config::{CliRuntimeOverrides, ConfigToml, ProviderKind};
-use codewhale_execpolicy::{
+use helpofai_agent::ModelRegistry;
+use helpofai_config::{CliRuntimeOverrides, ConfigToml, ProviderKind};
+use helpofai_execpolicy::{
     AskForApproval, ExecApprovalRequirement, ExecPolicyContext, ExecPolicyDecision,
     ExecPolicyEngine,
 };
-use codewhale_hooks::{HookDispatcher, HookEvent};
-use codewhale_mcp::{
+use helpofai_hooks::{HookDispatcher, HookEvent};
+use helpofai_mcp::{
     McpManager, McpStartupCompleteEvent, McpStartupStatus as McpManagerStartupStatus,
 };
-use codewhale_protocol::{
+use helpofai_protocol::{
     AppResponse, EventFrame, ExecApprovalRequestEvent, PromptRequest, PromptResponse,
     ResponseChannel, ReviewDecision, Thread, ThreadForkParams, ThreadGoal, ThreadGoalClearParams,
     ThreadGoalGetParams, ThreadGoalProgressParams, ThreadGoalSetParams, ThreadGoalStatus,
     ThreadListParams, ThreadReadParams, ThreadRequest, ThreadResponse, ThreadResumeParams,
     ThreadSetNameParams, ThreadStatus, ToolPayload, UserInputRequestEvent,
 };
-use codewhale_state::{
+use helpofai_state::{
     JobStateRecord, JobStateStatus, SessionSource, StateStore, ThreadGoalRecord,
     ThreadGoalStatus as PersistedThreadGoalStatus, ThreadListFilters, ThreadMetadata,
     ThreadStatus as PersistedThreadStatus,
 };
-use codewhale_tools::{ToolCall, ToolRegistry};
+use helpofai_tools::{ToolCall, ToolRegistry};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -487,11 +487,11 @@ impl ThreadManager {
             cwd: cwd.clone(),
             cli_version: self.cli_version.clone(),
             source: match source {
-                SessionSource::Interactive => codewhale_protocol::SessionSource::Interactive,
-                SessionSource::Resume => codewhale_protocol::SessionSource::Resume,
-                SessionSource::Fork => codewhale_protocol::SessionSource::Fork,
-                SessionSource::Api => codewhale_protocol::SessionSource::Api,
-                SessionSource::Unknown => codewhale_protocol::SessionSource::Unknown,
+                SessionSource::Interactive => helpofai_protocol::SessionSource::Interactive,
+                SessionSource::Resume => helpofai_protocol::SessionSource::Resume,
+                SessionSource::Fork => helpofai_protocol::SessionSource::Fork,
+                SessionSource::Api => helpofai_protocol::SessionSource::Api,
+                SessionSource::Unknown => helpofai_protocol::SessionSource::Unknown,
             },
             name: None,
         };
@@ -1522,19 +1522,19 @@ impl Runtime {
         });
         for update in updates {
             let status = match update.status {
-                McpManagerStartupStatus::Starting => codewhale_protocol::McpStartupStatus::Starting,
-                McpManagerStartupStatus::Ready => codewhale_protocol::McpStartupStatus::Ready,
+                McpManagerStartupStatus::Starting => helpofai_protocol::McpStartupStatus::Starting,
+                McpManagerStartupStatus::Ready => helpofai_protocol::McpStartupStatus::Ready,
                 McpManagerStartupStatus::Failed { error } => {
-                    codewhale_protocol::McpStartupStatus::Failed { error }
+                    helpofai_protocol::McpStartupStatus::Failed { error }
                 }
                 McpManagerStartupStatus::Cancelled => {
-                    codewhale_protocol::McpStartupStatus::Cancelled
+                    helpofai_protocol::McpStartupStatus::Cancelled
                 }
             };
             self.hooks
                 .emit(HookEvent::GenericEventFrame {
                     frame: Box::new(EventFrame::McpStartupUpdate {
-                        update: codewhale_protocol::McpStartupUpdateEvent {
+                        update: helpofai_protocol::McpStartupUpdateEvent {
                             server_name: update.server_name,
                             status,
                         },
@@ -1545,12 +1545,12 @@ impl Runtime {
         self.hooks
             .emit(HookEvent::GenericEventFrame {
                 frame: Box::new(EventFrame::McpStartupComplete {
-                    summary: codewhale_protocol::McpStartupCompleteEvent {
+                    summary: helpofai_protocol::McpStartupCompleteEvent {
                         ready: summary.ready.clone(),
                         failed: summary
                             .failed
                             .iter()
-                            .map(|f| codewhale_protocol::McpStartupFailure {
+                            .map(|f| helpofai_protocol::McpStartupFailure {
                                 server_name: f.server_name.clone(),
                                 error: f.error.clone(),
                             })
@@ -1780,11 +1780,11 @@ fn to_protocol_thread(thread: ThreadMetadata) -> Thread {
         cwd: thread.cwd,
         cli_version: thread.cli_version,
         source: match thread.source {
-            SessionSource::Interactive => codewhale_protocol::SessionSource::Interactive,
-            SessionSource::Resume => codewhale_protocol::SessionSource::Resume,
-            SessionSource::Fork => codewhale_protocol::SessionSource::Fork,
-            SessionSource::Api => codewhale_protocol::SessionSource::Api,
-            SessionSource::Unknown => codewhale_protocol::SessionSource::Unknown,
+            SessionSource::Interactive => helpofai_protocol::SessionSource::Interactive,
+            SessionSource::Resume => helpofai_protocol::SessionSource::Resume,
+            SessionSource::Fork => helpofai_protocol::SessionSource::Fork,
+            SessionSource::Api => helpofai_protocol::SessionSource::Api,
+            SessionSource::Unknown => helpofai_protocol::SessionSource::Unknown,
         },
         name: thread.name,
     }
@@ -1827,13 +1827,13 @@ fn to_persisted_status(status: &ThreadStatus) -> PersistedThreadStatus {
     }
 }
 
-fn to_persisted_source(source: &codewhale_protocol::SessionSource) -> SessionSource {
+fn to_persisted_source(source: &helpofai_protocol::SessionSource) -> SessionSource {
     match source {
-        codewhale_protocol::SessionSource::Interactive => SessionSource::Interactive,
-        codewhale_protocol::SessionSource::Resume => SessionSource::Resume,
-        codewhale_protocol::SessionSource::Fork => SessionSource::Fork,
-        codewhale_protocol::SessionSource::Api => SessionSource::Api,
-        codewhale_protocol::SessionSource::Unknown => SessionSource::Unknown,
+        helpofai_protocol::SessionSource::Interactive => SessionSource::Interactive,
+        helpofai_protocol::SessionSource::Resume => SessionSource::Resume,
+        helpofai_protocol::SessionSource::Fork => SessionSource::Fork,
+        helpofai_protocol::SessionSource::Api => SessionSource::Api,
+        helpofai_protocol::SessionSource::Unknown => SessionSource::Unknown,
     }
 }
 
@@ -1981,7 +1981,7 @@ fn tool_payload_value(payload: &ToolPayload) -> Value {
     )
 }
 
-fn tool_output_value(output: &codewhale_protocol::ToolOutput) -> Value {
+fn tool_output_value(output: &helpofai_protocol::ToolOutput) -> Value {
     serde_json::to_value(output).unwrap_or_else(
         |_| json!({"type":"serialization_error","message":"tool output unavailable"}),
     )
@@ -2124,11 +2124,11 @@ fn job_state_status_to_runtime(status: JobStateStatus) -> JobStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codewhale_tools::ToolCallSource;
+    use helpofai_tools::ToolCallSource;
 
     fn temp_core_state(name: &str) -> StateStore {
         let dir =
-            std::env::temp_dir().join(format!("codewhale-core-{name}-{}", Uuid::new_v4().simple()));
+            std::env::temp_dir().join(format!("helpofai-core-{name}-{}", Uuid::new_v4().simple()));
         std::fs::create_dir_all(&dir).expect("create temp state dir");
         StateStore::open(Some(dir.join("state.db"))).expect("open state store")
     }
@@ -2144,7 +2144,7 @@ mod tests {
             updated_at: 10,
             status: PersistedThreadStatus::Running,
             path: None,
-            cwd: PathBuf::from("/tmp/codewhale"),
+            cwd: PathBuf::from("/tmp/helpofai"),
             cli_version: "0.0.0-test".to_string(),
             source: SessionSource::Interactive,
             name: None,
@@ -2204,7 +2204,7 @@ mod tests {
         let call = ToolCall {
             name: "exec_shell".to_string(),
             payload: ToolPayload::LocalShell {
-                params: codewhale_protocol::LocalShellParams {
+                params: helpofai_protocol::LocalShellParams {
                     command: "cargo test".to_string(),
                     cwd: None,
                     timeout_ms: None,

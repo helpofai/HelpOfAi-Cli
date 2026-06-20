@@ -63,7 +63,7 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null
 git init -q -b main .
 # Mirror the real repo's .mailmap canonicalization for Hunter.
 cat >.mailmap <<'EOF'
-Hunter Bown <hmbown@gmail.com> Claude <noreply@anthropic.com>
+Hunter Bown <helpofai@gmail.com> Claude <noreply@anthropic.com>
 EOF
 
 commit() {
@@ -75,7 +75,7 @@ commit() {
     git commit -q -m "touch $1"
 }
 
-H_NAME="Hunter Bown"; H_EMAIL="hmbown@gmail.com"
+H_NAME="Hunter Bown"; H_EMAIL="helpofai@gmail.com"
 
 # main: base commit by Hunter.
 commit base "v0" "${H_NAME}" "${H_EMAIL}"

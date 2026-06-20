@@ -470,9 +470,9 @@ mod tests {
     #[test]
     fn provider_fallback_status_and_reset_use_configured_chain() {
         let mut app = create_test_app();
-        app.provider_chain = Some(codewhale_config::ProviderChain::new(
-            codewhale_config::ProviderKind::Deepseek,
-            &[codewhale_config::ProviderKind::Openrouter],
+        app.provider_chain = Some(helpofai_config::ProviderChain::new(
+            helpofai_config::ProviderKind::Deepseek,
+            &[helpofai_config::ProviderKind::Openrouter],
         ));
 
         let status = provider(&mut app, Some("fallback"));
