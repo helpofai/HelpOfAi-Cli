@@ -2201,6 +2201,11 @@ impl RuntimeThreadManager {
             prefer_bwrap: self.config.prefer_bwrap.unwrap_or(false),
             memory_enabled: self.config.memory_enabled(),
             memory_path: self.config.memory_path(),
+            project_memory_path: if self.config.memory_enabled() {
+                Some(self.config.project_memory_path(&thread.workspace))
+            } else {
+                None
+            },
             memory_max_size_kb: self.config.memory_max_size_kb(),
             speech_output_dir: self.config.speech_output_dir(),
             vision_config: self.config.vision_model_config(),

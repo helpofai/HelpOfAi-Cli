@@ -1,7 +1,7 @@
 {
   "name": "helpofai",
-  "version": "0.8.62",
-  "helpofaiBinaryVersion": "0.8.62",
+  "version": "0.8.64",
+  "helpofaiBinaryVersion": "0.8.64",
   "description": "Install and run HelpOfAi, the agentic terminal for open-source and open-weight coding models, from GitHub release artifacts.",
   "author": "helpofai",
   "license": "MIT",

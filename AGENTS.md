@@ -6,17 +6,17 @@
   **not** hard-code a device-specific checkout path here — work in whichever
   local checkout you have and always **confirm with
   `git branch --show-current` before editing.**
-- **Active branch:** `hunter/0.8.62-glm-subagents` (also at
-  `origin/hunter/0.8.62-glm-subagents`). 0.8.61 has shipped; all new work lands
+- **Active branch:** `hunter/0.8.64-glm-subagents` (also at
+  `origin/hunter/0.8.64-glm-subagents`). 0.8.64 has shipped; all new work lands
   here.
-- **Workspace version is intentionally still `0.8.61`** in `Cargo.toml` — the
-  bump to `0.8.62` is deferred until the GLM-5.2 routing is smoke-tested end to
+- **Workspace version is intentionally still `0.8.64`** in `Cargo.toml` — the
+  bump to `0.8.64` is deferred until the GLM-5.2 routing is smoke-tested end to
   end against live Z.ai + OpenRouter (see CHANGELOG `## [Unreleased]`). Do not
   bump it opportunistically.
-- **Milestone guidepost:** GitHub milestone `v0.8.62` (id 47). Check live state
-  with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.62" --state open`.
+- **Milestone guidepost:** GitHub milestone `v0.8.64` (id 47). Check live state
+  with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.64" --state open`.
 - **Default branch is `main`.** Never commit directly to `main`; always work on
-  `hunter/0.8.62-glm-subagents` (or a fresh branch off it for an isolated
+  `hunter/0.8.64-glm-subagents` (or a fresh branch off it for an isolated
   change). Open a PR into `main` only when a unit of work is reviewable.
 - **Always run before pushing a change:** `cargo fmt`, then the targeted tests
   for the area (`cargo test -p helpofai-tui --bins <filter>`,
@@ -43,7 +43,7 @@
 - Configurable sub-agent depth stays. No arbitrary new limits unless clearly
   needed and explained.
 - The sub-agent **TUI freeze reported in older handoffs is resolved** by the
-  v0.8.61 cutover (cap-20, persist-debounce, AgentProgress redraw throttle,
+  v0.8.64 cutover (cap-20, persist-debounce, AgentProgress redraw throttle,
   ListSubAgents coalescing, input-pump-off-render-thread). The leading
   "blocking I/O starves the worker pool" theory was measured and **disproven**
   (`git rev-parse` ~10ms, 18-core machine). Do not commit a speculative
@@ -91,12 +91,12 @@
 - When harvesting, preserve or add machine-readable credit: keep the original
   author where possible, add `Co-authored-by` using `.github/AUTHOR_MAP` or
   GitHub numeric noreply identity, and include `Harvested from PR #N by
-  @handle` in the commit body so the auto-close workflow can close the PR with
+@handle` in the commit body so the auto-close workflow can close the PR with
   credit after it reaches `main`.
 - Close or update issues and PRs only after verifying the landed commit on the
   relevant branch. If the release branch already contains equivalent behavior,
   leave a clear note linking the commit and describing any remaining delta.
-- For the active release queue, start from the GitHub `v0.8.62` milestone
-  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.62"`) and refresh
+- For the active release queue, start from the GitHub `v0.8.64` milestone
+  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.64"`) and refresh
   state before acting. Older per-version triage docs under `docs/` are
   historical reference only.

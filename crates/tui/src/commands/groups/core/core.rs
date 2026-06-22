@@ -610,7 +610,7 @@ mod tests {
         let msg = result.message.expect("help topic should return message");
         assert!(msg.contains("memory"));
         assert!(msg.contains("persistent user-memory file"));
-        assert!(msg.contains("Usage: /memory [show|path|clear|edit|help]"));
+        assert!(msg.contains("Usage: /memory [show|path|clear|edit|search|task|help]"));
     }
 
     #[test]

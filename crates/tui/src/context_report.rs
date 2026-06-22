@@ -227,7 +227,7 @@ pub fn build_headless_context_report(config: &Config, workspace: &Path) -> Promp
         ));
     }
 
-    let proj_memory_path = config.project_memory_path();
+    let proj_memory_path = config.project_memory_path(workspace);
     if let Some(proj_memory_block) = crate::memory::compose_project_block(
         config.memory_enabled(),
         &proj_memory_path,

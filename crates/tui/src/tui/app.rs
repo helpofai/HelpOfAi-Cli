@@ -2370,7 +2370,7 @@ impl App {
             pending_provider_switch: None,
             reasoning_effort,
             last_effective_reasoning_effort: None,
-            workspace,
+            workspace: workspace.clone(),
             config_path,
             config_profile,
             mcp_config_path: mcp_config_path.clone(),

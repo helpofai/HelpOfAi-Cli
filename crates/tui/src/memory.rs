@@ -22,7 +22,7 @@
 //! feature explicit.
 
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::path::Path;
 
 use chrono::Utc;
@@ -202,8 +202,8 @@ pub fn append_to_section(path: &Path, section: &str, line_to_append: &str) -> io
     if let Some(start) = section_start {
         // Find insert position at the end of the section (before next heading or EOF)
         let mut insert_at = lines.len();
-        for j in (start + 1)..lines.len() {
-            if lines[j].trim().starts_with("## ") {
+        for (j, line) in lines.iter().enumerate().skip(start + 1) {
+            if line.trim().starts_with("## ") {
                 insert_at = j;
                 break;
             }
@@ -311,11 +311,11 @@ pub fn list_tasks(path: &Path) -> io::Result<Vec<(bool, String)>> {
     };
 
     let mut tasks = Vec::new();
-    for j in (start + 1)..lines.len() {
-        if lines[j].trim().starts_with("## ") {
+    for line in lines.iter().skip(start + 1) {
+        if line.trim().starts_with("## ") {
             break;
         }
-        let trimmed = lines[j].trim();
+        let trimmed = line.trim();
         if trimmed.starts_with("- [ ]") {
             tasks.push((
                 false,
@@ -359,11 +359,11 @@ pub fn complete_task(path: &Path, task_index: usize) -> io::Result<Option<String
     };
 
     let mut task_lines_indices = Vec::new();
-    for j in (start + 1)..lines.len() {
-        if lines[j].trim().starts_with("## ") {
+    for (j, line) in lines.iter().enumerate().skip(start + 1) {
+        if line.trim().starts_with("## ") {
             break;
         }
-        if lines[j].trim().starts_with("- [ ]") || lines[j].trim().starts_with("- [x]") {
+        if line.trim().starts_with("- [ ]") || line.trim().starts_with("- [x]") {
             task_lines_indices.push(j);
         }
     }
@@ -433,12 +433,21 @@ mod tests {
         let block = as_system_block(&big, Path::new("/tmp/m.md"), limit_kb).unwrap();
         let payload = user_memory_payload(&block);
         assert_eq!(payload.len(), limit_bytes);
-        assert!(payload.ends_with("<truncated bytes=140 source=\"/tmp/m.md\">"));
+
+        let display = Path::new("/tmp/m.md").display().to_string();
+        let expected_suffix = format!("<truncated bytes=141 source=\"{display}\">");
+        assert!(
+            payload.ends_with(&expected_suffix),
+            "payload did not end with: {expected_suffix:?}. Actual payload tail: {:?}",
+            &payload[payload.len().saturating_sub(60)..]
+        );
     }
 
     fn user_memory_payload(block: &str) -> &str {
+        let display = Path::new("/tmp/m.md").display().to_string();
+        let prefix = format!("<user_memory source=\"{display}\">\n");
         block
-            .strip_prefix("<user_memory source=\"/tmp/m.md\">\n")
+            .strip_prefix(&prefix)
             .unwrap()
             .strip_suffix("\n</user_memory>")
             .unwrap()

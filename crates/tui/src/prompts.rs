@@ -1028,6 +1028,7 @@ pub fn system_prompt_for_mode_with_context_and_skills(
             context_window_override: None,
             show_thinking: true,
             verbosity: None,
+            project_memory_block: None,
             skills_scan_helpofai_only: false,
         },
     )
@@ -1928,6 +1929,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2000,6 +2002,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2045,6 +2048,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: false,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2100,6 +2104,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2206,6 +2211,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2245,6 +2251,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2276,6 +2283,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2336,6 +2344,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2367,6 +2376,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2639,6 +2649,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -2676,6 +2687,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: None,
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {
@@ -3258,6 +3270,7 @@ mod tests {
                 context_window_override: None,
                 show_thinking: true,
                 verbosity: Some(" Concise "),
+                project_memory_block: None,
                 skills_scan_helpofai_only: false,
             },
         ) {

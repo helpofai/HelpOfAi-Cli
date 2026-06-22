@@ -6090,6 +6090,7 @@ async fn dispatch_user_message(
                 ),
                 show_thinking: app.show_thinking,
                 verbosity: app.verbosity.as_deref(),
+                project_memory_block: None,
                 skills_scan_helpofai_only: app.skills_scan_helpofai_only,
             },
         ),

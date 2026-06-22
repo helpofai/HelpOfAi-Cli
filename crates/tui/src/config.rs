@@ -3083,8 +3083,8 @@ impl Config {
 
     /// Resolve the project-specific memory file path.
     #[must_use]
-    pub fn project_memory_path(&self) -> PathBuf {
-        self.workspace.join(".helpofai").join("memory.md")
+    pub fn project_memory_path(&self, workspace: &std::path::Path) -> PathBuf {
+        workspace.join(".helpofai").join("memory.md")
     }
 
     /// Resolve the default speech/TTS output directory, if configured.
