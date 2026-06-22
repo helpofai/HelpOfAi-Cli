@@ -10461,10 +10461,8 @@ mod work_sidebar_projection_tests {
         // Verify that killing a shell job via ShellManager removes it from
         // the list of running jobs, so the task panel refresh picks up the
         // correct state.
-        let temp_dir = std::env::temp_dir().join(format!(
-            "helpofai-test-shell-cancel-{}",
-            std::process::id()
-        ));
+        let temp_dir =
+            std::env::temp_dir().join(format!("helpofai-test-shell-cancel-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&temp_dir);
         let mut manager = crate::tools::shell::ShellManager::new(temp_dir.clone());
 

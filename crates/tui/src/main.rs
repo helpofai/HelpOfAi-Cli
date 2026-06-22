@@ -2387,9 +2387,7 @@ fn run_setup(config: &Config, workspace: &Path, args: SetupArgs) -> Result<()> {
                 println!("  · MCP config already exists at {}", mcp_path.display());
             }
         }
-        println!(
-            "    Next: edit the file, then run `helpofai mcp list` or `helpofai mcp tools`."
-        );
+        println!("    Next: edit the file, then run `helpofai mcp list` or `helpofai mcp tools`.");
     }
 
     if run_skills {
@@ -2767,8 +2765,7 @@ async fn run_doctor(config: &Config, workspace: &Path, config_path_override: Opt
     println!("{}", "Updates:".bold());
     let current_version = env!("CARGO_PKG_VERSION");
     println!("  · current: v{current_version}");
-    match helpofai_release::latest_release_tag_async(helpofai_release::ReleaseChannel::Stable)
-        .await
+    match helpofai_release::latest_release_tag_async(helpofai_release::ReleaseChannel::Stable).await
     {
         Ok(latest_tag) => {
             match helpofai_release::compare_release_versions(current_version, &latest_tag) {
@@ -5708,10 +5705,8 @@ fn merge_project_config(config: &mut Config, workspace: &Path) {
     if let Some(v) = table.get("approval_policy").and_then(toml::Value::as_str)
         && !v.is_empty()
     {
-        if helpofai_config::project_approval_policy_is_allowed(
-            config.approval_policy.as_deref(),
-            v,
-        ) {
+        if helpofai_config::project_approval_policy_is_allowed(config.approval_policy.as_deref(), v)
+        {
             config.approval_policy = Some(v.to_string());
         } else {
             eprintln!(

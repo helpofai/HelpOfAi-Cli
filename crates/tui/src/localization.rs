@@ -4579,9 +4579,7 @@ fn spanish_latin_america(id: MessageId) -> Option<&'static str> {
         MessageId::CmdModelDescription => "Cambiar o mostrar el modelo actual",
         MessageId::CmdModelsDescription => "Listar los modelos disponibles por la API",
         MessageId::CmdNetworkDescription => "Gestionar reglas de red permitidas y bloqueadas",
-        MessageId::CmdNoteDescription => {
-            "Agregar nota al archivo persistente (.helpofai/notes.md)"
-        }
+        MessageId::CmdNoteDescription => "Agregar nota al archivo persistente (.helpofai/notes.md)",
         MessageId::CmdThemeDescription => "Alternar entre tema claro y oscuro",
         MessageId::CmdProviderDescription => {
             "Cambiar o mostrar el backend LLM activo (deepseek | nvidia-nim | ollama)"

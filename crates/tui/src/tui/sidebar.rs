@@ -4533,8 +4533,9 @@ mod tests {
         app.sidebar_focus = SidebarFocus::Tasks;
         for _ in 0..3 {
             app.history.push(HistoryCell::Tool(ToolCell::Exec(ExecCell {
-                command: "cd /tmp/repo && sleep 15 && gh pr checks 1616 --repo helpofai/HelpOfAi-Cli"
-                    .to_string(),
+                command:
+                    "cd /tmp/repo && sleep 15 && gh pr checks 1616 --repo helpofai/HelpOfAi-Cli"
+                        .to_string(),
                 status: ToolStatus::Failed,
                 output: Some("Lint pending\nTest pending".to_string()),
                 live_output: None,

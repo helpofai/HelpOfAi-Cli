@@ -82,7 +82,9 @@ impl FeedbackKind {
 
     fn issue_url_base(self) -> &'static str {
         match self {
-            Self::Bug => "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=bug_report.md",
+            Self::Bug => {
+                "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=bug_report.md"
+            }
             Self::Feature => {
                 "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=feature_request.md"
             }

@@ -4240,8 +4240,7 @@ mod tests {
         use crate::worker_profile::{ModelRoute, ToolScope, WorkerRuntimeProfile};
         use std::collections::VecDeque;
 
-        let root =
-            std::env::temp_dir().join(format!("helpofai-agent-runs-api-{}", Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("helpofai-agent-runs-api-{}", Uuid::new_v4()));
         let workspace = root.join("workspace");
         fs::create_dir_all(workspace.join(".helpofai/state"))?;
 

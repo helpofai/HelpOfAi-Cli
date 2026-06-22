@@ -306,10 +306,7 @@ impl NetworkAuditor {
     #[must_use]
     pub fn default_path(enabled: bool) -> Option<Self> {
         let home = dirs::home_dir()?;
-        Some(Self::new(
-            home.join(".helpofai").join("audit.log"),
-            enabled,
-        ))
+        Some(Self::new(home.join(".helpofai").join("audit.log"), enabled))
     }
 
     /// Append one line. Best-effort: errors are logged via `eprintln!` but

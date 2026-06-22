@@ -3783,10 +3783,7 @@ fn env_base_url_override() -> Option<String> {
 /// Resolve an env var, preferring the `HELPOFAI_*` form over the
 /// legacy `DEEPSEEK_*` form. Empty values are ignored so a blank shell export
 /// does not erase configured provider settings.
-fn helpofai_env_var(
-    helpofai_name: &str,
-    legacy_name: &str,
-) -> Result<String, std::env::VarError> {
+fn helpofai_env_var(helpofai_name: &str, legacy_name: &str) -> Result<String, std::env::VarError> {
     std::env::var(helpofai_name)
         .ok()
         .filter(|value| !value.trim().is_empty())
@@ -5043,9 +5040,7 @@ fn merge_skills_config(
             max_install_size_bytes: override_cfg
                 .max_install_size_bytes
                 .or(base.max_install_size_bytes),
-            scan_helpofai_only: override_cfg
-                .scan_helpofai_only
-                .or(base.scan_helpofai_only),
+            scan_helpofai_only: override_cfg.scan_helpofai_only.or(base.scan_helpofai_only),
         }),
     }
 }

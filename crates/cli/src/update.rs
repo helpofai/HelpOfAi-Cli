@@ -19,7 +19,8 @@ use reqwest::Proxy;
 use std::io::Write;
 use std::time::Duration;
 
-const GITHUB_LATEST_RELEASE_PAGE_URL: &str = "https://github.com/helpofai/HelpOfAi-Cli/releases/latest";
+const GITHUB_LATEST_RELEASE_PAGE_URL: &str =
+    "https://github.com/helpofai/HelpOfAi-Cli/releases/latest";
 const GITHUB_RELEASE_DOWNLOAD_BASE_URL: &str =
     "https://github.com/helpofai/HelpOfAi-Cli/releases/download";
 const UPDATE_HTTP_ATTEMPTS: usize = 3;
@@ -1054,20 +1055,14 @@ mod tests {
 
         // Dispatcher binary should use helpofai prefix
         assert_eq!(binary_prefix_for_exe(Path::new("helpofai")), "helpofai");
-        assert_eq!(
-            binary_prefix_for_exe(Path::new("helpofai.exe")),
-            "helpofai"
-        );
+        assert_eq!(binary_prefix_for_exe(Path::new("helpofai.exe")), "helpofai");
         assert_eq!(
             binary_prefix_for_exe(Path::new("/usr/local/bin/helpofai")),
             "helpofai"
         );
 
         // Fallback for unknown names
-        assert_eq!(
-            binary_prefix_for_exe(Path::new("other-binary")),
-            "helpofai"
-        );
+        assert_eq!(binary_prefix_for_exe(Path::new("other-binary")), "helpofai");
 
         // Legacy names still map to the canonical update asset prefixes.
         assert_eq!(
@@ -1191,12 +1186,7 @@ mod tests {
                 "aarch64",
                 "helpofai-tui-macos-arm64",
             ),
-            (
-                "helpofai-tui",
-                "linux",
-                "x86_64",
-                "helpofai-tui-linux-x64",
-            ),
+            ("helpofai-tui", "linux", "x86_64", "helpofai-tui-linux-x64"),
         ];
 
         for (exe, os, arch, expected) in cases {
@@ -1431,11 +1421,8 @@ E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  *helpofai-wind
     #[test]
     fn mocked_release_selects_tui_asset_when_tui_binary_invokes_update() {
         let release = mocked_release();
-        let stem = release_asset_stem_for(
-            Path::new("/usr/local/bin/helpofai-tui"),
-            "macos",
-            "aarch64",
-        );
+        let stem =
+            release_asset_stem_for(Path::new("/usr/local/bin/helpofai-tui"), "macos", "aarch64");
         let asset = select_platform_asset(&release, &stem).expect("TUI platform asset");
         assert_eq!(asset.name, "helpofai-tui-macos-arm64");
     }
@@ -1491,8 +1478,9 @@ E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  *helpofai-wind
 
     #[test]
     fn github_release_url_parser_extracts_tag() {
-        let url = reqwest::Url::parse("https://github.com/helpofai/HelpOfAi-Cli/releases/tag/v0.8.61")
-            .unwrap();
+        let url =
+            reqwest::Url::parse("https://github.com/helpofai/HelpOfAi-Cli/releases/tag/v0.8.61")
+                .unwrap();
 
         assert_eq!(
             release_tag_from_github_release_url(&url).as_deref(),

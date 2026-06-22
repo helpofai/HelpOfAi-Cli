@@ -10977,10 +10977,9 @@ async fn version_hint_from_release_mirror_env(current: &str) -> Option<String> {
     if !release_mirror_env_configured() {
         return None;
     }
-    let tag =
-        helpofai_release::latest_release_tag_async(helpofai_release::ReleaseChannel::Stable)
-            .await
-            .ok()?;
+    let tag = helpofai_release::latest_release_tag_async(helpofai_release::ReleaseChannel::Stable)
+        .await
+        .ok()?;
     version_hint_from_latest_tag(&tag, current)
 }
 
@@ -10994,8 +10993,8 @@ async fn version_hint_from_configured_update_uri(
     update_uri: &str,
     current: &str,
 ) -> Result<Option<String>> {
-    let body = helpofai_release::fetch_release_json_async(update_uri, "configured latest release")
-        .await?;
+    let body =
+        helpofai_release::fetch_release_json_async(update_uri, "configured latest release").await?;
     let json: serde_json::Value = serde_json::from_str(&body).with_context(|| {
         format!("failed to parse release JSON from configured URI {update_uri}")
     })?;

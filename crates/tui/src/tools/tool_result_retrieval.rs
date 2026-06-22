@@ -154,9 +154,8 @@ impl ToolSpec for RetrieveToolResultTool {
 /// The error message on a miss enumerates which forms were tried so the
 /// model can correct course without a second blind guess.
 fn resolve_spillover_reference(reference: &str, session_id: &str) -> Result<PathBuf, ToolError> {
-    let root = crate::tools::truncate::spillover_root().ok_or_else(|| {
-        ToolError::execution_failed("could not resolve ~/.helpofai/tool_outputs")
-    })?;
+    let root = crate::tools::truncate::spillover_root()
+        .ok_or_else(|| ToolError::execution_failed("could not resolve ~/.helpofai/tool_outputs"))?;
     let root_canonical = root.canonicalize().ok();
 
     // Resolve the session's `artifacts/` directory.

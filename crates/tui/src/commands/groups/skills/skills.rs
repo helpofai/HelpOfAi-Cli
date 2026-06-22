@@ -30,8 +30,7 @@ fn discover_visible_skills(app: &App) -> SkillRegistry {
 
 #[cfg(test)]
 fn discover_visible_skills(app: &App) -> SkillRegistry {
-    let mode =
-        crate::skills::SkillDiscoveryMode::from_helpofai_only(app.skills_scan_helpofai_only);
+    let mode = crate::skills::SkillDiscoveryMode::from_helpofai_only(app.skills_scan_helpofai_only);
     TEST_HOME_DIR.with(|home| {
         if let Some(home) = home.borrow().as_deref() {
             crate::skills::discover_for_workspace_and_dir_with_home_and_mode(
