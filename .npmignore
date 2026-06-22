@@ -1,0 +1,3 @@
+# Root .npmignore to bypass .gitignore rules during npm git dependency installation
+*.tgz
+*.log
