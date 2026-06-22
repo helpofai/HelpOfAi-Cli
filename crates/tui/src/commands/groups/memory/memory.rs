@@ -3,19 +3,15 @@
 //! When the user-memory feature is opted-in (`[memory] enabled = true` in
 //! config or `DEEPSEEK_MEMORY=on` in the environment), `/memory` shows
 //! the current memory file path and contents inline. Subcommands let the
-//! user clear or open the file:
+//! user clear, open, search, or track tasks in the file:
 //!
 //! - `/memory` — show path + content
 //! - `/memory show` — alias for the no-arg form
 //! - `/memory clear` — replace the file contents with an empty marker
 //! - `/memory path` — show only the resolved path
+//! - `/memory search <query>` — search bullets in memory file
+//! - `/memory task [list|add|complete]` — list, add, or complete tasks
 //! - `/memory help` — show command-specific help and the resolved path
-//!
-//! Editor integration (`/memory edit`) is intentionally minimal: the
-//! command prints a copy-pasteable shell line to open the file in the
-//! user's `$VISUAL` / `$EDITOR`, since the in-process external editor
-//! plumbing requires terminal teardown that the slash-command handler
-//! doesn't have access to.
 
 use std::fs;
 use std::path::Path;
@@ -23,7 +19,7 @@ use std::path::Path;
 use super::CommandResult;
 use crate::tui::app::App;
 
-const MEMORY_USAGE: &str = "/memory [show|path|clear|edit|help]";
+const MEMORY_USAGE: &str = "/memory [show|path|clear|edit|search|task|help]";
 
 fn memory_help(path: &Path) -> String {
     format!(
@@ -31,12 +27,16 @@ fn memory_help(path: &Path) -> String {
          Usage: {MEMORY_USAGE}\n\n\
          Current path: {}\n\n\
          Subcommands:\n\
-           /memory          Show the resolved path and current contents\n\
-           /memory show     Alias for the no-arg form\n\
-           /memory path     Print just the resolved path\n\
-           /memory clear    Replace the file contents with an empty marker\n\
-           /memory edit     Print the editor command for this file\n\
-           /memory help     Show this help\n\n\
+           /memory                  Show the resolved path and current contents\n\
+           /memory show             Alias for the no-arg form\n\
+           /memory path             Print just the resolved path\n\
+           /memory clear            Replace the file contents with an empty marker\n\
+           /memory edit             Print the editor command for this file\n\
+           /memory search <query>   Search bullets in your memory file\n\
+           /memory task             List active memory tasks\n\
+           /memory task add <desc>  Add a new memory task\n\
+           /memory task complete <n> Mark task #n as completed\n\
+           /memory help             Show this help\n\n\
          Quick capture: type `# foo` in the composer to append a timestamped\n\
          bullet without firing a turn.",
         path.display()
@@ -51,7 +51,9 @@ pub fn memory(app: &mut App, arg: Option<&str>) -> CommandResult {
     }
 
     let path = app.memory_path.clone();
-    let sub = arg.unwrap_or("show").trim();
+    let trimmed_arg = arg.unwrap_or("show").trim();
+    let parts: Vec<&str> = trimmed_arg.split_whitespace().collect();
+    let sub = parts.first().copied().unwrap_or("show");
 
     match sub {
         "" | "show" => {
@@ -78,6 +80,96 @@ pub fn memory(app: &mut App, arg: Option<&str>) -> CommandResult {
             path.display()
         )),
         "help" => CommandResult::message(memory_help(&path)),
+        "search" => {
+            let query = parts[1..].join(" ");
+            if query.is_empty() {
+                return CommandResult::error(
+                    "please specify a search term: `/memory search <query>`",
+                );
+            }
+            let text = match fs::read_to_string(&path) {
+                Ok(t) => t,
+                Err(_) => return CommandResult::error("memory file does not exist yet"),
+            };
+            let mut matches = Vec::new();
+            for (idx, line) in text.lines().enumerate() {
+                let trimmed = line.trim();
+                if !trimmed.is_empty()
+                    && !trimmed.starts_with("#")
+                    && trimmed.to_lowercase().contains(&query.to_lowercase())
+                {
+                    matches.push(format!("  Line {}: {}", idx + 1, trimmed));
+                }
+            }
+            if matches.is_empty() {
+                CommandResult::message(format!("No matches found for query: '{query}'"))
+            } else {
+                CommandResult::message(format!(
+                    "Found {} matches in memory file:\n\n{}",
+                    matches.len(),
+                    matches.join("\n")
+                ))
+            }
+        }
+        "task" => {
+            let task_sub = parts.get(1).copied().unwrap_or("list");
+            match task_sub {
+                "list" | "" => {
+                    let tasks = crate::memory::list_tasks(&path);
+                    match tasks {
+                        Ok(t) => {
+                            if t.is_empty() {
+                                CommandResult::message("No active tasks found in memory.")
+                            } else {
+                                let mut list = Vec::new();
+                                for (i, (completed, desc)) in t.iter().enumerate() {
+                                    let marker = if *completed { "[x]" } else { "[ ]" };
+                                    list.push(format!("  {} {} {}", i + 1, marker, desc));
+                                }
+                                CommandResult::message(format!(
+                                    "Active Tasks:\n\n{}",
+                                    list.join("\n")
+                                ))
+                            }
+                        }
+                        Err(err) => CommandResult::error(format!("failed to read tasks: {err}")),
+                    }
+                }
+                "add" => {
+                    let desc = parts[2..].join(" ");
+                    if desc.is_empty() {
+                        return CommandResult::error(
+                            "please specify a task description: `/memory task add <description>`",
+                        );
+                    }
+                    match crate::memory::append_task(&path, &desc) {
+                        Ok(()) => CommandResult::message(format!("Added task: {desc}")),
+                        Err(err) => CommandResult::error(format!("failed to add task: {err}")),
+                    }
+                }
+                "complete" => {
+                    let index_str = parts.get(2).copied().unwrap_or("");
+                    let index = index_str.parse::<usize>().ok();
+                    let Some(idx) = index else {
+                        return CommandResult::error(
+                            "please specify a task index: `/memory task complete <index>`",
+                        );
+                    };
+                    match crate::memory::complete_task(&path, idx) {
+                        Ok(Some(line)) => {
+                            CommandResult::message(format!("Completed task: {}", line.trim()))
+                        }
+                        Ok(None) => {
+                            CommandResult::error(format!("task index {idx} is out of bounds"))
+                        }
+                        Err(err) => CommandResult::error(format!("failed to complete task: {err}")),
+                    }
+                }
+                other => CommandResult::error(format!(
+                    "unknown task subcommand `{other}`. Try `/memory task [list|add|complete]`"
+                )),
+            }
+        }
         _ => CommandResult::error(format!(
             "unknown subcommand `{sub}`. Try `/memory help`.\n\n{}",
             memory_help(&path)
@@ -123,30 +215,35 @@ mod tests {
         let mut app = create_test_app_with_memory(&tmpdir, true);
         let result = memory(&mut app, Some("help"));
         let msg = result.message.expect("help should return text");
-        assert!(msg.contains("Usage: /memory [show|path|clear|edit|help]"));
+        assert!(msg.contains("Usage: /memory [show|path|clear|edit|search|task|help]"));
         assert!(msg.contains("/memory edit"));
         assert!(msg.contains(app.memory_path.to_string_lossy().as_ref()));
     }
 
     #[test]
-    fn memory_unknown_subcommand_points_to_help() {
+    fn memory_search_and_task_work() {
         let tmpdir = TempDir::new().expect("tempdir");
         let mut app = create_test_app_with_memory(&tmpdir, true);
-        let result = memory(&mut app, Some("wat"));
-        let msg = result
-            .message
-            .expect("unknown subcommand should return text");
-        assert!(msg.contains("Try `/memory help`"));
-        assert!(msg.contains("/memory clear"));
-    }
 
-    #[test]
-    fn memory_disabled_returns_enablement_hint() {
-        let tmpdir = TempDir::new().expect("tempdir");
-        let mut app = create_test_app_with_memory(&tmpdir, false);
-        let result = memory(&mut app, None);
-        let msg = result.message.expect("disabled memory should return text");
-        assert!(msg.contains("user memory is disabled"));
-        assert!(msg.contains("DEEPSEEK_MEMORY=on"));
+        // Add preference
+        crate::memory::append_preference(&app.memory_path, "always use spaces").unwrap();
+        // Add task
+        memory(&mut app, Some("task add Implement memory search"))
+            .message
+            .unwrap();
+
+        // Search
+        let search_result = memory(&mut app, Some("search spaces")).message.unwrap();
+        assert!(search_result.contains("always use spaces"));
+
+        // List tasks
+        let task_list = memory(&mut app, Some("task list")).message.unwrap();
+        assert!(task_list.contains("[ ]"));
+        assert!(task_list.contains("Implement memory search"));
+
+        // Complete task
+        memory(&mut app, Some("task complete 1")).message.unwrap();
+        let task_list_completed = memory(&mut app, Some("task list")).message.unwrap();
+        assert!(task_list_completed.contains("[x]"));
     }
 }

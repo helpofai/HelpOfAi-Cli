@@ -1479,6 +1479,8 @@ pub struct App {
     /// composer interception, the `/memory` slash command, and tool
     /// registration for `remember`.
     pub use_memory: bool,
+    /// Maximum size of memory in KiB.
+    pub memory_max_size_kb: usize,
     pub use_alt_screen: bool,
     pub use_mouse_capture: bool,
     /// When true, plain Up/Down on an empty composer scroll the transcript
@@ -2374,6 +2376,7 @@ impl App {
             skills_scan_helpofai_only,
             memory_path,
             use_memory,
+            memory_max_size_kb: config.memory_max_size_kb(),
             use_alt_screen,
             use_mouse_capture,
             use_bracketed_paste,

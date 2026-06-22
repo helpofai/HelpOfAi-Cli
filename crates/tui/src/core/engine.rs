@@ -318,6 +318,8 @@ pub struct EngineConfig {
     /// Path to the user memory file (#489). Always populated; only
     /// consulted when `memory_enabled` is `true`.
     pub memory_path: PathBuf,
+    /// Maximum size of user memory file in KiB.
+    pub memory_max_size_kb: usize,
     /// Default directory for Xiaomi MiMo speech/TTS tool outputs.
     pub speech_output_dir: Option<PathBuf>,
     pub vision_config: Option<crate::config::VisionModelConfig>,
@@ -418,6 +420,7 @@ impl Default for EngineConfig {
             subagent_model_overrides: HashMap::new(),
             memory_enabled: false,
             memory_path: PathBuf::from("./memory.md"),
+            memory_max_size_kb: 512,
             speech_output_dir: None,
             vision_config: None,
             strict_tool_mode: false,
@@ -778,8 +781,11 @@ impl Engine {
         // Set up stable system prompt with project context (default to agent mode).
         // Per-turn working-set metadata is injected into the latest user
         // message at request time so file churn does not rewrite this prefix.
-        let user_memory_block =
-            crate::memory::compose_block(config.memory_enabled, &config.memory_path);
+        let user_memory_block = crate::memory::compose_block(
+            config.memory_enabled,
+            &config.memory_path,
+            config.memory_max_size_kb,
+        );
         let prompt_goal_objective =
             goal_objective_for_prompt(config.goal_objective.as_deref(), &config.goal_state);
         let system_prompt =
@@ -2854,8 +2860,11 @@ impl Engine {
     }
     /// Refresh the stable system prompt based on current non-mode context.
     fn refresh_system_prompt(&mut self) {
-        let user_memory_block =
-            crate::memory::compose_block(self.config.memory_enabled, &self.config.memory_path);
+        let user_memory_block = crate::memory::compose_block(
+            self.config.memory_enabled,
+            &self.config.memory_path,
+            self.config.memory_max_size_kb,
+        );
         let prompt_goal_objective = goal_objective_for_prompt(
             self.config.goal_objective.as_deref(),
             &self.config.goal_state,

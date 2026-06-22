@@ -32,7 +32,7 @@ static NOTE_INFO: CommandInfo = CommandInfo {
 static MEMORY_INFO: CommandInfo = CommandInfo {
     name: "memory",
     aliases: &[],
-    usage: "/memory [show|path|clear|edit|help]",
+    usage: "/memory [show|path|clear|edit|search|task|help]",
     description_id: MessageId::CmdMemoryDescription,
 };
 

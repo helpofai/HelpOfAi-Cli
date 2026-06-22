@@ -1340,6 +1340,8 @@ pub struct MemoryConfig {
     /// `# foo` typed in the composer to append to that file. Default `false`.
     #[serde(default)]
     pub enabled: Option<bool>,
+    /// Maximum size of the user memory file in KiB. Default: 512 KiB.
+    pub max_size_kb: Option<usize>,
 }
 
 /// Xiaomi MiMo speech/TTS output configuration.
@@ -3126,6 +3128,15 @@ impl Config {
             .as_ref()
             .and_then(|m| m.enabled)
             .unwrap_or(false)
+    }
+
+    /// Return the configured maximum memory size in KiB. Defaults to 512 KiB.
+    #[must_use]
+    pub fn memory_max_size_kb(&self) -> usize {
+        self.memory
+            .as_ref()
+            .and_then(|m| m.max_size_kb)
+            .unwrap_or(512)
     }
 
     /// Return the configured vision model config, inheriting api_key from main config.

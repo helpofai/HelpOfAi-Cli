@@ -776,280 +776,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9b18233253483ce2f65329a24072ec414db782531bdbb7d0bbc4bd2ce6b7e21"
 
 [[package]]
-name = "helpofai-agent"
-version = "0.8.62"
-dependencies = [
- "helpofai-config",
- "serde",
-]
-
-[[package]]
-name = "helpofai-app-server"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "axum",
- "clap",
- "helpofai-agent",
- "helpofai-config",
- "helpofai-core",
- "helpofai-execpolicy",
- "helpofai-hooks",
- "helpofai-mcp",
- "helpofai-protocol",
- "helpofai-state",
- "helpofai-tools",
- "reqwest",
- "rustls",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "helpofai-cli"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "clap_complete",
- "helpofai-agent",
- "helpofai-app-server",
- "helpofai-config",
- "helpofai-execpolicy",
- "helpofai-mcp",
- "helpofai-release",
- "helpofai-secrets",
- "helpofai-state",
- "dirs",
- "reqwest",
- "rustls",
- "semver",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "helpofai-config"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "helpofai-execpolicy",
- "helpofai-secrets",
- "dirs",
- "serde",
- "serde_json",
- "tempfile",
- "toml 0.9.11+spec-1.1.0",
- "toml_edit",
- "tracing",
-]
-
-[[package]]
-name = "helpofai-core"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "chrono",
- "helpofai-agent",
- "helpofai-config",
- "helpofai-execpolicy",
- "helpofai-hooks",
- "helpofai-mcp",
- "helpofai-protocol",
- "helpofai-state",
- "helpofai-tools",
- "serde_json",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "helpofai-execpolicy"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "helpofai-protocol",
- "serde",
-]
-
-[[package]]
-name = "helpofai-hooks"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "helpofai-protocol",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "helpofai-mcp"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "helpofai-protocol"
-version = "0.8.62"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "helpofai-release"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "helpofai-secrets"
-version = "0.8.62"
-dependencies = [
- "dirs",
- "keyring",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
-name = "helpofai-state"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "chrono",
- "dirs",
- "rusqlite",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "helpofai-tools"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "async-trait",
- "helpofai-protocol",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "helpofai-tui"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "arboard",
- "async-stream",
- "async-trait",
- "axum",
- "base64",
- "chrono",
- "clap",
- "clap_complete",
- "helpofai-config",
- "helpofai-execpolicy",
- "helpofai-protocol",
- "helpofai-release",
- "helpofai-secrets",
- "helpofai-tools",
- "colored",
- "crossterm 0.28.1",
- "cucumber",
- "dirs",
- "dotenvy",
- "fd-lock",
- "flate2",
- "futures-util",
- "ignore",
- "image",
- "libc",
- "lru",
- "multimap",
- "objc2",
- "objc2-foundation",
- "parking_lot",
- "pdf-extract",
- "portable-pty",
- "pretty_assertions",
- "qrcode",
- "ratatui",
- "regex",
- "reqwest",
- "rustls",
- "schemars",
- "schemaui",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "shellexpand",
- "shlex",
- "similar",
- "starlark",
- "tar",
- "tempfile",
- "thiserror 2.0.18",
- "tiny_http",
- "tokio",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "unicode-segmentation",
- "unicode-width 0.2.2",
- "uuid",
- "vt100",
- "wait-timeout",
- "windows",
- "wiremock",
-]
-
-[[package]]
-name = "helpofai-helpflow"
-version = "0.8.62"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "starlark",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2267,6 +1993,280 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "helpofai-agent"
+version = "0.8.62"
+dependencies = [
+ "helpofai-config",
+ "serde",
+]
+
+[[package]]
+name = "helpofai-app-server"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "axum",
+ "clap",
+ "helpofai-agent",
+ "helpofai-config",
+ "helpofai-core",
+ "helpofai-execpolicy",
+ "helpofai-hooks",
+ "helpofai-mcp",
+ "helpofai-protocol",
+ "helpofai-state",
+ "helpofai-tools",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "helpofai-cli"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "clap_complete",
+ "dirs",
+ "helpofai-agent",
+ "helpofai-app-server",
+ "helpofai-config",
+ "helpofai-execpolicy",
+ "helpofai-mcp",
+ "helpofai-release",
+ "helpofai-secrets",
+ "helpofai-state",
+ "reqwest",
+ "rustls",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "helpofai-config"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "helpofai-execpolicy",
+ "helpofai-secrets",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "toml 0.9.11+spec-1.1.0",
+ "toml_edit",
+ "tracing",
+]
+
+[[package]]
+name = "helpofai-core"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "helpofai-agent",
+ "helpofai-config",
+ "helpofai-execpolicy",
+ "helpofai-hooks",
+ "helpofai-mcp",
+ "helpofai-protocol",
+ "helpofai-state",
+ "helpofai-tools",
+ "serde_json",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "helpofai-execpolicy"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "helpofai-protocol",
+ "serde",
+]
+
+[[package]]
+name = "helpofai-helpflow"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "starlark",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "helpofai-hooks"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "helpofai-protocol",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "helpofai-mcp"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "helpofai-protocol"
+version = "0.8.62"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "helpofai-release"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "helpofai-secrets"
+version = "0.8.62"
+dependencies = [
+ "dirs",
+ "keyring",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "helpofai-state"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dirs",
+ "rusqlite",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "helpofai-tools"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "helpofai-protocol",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "helpofai-tui"
+version = "0.8.62"
+dependencies = [
+ "anyhow",
+ "arboard",
+ "async-stream",
+ "async-trait",
+ "axum",
+ "base64",
+ "chrono",
+ "clap",
+ "clap_complete",
+ "colored",
+ "crossterm 0.28.1",
+ "cucumber",
+ "dirs",
+ "dotenvy",
+ "fd-lock",
+ "flate2",
+ "futures-util",
+ "helpofai-config",
+ "helpofai-execpolicy",
+ "helpofai-protocol",
+ "helpofai-release",
+ "helpofai-secrets",
+ "helpofai-tools",
+ "ignore",
+ "image",
+ "libc",
+ "lru",
+ "multimap",
+ "objc2",
+ "objc2-foundation",
+ "parking_lot",
+ "pdf-extract",
+ "portable-pty",
+ "pretty_assertions",
+ "qrcode",
+ "ratatui",
+ "regex",
+ "reqwest",
+ "rustls",
+ "schemars",
+ "schemaui",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "shellexpand",
+ "shlex",
+ "similar",
+ "starlark",
+ "tar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tiny_http",
+ "tokio",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "unicode-segmentation",
+ "unicode-width 0.2.2",
+ "uuid",
+ "vt100",
+ "wait-timeout",
+ "windows",
+ "wiremock",
+]
 
 [[package]]
 name = "hermit-abi"
