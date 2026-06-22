@@ -3081,6 +3081,12 @@ impl Config {
             .unwrap_or_else(|| PathBuf::from("./memory.md"))
     }
 
+    /// Resolve the project-specific memory file path.
+    #[must_use]
+    pub fn project_memory_path(&self) -> PathBuf {
+        self.workspace.join(".helpofai").join("memory.md")
+    }
+
     /// Resolve the default speech/TTS output directory, if configured.
     #[must_use]
     pub fn speech_output_dir(&self) -> Option<PathBuf> {

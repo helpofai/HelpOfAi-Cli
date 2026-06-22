@@ -180,6 +180,8 @@ pub struct ToolContext {
     /// short-circuit on `None` rather than fall back to a workspace-local
     /// default.
     pub memory_path: Option<PathBuf>,
+    /// Path to the project-specific workspace memory file.
+    pub project_memory_path: Option<PathBuf>,
     /// LSP manager for post-edit diagnostics injection (#428). `None` when
     /// LSP is disabled or the context is constructed in a test that does not
     /// need diagnostics. Edit tools append a `<diagnostics>` block to their
@@ -242,6 +244,7 @@ impl ToolContext {
             cancel_token: None,
             sandbox_backend: None,
             memory_path: None,
+            project_memory_path: None,
             lsp_manager: None,
             large_output_router: None,
             search_provider: crate::config::SearchProvider::default(),

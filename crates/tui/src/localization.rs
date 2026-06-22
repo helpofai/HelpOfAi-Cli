@@ -313,6 +313,7 @@ pub enum MessageId {
     CmdLogoutDescription,
     CmdMcpDescription,
     CmdMemoryDescription,
+    CmdProjectMemoryDescription,
     CmdPluginDescription,
     CmdPluginNoneFound,
     CmdPluginNotFound,
@@ -760,6 +761,7 @@ pub const ALL_MESSAGE_IDS: &[MessageId] = &[
     MessageId::CmdPluginDetailApproval,
     MessageId::CmdPluginDetailPath,
     MessageId::CmdMemoryDescription,
+    MessageId::CmdProjectMemoryDescription,
     MessageId::CmdModeDescription,
     MessageId::CmdModelDescription,
     MessageId::CmdModelsDescription,
@@ -1403,6 +1405,9 @@ fn english(id: MessageId) -> &'static str {
         MessageId::CmdPluginDetailApproval => "Approval: {approval}",
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => "Inspect or manage the persistent user-memory file",
+        MessageId::CmdProjectMemoryDescription => {
+            "Inspect or manage the project-specific memory file"
+        }
         MessageId::CmdModeDescription => {
             "Switch mode or open picker: /mode [agent|plan|yolo|1|2|3]"
         }
@@ -2014,6 +2019,7 @@ fn vietnamese(id: MessageId) -> Option<&'static str> {
         MessageId::CmdPluginDetailApproval => "Approval: {approval}",
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => "Kiểm tra hoặc quản lý tệp bộ nhớ người dùng liên tục",
+        MessageId::CmdProjectMemoryDescription => "Kiểm tra hoặc quản lý tệp bộ nhớ dự án liên tục",
         MessageId::CmdModeDescription => {
             "Chuyển đổi chế độ hoặc mở bảng chọn: /mode [agent|plan|yolo|1|2|3]"
         }
@@ -2821,6 +2827,7 @@ fn japanese(id: MessageId) -> Option<&'static str> {
         MessageId::CmdPluginDetailApproval => "Approval: {approval}",
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => "永続ユーザーメモリファイルを確認・管理",
+        MessageId::CmdProjectMemoryDescription => "永続プロジェクトメモリファイルを確認・管理",
         MessageId::CmdModeDescription => {
             "動作モードを切り替え、または選択画面を開く: /mode [agent|plan|yolo|1|2|3]"
         }
@@ -3403,6 +3410,7 @@ fn chinese_simplified(id: MessageId) -> Option<&'static str> {
         MessageId::CmdPluginDetailApproval => "Approval: {approval}",
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => "查看或管理持久用户记忆文件",
+        MessageId::CmdProjectMemoryDescription => "查看或管理持久项目记忆文件",
         MessageId::CmdModeDescription => "切换运行模式或打开选择器：/mode [agent|plan|yolo|1|2|3]",
         MessageId::CmdModelDescription => "切换或查看当前模型",
         MessageId::CmdModelsDescription => "列出 API 中可用的模型",
@@ -3946,6 +3954,9 @@ fn portuguese_brazil(id: MessageId) -> Option<&'static str> {
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => {
             "Inspecionar ou gerenciar o arquivo persistente de memória do usuário"
+        }
+        MessageId::CmdProjectMemoryDescription => {
+            "Inspecionar ou gerenciar o arquivo de memória persistente do projeto"
         }
         MessageId::CmdModeDescription => {
             "Alternar modo ou abrir seletor: /mode [agent|plan|yolo|1|2|3]"
@@ -4572,6 +4583,9 @@ fn spanish_latin_america(id: MessageId) -> Option<&'static str> {
         MessageId::CmdPluginDetailPath => "Path: {path}",
         MessageId::CmdMemoryDescription => {
             "Inspeccionar o gestionar el archivo persistente de memoria del usuario"
+        }
+        MessageId::CmdProjectMemoryDescription => {
+            "Inspeccionar o administrar el archivo de memoria persistente del proyecto"
         }
         MessageId::CmdModeDescription => {
             "Alternar modo o abrir selector: /mode [agent|plan|yolo|1|2|3]"

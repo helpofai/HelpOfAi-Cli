@@ -1121,6 +1121,7 @@ fn build_engine_config(app: &App, config: &Config) -> EngineConfig {
         prefer_bwrap: config.prefer_bwrap.unwrap_or(false),
         memory_enabled: config.memory_enabled(),
         memory_path: config.memory_path(),
+        project_memory_path: app.project_memory_path.clone(),
         memory_max_size_kb: app.memory_max_size_kb,
         speech_output_dir: config.speech_output_dir(),
         vision_config: config.vision_model_config(),

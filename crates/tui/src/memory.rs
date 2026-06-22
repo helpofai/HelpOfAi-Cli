@@ -103,6 +103,46 @@ pub fn compose_block(enabled: bool, path: &Path, max_size_kb: usize) -> Option<S
     as_system_block(&content, path, max_size_kb)
 }
 
+/// Wrap project memory content in a `<project_memory>` block ready to prepend to the
+/// system prompt. The `source` value is rendered verbatim into a
+/// `source="…"` attribute — pass the path so the model can see where the
+/// memory came from. Returns `None` for empty content.
+#[must_use]
+pub fn as_project_system_block(content: &str, source: &Path, max_size_kb: usize) -> Option<String> {
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let display = source.display().to_string();
+    let max_size_bytes = max_size_kb * 1024;
+    let payload = if content.len() > max_size_bytes {
+        let cutoff = truncation_cutoff(content, &display, max_size_bytes);
+        let omitted_bytes = content.len() - cutoff;
+        let mut head = content[..cutoff].to_string();
+        head.push_str(&truncation_marker(omitted_bytes, &display));
+        head
+    } else {
+        trimmed.to_string()
+    };
+
+    Some(format!(
+        "<project_memory source=\"{display}\">\n{payload}\n</project_memory>"
+    ))
+}
+
+/// Compose the `<project_memory>` block for the system prompt, honouring the
+/// opt-in toggle. Returns `None` when the feature is disabled or the file
+/// is missing / empty.
+#[must_use]
+pub fn compose_project_block(enabled: bool, path: &Path, max_size_kb: usize) -> Option<String> {
+    if !enabled {
+        return None;
+    }
+    let content = load(path)?;
+    as_project_system_block(&content, path, max_size_kb)
+}
+
 /// Helper function to append a line to a specific markdown heading section in the memory file.
 /// If headings are missing, it initializes the file with the standard structure:
 /// # User Memory

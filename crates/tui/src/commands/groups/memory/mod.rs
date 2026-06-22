@@ -19,6 +19,10 @@ impl CommandGroup for MemoryCommands {
         vec![
             Box::new(FunctionCommand::new(&NOTE_INFO, run_note)),
             Box::new(FunctionCommand::new(&MEMORY_INFO, run_memory)),
+            Box::new(FunctionCommand::new(
+                &PROJECT_MEMORY_INFO,
+                run_project_memory,
+            )),
         ]
     }
 }
@@ -35,6 +39,12 @@ static MEMORY_INFO: CommandInfo = CommandInfo {
     usage: "/memory [show|path|clear|edit|search|task|help]",
     description_id: MessageId::CmdMemoryDescription,
 };
+static PROJECT_MEMORY_INFO: CommandInfo = CommandInfo {
+    name: "projectmemory",
+    aliases: &["pmemory"],
+    usage: "/projectmemory [show|path|clear|edit|search|task|help]",
+    description_id: MessageId::CmdProjectMemoryDescription,
+};
 
 fn run_registered(app: &mut App, name: &str, arg: Option<&str>) -> CommandResult {
     dispatch(app, name, arg).expect("registered memory command should dispatch")
@@ -46,6 +56,9 @@ fn run_note(app: &mut App, arg: Option<&str>) -> CommandResult {
 fn run_memory(app: &mut App, arg: Option<&str>) -> CommandResult {
     run_registered(app, "memory", arg)
 }
+fn run_project_memory(app: &mut App, arg: Option<&str>) -> CommandResult {
+    run_registered(app, "projectmemory", arg)
+}
 
 pub(in crate::commands) fn dispatch(
     app: &mut App,
@@ -54,6 +67,7 @@ pub(in crate::commands) fn dispatch(
 ) -> Option<CommandResult> {
     let result = match command {
         "memory" => memory::memory(app, arg),
+        "projectmemory" | "pmemory" => memory::project_memory(app, arg),
         "note" => note::note(app, arg),
         _ => return None,
     };

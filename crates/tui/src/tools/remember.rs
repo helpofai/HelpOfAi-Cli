@@ -45,6 +45,11 @@ impl ToolSpec for RememberTool {
                     "enum": ["preference", "task", "file_change"],
                     "description": "The category/section of memory to update. Defaults to 'preference'."
                 },
+                "scope": {
+                    "type": "string",
+                    "enum": ["user", "project"],
+                    "description": "Whether to remember this in the global user memory ('user') or the project-specific workspace memory ('project'). Defaults to 'user'."
+                },
                 "file_path": {
                     "type": "string",
                     "description": "The relative or absolute file path. Required when category is 'file_change'."
@@ -72,15 +77,22 @@ impl ToolSpec for RememberTool {
             .get("category")
             .and_then(Value::as_str)
             .unwrap_or("preference");
+        let scope = input.get("scope").and_then(Value::as_str).unwrap_or("user");
         let file_path = input.get("file_path").and_then(Value::as_str);
         let lines = input.get("lines").and_then(Value::as_str);
 
-        let path = context.memory_path.as_ref().ok_or_else(|| {
-            ToolError::execution_failed(
-                "user memory is disabled — set `[memory] enabled = true` in config.toml or \
-                 `DEEPSEEK_MEMORY=on` in the environment to enable",
-            )
-        })?;
+        let path = if scope == "project" {
+            context.project_memory_path.as_ref().ok_or_else(|| {
+                ToolError::execution_failed("project memory is disabled or unavailable")
+            })?
+        } else {
+            context.memory_path.as_ref().ok_or_else(|| {
+                ToolError::execution_failed(
+                    "user memory is disabled — set `[memory] enabled = true` in config.toml or \
+                     `DEEPSEEK_MEMORY=on` in the environment to enable",
+                )
+            })?
+        };
 
         match category {
             "preference" => {
@@ -110,7 +122,7 @@ impl ToolSpec for RememberTool {
         }
 
         Ok(ToolResult::success(format!(
-            "remembered in category '{category}': {}",
+            "remembered in category '{category}' (scope: {scope}): {}",
             note.trim_start_matches('#').trim()
         )))
     }
@@ -208,5 +220,29 @@ mod tests {
         assert!(body.contains("## File Change Log"));
         assert!(body.contains("[crates/tui/src/parser.rs:50-75]"));
         assert!(body.contains("Refactored parsing logic"));
+    }
+
+    #[tokio::test]
+    async fn appends_preference_to_project_memory_file() {
+        let tmp = tempdir().unwrap();
+        let path = tmp.path().join("project-memory.md");
+        let mut ctx = ToolContext::new(tmp.path());
+        ctx.project_memory_path = Some(path.clone());
+
+        let tool = RememberTool;
+        let result = tool
+            .execute(
+                json!({"note": "use spaces for project", "category": "preference", "scope": "project"}),
+                &ctx,
+            )
+            .await
+            .expect("ok");
+        assert!(result.success);
+        assert!(result.content.contains("use spaces for project"));
+        assert!(result.content.contains("scope: project"));
+
+        let body = std::fs::read_to_string(&path).expect("read");
+        assert!(body.contains("## Preferences"));
+        assert!(body.contains("use spaces for project"));
     }
 }

@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone)]
 pub struct PromptSessionContext<'a> {
     pub user_memory_block: Option<&'a str>,
+    pub project_memory_block: Option<&'a str>,
     pub goal_objective: Option<&'a str>,
     pub project_context_pack_enabled: bool,
     /// Resolved BCP-47 locale tag for the `## Environment` block in
@@ -53,6 +54,7 @@ impl Default for PromptSessionContext<'_> {
     fn default() -> Self {
         Self {
             user_memory_block: None,
+            project_memory_block: None,
             goal_objective: None,
             project_context_pack_enabled: true,
             locale_tag: "en",
@@ -713,6 +715,17 @@ pub const GOAL_CONTINUATION_PROMPT: &str = include_str!("prompts/continuation.md
 /// can override the user's current request (#725).
 pub const MEMORY_GUIDANCE: &str = include_str!("prompts/memory_guidance.md");
 
+/// Project-specific memory guidance — appended to the system prompt when the
+/// session has a non-empty project-memory block.
+pub const PROJECT_MEMORY_GUIDANCE: &str = "\
+## Project Memory Hygiene
+
+The `<project_memory>` block contains persistent context, directory structures, architectural notes, and file history specific to this project workspace.
+Phrase project memories as declarative facts about the project workspace rather than imperatives:
+- \"Project's main server source is at crates/app-server/src\" ✓
+- \"Workspace uses pytest for testing\" ✓
+Refer to this block to maintain long-term memory of this project across engine resets.";
+
 // ── Legacy prompt constants (kept for backwards compatibility) ────────
 
 /// Legacy base prompt (agent.txt — now decomposed into constitution.md + overlays).
@@ -1210,6 +1223,13 @@ pub fn system_prompt_for_mode_with_context_skills_session_and_approval(
         && !memory_block.trim().is_empty()
     {
         full_prompt = format!("{full_prompt}\n\n{memory_block}\n\n{MEMORY_GUIDANCE}");
+    }
+
+    // 6bb. Project memory block.
+    if let Some(proj_memory_block) = session_context.project_memory_block
+        && !proj_memory_block.trim().is_empty()
+    {
+        full_prompt = format!("{full_prompt}\n\n{proj_memory_block}\n\n{PROJECT_MEMORY_GUIDANCE}");
     }
 
     // 6c. Current session goal. Also volatile: users set / change goals

@@ -1474,6 +1474,8 @@ pub struct App {
     /// Path to the user-memory file (#489). Always populated; only
     /// consulted when `use_memory` is `true`.
     pub memory_path: PathBuf,
+    /// Path to the project-specific workspace memory file.
+    pub project_memory_path: Option<PathBuf>,
     /// Whether the user-memory feature is enabled (#489). Mirrors
     /// `Config::memory_enabled()` at app boot. Used by the `# foo`
     /// composer interception, the `/memory` slash command, and tool
@@ -2375,6 +2377,11 @@ impl App {
             skills_dir,
             skills_scan_helpofai_only,
             memory_path,
+            project_memory_path: if use_memory {
+                Some(workspace.join(".helpofai").join("memory.md"))
+            } else {
+                None
+            },
             use_memory,
             memory_max_size_kb: config.memory_max_size_kb(),
             use_alt_screen,
