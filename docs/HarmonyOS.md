@@ -1,6 +1,6 @@
 # HarmonyOS and OpenHarmony
 
-This page covers CodeWhale on HarmonyOS PC and OpenHarmony cross-build setups.
+This page covers HelpOfAi on HarmonyOS PC and OpenHarmony cross-build setups.
 
 ## Running On HarmonyOS PC
 
@@ -8,12 +8,12 @@ HarmonyOS PC can use the normal Linux ARM64 package when its userspace is
 glibc-compatible:
 
 ```bash
-npm i -g codewhale
-codewhale --version
+npm i -g helpofai
+helpofai --version
 ```
 
-You can also download `codewhale-linux-arm64` and
-`codewhale-tui-linux-arm64` from the GitHub Releases page and place both
+You can also download `helpofai-linux-arm64` and
+`helpofai-tui-linux-arm64` from the GitHub Releases page and place both
 binaries on `PATH`.
 
 ## Cross-Compiling To OpenHarmony
@@ -28,7 +28,7 @@ On Windows PowerShell:
 $env:OHOS_NATIVE_SDK="<path-to-openharmony-native-sdk>"
 . .\scripts\ohos-env.ps1
 rustup target add aarch64-unknown-linux-ohos
-cargo build --target aarch64-unknown-linux-ohos -p codewhale-cli
+cargo build --target aarch64-unknown-linux-ohos -p helpofai-cli
 ```
 
 On Linux or macOS:
@@ -37,7 +37,7 @@ On Linux or macOS:
 export OHOS_NATIVE_SDK=/path/to/openharmony/native
 . ./scripts/ohos-env.sh
 rustup target add aarch64-unknown-linux-ohos
-cargo build --target aarch64-unknown-linux-ohos -p codewhale-cli
+cargo build --target aarch64-unknown-linux-ohos -p helpofai-cli
 ```
 
 The setup scripts export Cargo's target-specific `linker`, `AR`, `CC`, `CXX`,
@@ -85,7 +85,7 @@ Release prep runs a no-SDK dependency check:
 ./scripts/release/check-ohos-deps.sh
 ```
 
-The guard resolves the `codewhale-tui` dependency graph for
+The guard resolves the `helpofai-tui` dependency graph for
 `aarch64-unknown-linux-ohos` and fails if unsupported host/UI crates re-enter
 the target graph: `nix` 0.28/0.29, `portable-pty`, `starlark`, `arboard`, or
 `keyring`. This does not replace a real SDK/sysroot build, but it catches the

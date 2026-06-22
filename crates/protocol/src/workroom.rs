@@ -161,14 +161,14 @@ pub struct WorkroomLink {
 }
 
 impl WorkroomLink {
-    /// Parse a `codewhale://workroom/...` URL.
+    /// Parse a `helpofai://workroom/...` URL.
     ///
     /// Accepted forms:
-    /// - `codewhale://workroom/wr_<id>`
-    /// - `codewhale://workroom/wr_<id>/thread/<thread_id>`
-    /// - `codewhale://workroom/wr_<id>/event/<event_id>`
+    /// - `helpofai://workroom/wr_<id>`
+    /// - `helpofai://workroom/wr_<id>/thread/<thread_id>`
+    /// - `helpofai://workroom/wr_<id>/event/<event_id>`
     pub fn parse(url: &str) -> Option<Self> {
-        let rest = url.strip_prefix("codewhale://workroom/")?;
+        let rest = url.strip_prefix("helpofai://workroom/")?;
         let mut segments = rest.split('/');
         let workroom_id = parse_segment_with_prefix(segments.next()?, "wr_")?;
         let next = segments.next();
@@ -205,9 +205,9 @@ impl WorkroomLink {
         })
     }
 
-    /// Serialise back to the `codewhale://workroom/...` URL form.
+    /// Serialise back to the `helpofai://workroom/...` URL form.
     pub fn to_url(&self) -> String {
-        let mut url = format!("codewhale://workroom/{}", self.workroom_id);
+        let mut url = format!("helpofai://workroom/{}", self.workroom_id);
         if let Some(ref thread_id) = self.thread_id {
             url.push_str(&format!("/thread/{thread_id}"));
             if let Some(ref event_id) = self.event_id {
@@ -273,7 +273,7 @@ mod tests {
 
     #[test]
     fn workroom_link_parse_workroom_only() {
-        let link = WorkroomLink::parse("codewhale://workroom/wr_abc123def456").unwrap();
+        let link = WorkroomLink::parse("helpofai://workroom/wr_abc123def456").unwrap();
         assert_eq!(link.workroom_id.0, "wr_abc123def456");
         assert!(link.thread_id.is_none());
         assert!(link.event_id.is_none());
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn workroom_link_parse_with_thread() {
-        let link = WorkroomLink::parse("codewhale://workroom/wr_abc/thread/thr_xyz").unwrap();
+        let link = WorkroomLink::parse("helpofai://workroom/wr_abc/thread/thr_xyz").unwrap();
         assert_eq!(link.workroom_id.0, "wr_abc");
         assert_eq!(link.thread_id.as_deref(), Some("thr_xyz"));
         assert!(link.event_id.is_none());
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn workroom_link_parse_with_event() {
-        let link = WorkroomLink::parse("codewhale://workroom/wr_abc/event/evt_789").unwrap();
+        let link = WorkroomLink::parse("helpofai://workroom/wr_abc/event/evt_789").unwrap();
         assert_eq!(link.workroom_id.0, "wr_abc");
         assert_eq!(link.event_id.as_deref(), Some("evt_789"));
         assert!(link.thread_id.is_none());
@@ -297,7 +297,7 @@ mod tests {
 
     #[test]
     fn workroom_link_roundtrip() {
-        let original = "codewhale://workroom/wr_abc/thread/thr_x/event/evt_y";
+        let original = "helpofai://workroom/wr_abc/thread/thr_x/event/evt_y";
         let parsed = WorkroomLink::parse(original).unwrap();
         assert_eq!(parsed.to_url(), original);
     }
@@ -305,25 +305,25 @@ mod tests {
     #[test]
     fn workroom_link_reject_bad_prefix() {
         assert!(WorkroomLink::parse("http://workroom/wr_abc").is_none());
-        assert!(WorkroomLink::parse("codewhale://not-workroom/wr_abc").is_none());
+        assert!(WorkroomLink::parse("helpofai://not-workroom/wr_abc").is_none());
     }
 
     #[test]
     fn workroom_link_rejects_malformed_paths() {
-        assert!(WorkroomLink::parse("codewhale://workroom/").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/abc").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/wr_").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/wr_abc/thread").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/wr_abc/thread/").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/wr_abc/unknown/x").is_none());
-        assert!(WorkroomLink::parse("codewhale://workroom/wr_abc/event/evt/x").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/abc").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/wr_").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/wr_abc/thread").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/wr_abc/thread/").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/wr_abc/unknown/x").is_none());
+        assert!(WorkroomLink::parse("helpofai://workroom/wr_abc/event/evt/x").is_none());
     }
 
     #[test]
     fn external_thread_ref_serde_roundtrip() {
         let issue = ExternalThreadRef::GitHubIssue {
-            owner: "Hmbown".into(),
-            repo: "CodeWhale".into(),
+            owner: "helpofai".into(),
+            repo: "HelpOfAi".into(),
             number: 3209,
         };
         let json = serde_json::to_string(&issue).unwrap();

@@ -1,0 +1,23 @@
+[Unit]
+Description=HelpOfAi Runtime API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=helpofai
+Group=helpofai
+WorkingDirectory=/opt/whalebro
+# Legacy /etc/deepseek is loaded first for old installs; /etc/helpofai wins.
+EnvironmentFile=-/etc/deepseek/runtime.env
+EnvironmentFile=-/etc/helpofai/runtime.env
+ExecStart=/bin/sh -lc 'exec /home/helpofai/.cargo/bin/helpofai serve --http --host 127.0.0.1 --port "${HELPOFAI_RUNTIME_PORT:-${DEEPSEEK_RUNTIME_PORT:-7878}}" --workers "${HELPOFAI_RUNTIME_WORKERS:-${DEEPSEEK_RUNTIME_WORKERS:-2}}" --auth-token "${HELPOFAI_RUNTIME_TOKEN:-${DEEPSEEK_RUNTIME_TOKEN}}"'
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/home/helpofai/.helpofai /home/helpofai/.deepseek /opt/whalebro
+
+[Install]
+WantedBy=multi-user.target

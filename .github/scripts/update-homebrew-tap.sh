@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Update the Homebrew tap at Hmbown/homebrew-deepseek-tui after a release.
+# Update the Homebrew tap at helpofai/homebrew-deepseek-tui after a release.
 #
 # Expected environment:
 #   TAG       – git tag, e.g. "v0.8.31"
-#   MANIFEST  – path to codewhale-artifacts-sha256.txt
+#   MANIFEST  – path to helpofai-artifacts-sha256.txt
 #   TAP_REPO  – owner/repo of the Homebrew tap
 #   TOKEN     – PAT with contents:write on TAP_REPO (optional; skips if unset)
 
@@ -35,14 +35,14 @@ sha() {
 # --- read checksums ---------------------------------------------------
 
 # Canonical dispatcher and TUI
-readonly SHA_COD_MACOS_ARM="$(sha codewhale-macos-arm64)"
-readonly SHA_TUI_MACOS_ARM="$(sha codewhale-tui-macos-arm64)"
-readonly SHA_COD_MACOS_X64="$(sha codewhale-macos-x64)"
-readonly SHA_TUI_MACOS_X64="$(sha codewhale-tui-macos-x64)"
-readonly SHA_COD_LINUX_ARM="$(sha codewhale-linux-arm64)"
-readonly SHA_TUI_LINUX_ARM="$(sha codewhale-tui-linux-arm64)"
-readonly SHA_COD_LINUX_X64="$(sha codewhale-linux-x64)"
-readonly SHA_TUI_LINUX_X64="$(sha codewhale-tui-linux-x64)"
+readonly SHA_COD_MACOS_ARM="$(sha helpofai-macos-arm64)"
+readonly SHA_TUI_MACOS_ARM="$(sha helpofai-tui-macos-arm64)"
+readonly SHA_COD_MACOS_X64="$(sha helpofai-macos-x64)"
+readonly SHA_TUI_MACOS_X64="$(sha helpofai-tui-macos-x64)"
+readonly SHA_COD_LINUX_ARM="$(sha helpofai-linux-arm64)"
+readonly SHA_TUI_LINUX_ARM="$(sha helpofai-tui-linux-arm64)"
+readonly SHA_COD_LINUX_X64="$(sha helpofai-linux-x64)"
+readonly SHA_TUI_LINUX_X64="$(sha helpofai-tui-linux-x64)"
 
 # --- temp dirs --------------------------------------------------------
 
@@ -52,28 +52,28 @@ trap 'rm -rf "${TAP_DIR}" "${FORMULA_FILE}"' EXIT
 
 # --- generate formula --------------------------------------------------
 
-readonly BASE_URL="https://github.com/Hmbown/CodeWhale/releases/download/${TAG}"
+readonly BASE_URL="https://github.com/helpofai/HelpOfAi-Cli/releases/download/${TAG}"
 
 cat > "${FORMULA_FILE}" << EOF
 class DeepseekTui < Formula
   desc "Terminal-native coding agent for DeepSeek V4"
-  homepage "https://github.com/Hmbown/CodeWhale"
+  homepage "https://github.com/helpofai/HelpOfAi-Cli"
   version "${VERSION}"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "${BASE_URL}/codewhale-macos-arm64", using: :nounzip
+      url "${BASE_URL}/helpofai-macos-arm64", using: :nounzip
       sha256 "${SHA_COD_MACOS_ARM}"
       resource "tui" do
-        url "${BASE_URL}/codewhale-tui-macos-arm64", using: :nounzip
+        url "${BASE_URL}/helpofai-tui-macos-arm64", using: :nounzip
         sha256 "${SHA_TUI_MACOS_ARM}"
       end
     else
-      url "${BASE_URL}/codewhale-macos-x64", using: :nounzip
+      url "${BASE_URL}/helpofai-macos-x64", using: :nounzip
       sha256 "${SHA_COD_MACOS_X64}"
       resource "tui" do
-        url "${BASE_URL}/codewhale-tui-macos-x64", using: :nounzip
+        url "${BASE_URL}/helpofai-tui-macos-x64", using: :nounzip
         sha256 "${SHA_TUI_MACOS_X64}"
       end
     end
@@ -81,29 +81,29 @@ class DeepseekTui < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "${BASE_URL}/codewhale-linux-arm64", using: :nounzip
+      url "${BASE_URL}/helpofai-linux-arm64", using: :nounzip
       sha256 "${SHA_COD_LINUX_ARM}"
       resource "tui" do
-        url "${BASE_URL}/codewhale-tui-linux-arm64", using: :nounzip
+        url "${BASE_URL}/helpofai-tui-linux-arm64", using: :nounzip
         sha256 "${SHA_TUI_LINUX_ARM}"
       end
     else
-      url "${BASE_URL}/codewhale-linux-x64", using: :nounzip
+      url "${BASE_URL}/helpofai-linux-x64", using: :nounzip
       sha256 "${SHA_COD_LINUX_X64}"
       resource "tui" do
-        url "${BASE_URL}/codewhale-tui-linux-x64", using: :nounzip
+        url "${BASE_URL}/helpofai-tui-linux-x64", using: :nounzip
         sha256 "${SHA_TUI_LINUX_X64}"
       end
     end
   end
 
   def install
-    bin.install Dir["*"].first => "codewhale"
-    resource("tui").stage { bin.install Dir["*"].first => "codewhale-tui" }
+    bin.install Dir["*"].first => "helpofai"
+    resource("tui").stage { bin.install Dir["*"].first => "helpofai-tui" }
   end
 
   test do
-    system "#{bin}/codewhale", "--version"
+    system "#{bin}/helpofai", "--version"
   end
 end
 EOF

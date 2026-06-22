@@ -3,7 +3,7 @@ import {
   checkRuntime,
   listSnapshots,
   listThreadSummaries,
-  openCodeWhaleTerminal,
+  openHelpOfAiTerminal,
   readRuntimeConfig,
   runtimeBaseUrl,
   startRuntimeTerminal,
@@ -12,13 +12,13 @@ import {
 import { RuntimeStatusView } from "./status";
 
 export function activate(context: vscode.ExtensionContext): void {
-  const output = vscode.window.createOutputChannel("CodeWhale");
+  const output = vscode.window.createOutputChannel("HelpOfAi");
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   const statusView = new RuntimeStatusView();
   let autoRefreshTimer: ReturnType<typeof setInterval> | undefined;
   let autoRefreshInFlight = false;
 
-  status.command = "codewhale.checkRuntime";
+  status.command = "helpofai.checkRuntime";
   context.subscriptions.push(output, status);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(RuntimeStatusView.viewType, statusView),
@@ -74,7 +74,7 @@ export function activate(context: vscode.ExtensionContext): void {
   ): Promise<RuntimeState> => {
     const config = readRuntimeConfig();
     if (showSpinner) {
-      updateStatus("$(sync~spin) CodeWhale", "Checking CodeWhale runtime...");
+      updateStatus("$(sync~spin) HelpOfAi", "Checking HelpOfAi runtime...");
     }
 
     const state = await checkRuntime(config);
@@ -82,17 +82,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
     switch (state.kind) {
       case "connected":
-        updateStatus("$(check) CodeWhale", state.detail);
+        updateStatus("$(check) HelpOfAi", state.detail);
         await refreshAgentViewDetails(false);
         break;
       case "auth-required":
-        updateStatus("$(lock) CodeWhale", state.detail);
+        updateStatus("$(lock) HelpOfAi", state.detail);
         statusView.updateThreads([], "Runtime token is required before threads can load.");
         statusView.updateSnapshots([], "Runtime token is required before restore points can load.");
         break;
       case "offline":
       case "error":
-        updateStatus("$(warning) CodeWhale", state.detail);
+        updateStatus("$(warning) HelpOfAi", state.detail);
         statusView.updateThreads([], "Connect to the runtime to load recent threads.");
         statusView.updateSnapshots([], "Connect to the runtime to load restore points.");
         break;
@@ -135,7 +135,7 @@ export function activate(context: vscode.ExtensionContext): void {
     output.appendLine(`Agent View auto-refresh scheduled every ${intervalSeconds}s.`);
   };
 
-  updateStatus("$(terminal) CodeWhale", "Check CodeWhale runtime");
+  updateStatus("$(terminal) HelpOfAi", "Check HelpOfAi runtime");
   scheduleAutoRefresh();
   context.subscriptions.push(
     new vscode.Disposable(() => {
@@ -144,45 +144,45 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("codewhale.agentViewRefreshIntervalSeconds")) {
+      if (event.affectsConfiguration("helpofai.agentViewRefreshIntervalSeconds")) {
         scheduleAutoRefresh();
       }
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.openTerminal", () => {
+    vscode.commands.registerCommand("helpofai.openTerminal", () => {
       const config = readRuntimeConfig();
-      openCodeWhaleTerminal(config);
-      output.appendLine(`Opened CodeWhale terminal using ${config.commandPath}.`);
+      openHelpOfAiTerminal(config);
+      output.appendLine(`Opened HelpOfAi terminal using ${config.commandPath}.`);
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.startRuntime", () => {
+    vscode.commands.registerCommand("helpofai.startRuntime", () => {
       const config = readRuntimeConfig();
       startRuntimeTerminal(config);
       const baseUrl = runtimeBaseUrl(config);
-      updateStatus("$(sync~spin) CodeWhale", `Runtime terminal started for ${baseUrl}`);
-      output.appendLine(`Started CodeWhale runtime terminal at ${baseUrl}.`);
-      void vscode.window.showInformationMessage(`CodeWhale runtime starting at ${baseUrl}`);
+      updateStatus("$(sync~spin) HelpOfAi", `Runtime terminal started for ${baseUrl}`);
+      output.appendLine(`Started HelpOfAi runtime terminal at ${baseUrl}.`);
+      void vscode.window.showInformationMessage(`HelpOfAi runtime starting at ${baseUrl}`);
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.checkRuntime", async () => {
+    vscode.commands.registerCommand("helpofai.checkRuntime", async () => {
       return await checkAndRefreshRuntime(true, true);
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.refreshAgentView", async () => {
+    vscode.commands.registerCommand("helpofai.refreshAgentView", async () => {
       await refreshAgentViewDetails(true);
     }),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.refreshSnapshots", async () => {
+    vscode.commands.registerCommand("helpofai.refreshSnapshots", async () => {
       try {
         await refreshSnapshots();
       } catch (error: unknown) {
@@ -195,16 +195,16 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("codewhale.openRuntimeDocs", () => {
+    vscode.commands.registerCommand("helpofai.openRuntimeDocs", () => {
       void vscode.env.openExternal(
         vscode.Uri.parse(
-          "https://github.com/Hmbown/CodeWhale/blob/main/docs/RUNTIME_API.md",
+          "https://github.com/helpofai/HelpOfAi-Cli/blob/main/docs/RUNTIME_API.md",
         ),
       );
     }),
   );
 
-  void vscode.commands.executeCommand("codewhale.checkRuntime");
+  void vscode.commands.executeCommand("helpofai.checkRuntime");
 }
 
 export function deactivate(): void {

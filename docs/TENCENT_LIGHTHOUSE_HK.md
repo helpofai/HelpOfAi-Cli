@@ -1,7 +1,7 @@
 # Tencent Lighthouse Hong Kong Phone Setup
 
 This runbook sets up a Tencent Cloud Lighthouse instance in Hong Kong as an
-always-on codewhale host controlled from Feishu/Lark or Telegram on a phone.
+always-on helpofai host controlled from Feishu/Lark or Telegram on a phone.
 
 If you are teaching this as the Tencent-native default path, start with
 [docs/TENCENT_CLOUD_REMOTE_FIRST.md](TENCENT_CLOUD_REMOTE_FIRST.md). This file
@@ -11,14 +11,14 @@ is the implementation runbook for the Lighthouse host itself.
 
 ```text
 CNB mirror or GitHub branch
-  -> /opt/whalebro/codewhale
+  -> /opt/whalebro/helpofai
 
 Phone chat app
   -> Feishu/Lark long-connection bot, or Telegram long-polling bot
-  -> codewhale-feishu-bridge.service or codewhale-telegram-bridge.service
-  -> http://127.0.0.1:7878 codewhale serve --http
+  -> helpofai-feishu-bridge.service or helpofai-telegram-bridge.service
+  -> http://127.0.0.1:7878 helpofai serve --http
   -> /opt/whalebro
-       -> codewhale/
+       -> helpofai/
 
 Optional public edge:
 EdgeOne -> Caddy/Nginx public site on Lighthouse
@@ -31,11 +31,11 @@ HTTP service, not the runtime API.
 ## Remote Whalebro Workspace
 
 Use `/opt/whalebro` as the VPS workspace root. The first-class checkout is
-`/opt/whalebro/codewhale`.
+`/opt/whalebro/helpofai`.
 
 Create these paths first:
 
-- `/opt/whalebro/codewhale`
+- `/opt/whalebro/helpofai`
 - `/opt/whalebro/worktrees`
 
 Linux is enough for Rust, Node, and service work. Mac-only release work such
@@ -61,8 +61,8 @@ Use 4 GB RAM for compiling Rust and running the bridge comfortably. A 4 vCPU /
 ## Phone Bridge Choice
 
 Use Telegram for the simplest MVP: create a bot with `@BotFather`, put the
-token in `/etc/codewhale/telegram-bridge.env`, and install services with
-`CODEWHALE_BRIDGE=telegram`.
+token in `/etc/helpofai/telegram-bridge.env`, and install services with
+`HELPOFAI_BRIDGE=telegram`.
 
 Use Feishu/Lark when you specifically want the Tencent-native path, tenant
 controls, or China-enterprise chat integration.
@@ -95,12 +95,12 @@ SSH into the Lighthouse instance and run:
 ```bash
 sudo apt-get update
 sudo apt-get install -y git
-export CODEWHALE_BRANCH=main
-export CODEWHALE_REPO_URL=https://cnb.cool/codewhale.net/codewhale.git
-git clone --branch "$CODEWHALE_BRANCH" "$CODEWHALE_REPO_URL" /tmp/codewhale
-cd /tmp/codewhale
-sudo CODEWHALE_REPO_URL="$CODEWHALE_REPO_URL" \
-  CODEWHALE_REPO_BRANCH="$CODEWHALE_BRANCH" \
+export HELPOFAI_BRANCH=main
+export HELPOFAI_REPO_URL=https://cnb.cool/helpofai.net/helpofai.git
+git clone --branch "$HELPOFAI_BRANCH" "$HELPOFAI_REPO_URL" /tmp/helpofai
+cd /tmp/helpofai
+sudo HELPOFAI_REPO_URL="$HELPOFAI_REPO_URL" \
+  HELPOFAI_REPO_BRANCH="$HELPOFAI_BRANCH" \
   bash scripts/tencent-lighthouse/bootstrap-ubuntu.sh
 ```
 
@@ -108,15 +108,15 @@ Use an SSH repo URL instead if you want push access from the VPS. If the CNB
 mirror is unavailable, fall back to:
 
 ```bash
-export CODEWHALE_REPO_URL=https://github.com/Hmbown/CodeWhale.git
+export HELPOFAI_REPO_URL=https://github.com/helpofai/HelpOfAi-Cli.git
 ```
 
 For stable release docs, confirm the CNB mirror has the branch or tag before
 using it:
 
 ```bash
-export CODEWHALE_REPO_URL=https://cnb.cool/codewhale.net/codewhale.git
-git ls-remote "$CODEWHALE_REPO_URL" \
+export HELPOFAI_REPO_URL=https://cnb.cool/helpofai.net/helpofai.git
+git ls-remote "$HELPOFAI_REPO_URL" \
   refs/heads/main \
   refs/tags/v0.8.37
 ```
@@ -129,16 +129,16 @@ If this deployment setup has not been pushed to Git yet, either push the branch
 first or copy this checkout to the VPS before running these commands. A fresh
 VPS clone cannot see uncommitted local files.
 
-Install Rust 1.88+ for the `codewhale` user, then build both shipped binaries:
+Install Rust 1.88+ for the `helpofai` user, then build both shipped binaries:
 
 ```bash
-sudo -iu codewhale
+sudo -iu helpofai
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh
 sed -n '1,120p' /tmp/rustup-init.sh
 sh /tmp/rustup-init.sh -y --profile minimal
 . "$HOME/.cargo/env"
 rustup default stable
-cd /opt/whalebro/codewhale
+cd /opt/whalebro/helpofai
 cargo install --path crates/cli --locked --force
 cargo install --path crates/tui --locked --force
 exit
@@ -147,23 +147,23 @@ exit
 Copy and install the bridge/service files:
 
 ```bash
-cd /opt/whalebro/codewhale
+cd /opt/whalebro/helpofai
 sudo bash scripts/tencent-lighthouse/install-services.sh
 ```
 
 For Telegram instead of Feishu/Lark:
 
 ```bash
-cd /opt/whalebro/codewhale
-sudo CODEWHALE_BRIDGE=telegram bash scripts/tencent-lighthouse/install-services.sh
+cd /opt/whalebro/helpofai
+sudo HELPOFAI_BRIDGE=telegram bash scripts/tencent-lighthouse/install-services.sh
 ```
 
 After editing both env files, validate the bridge/runtime pairing:
 
 ```bash
-sudo -u codewhale node /opt/codewhale/bridge/scripts/validate-config.mjs \
-  --env /etc/codewhale/feishu-bridge.env \
-  --runtime-env /etc/codewhale/runtime.env \
+sudo -u helpofai node /opt/helpofai/bridge/scripts/validate-config.mjs \
+  --env /etc/helpofai/feishu-bridge.env \
+  --runtime-env /etc/helpofai/runtime.env \
   --workspace-root /opt/whalebro \
   --check-filesystem
 ```
@@ -174,27 +174,27 @@ Generate one runtime token and put the same value in both env files:
 
 ```bash
 openssl rand -hex 32
-sudoedit /etc/codewhale/runtime.env
-sudoedit /etc/codewhale/feishu-bridge.env
+sudoedit /etc/helpofai/runtime.env
+sudoedit /etc/helpofai/feishu-bridge.env
 ```
 
 Required values:
 
-- `/etc/codewhale/runtime.env`
-  - `CODEWHALE_PROVIDER=deepseek`
-  - `CODEWHALE_RUNTIME_TOKEN`
+- `/etc/helpofai/runtime.env`
+  - `HELPOFAI_PROVIDER=deepseek`
+  - `HELPOFAI_RUNTIME_TOKEN`
   - `DEEPSEEK_API_KEY`
-- `/etc/codewhale/feishu-bridge.env`
+- `/etc/helpofai/feishu-bridge.env`
   - `FEISHU_APP_ID`
   - `FEISHU_APP_SECRET`
   - `FEISHU_DOMAIN=feishu` for Feishu, `lark` for Lark
-  - `CODEWHALE_RUNTIME_TOKEN`
+  - `HELPOFAI_RUNTIME_TOKEN`
   - `FEISHU_ALLOW_GROUPS=false` for the first deployment
 
 For first pairing, either:
 
-1. Temporarily set `CODEWHALE_ALLOW_UNLISTED=true`, message the bot, copy the
-   returned `chat_id`, then set `CODEWHALE_CHAT_ALLOWLIST=<chat_id>` and turn
+1. Temporarily set `HELPOFAI_ALLOW_UNLISTED=true`, message the bot, copy the
+   returned `chat_id`, then set `HELPOFAI_CHAT_ALLOWLIST=<chat_id>` and turn
    unlisted access back off.
 2. Or obtain the chat ID from Feishu/Lark event logs and set the allowlist
    before first start.
@@ -202,37 +202,37 @@ For first pairing, either:
 ## Start Services
 
 ```bash
-sudo systemctl start codewhale-runtime
-sudo systemctl status codewhale-runtime --no-pager
+sudo systemctl start helpofai-runtime
+sudo systemctl status helpofai-runtime --no-pager
 curl -s http://127.0.0.1:7878/health
 
-sudo systemctl start codewhale-feishu-bridge
-sudo journalctl -u codewhale-feishu-bridge -f
+sudo systemctl start helpofai-feishu-bridge
+sudo journalctl -u helpofai-feishu-bridge -f
 ```
 
-For Telegram, use `codewhale-telegram-bridge` for the bridge service name.
+For Telegram, use `helpofai-telegram-bridge` for the bridge service name.
 
 Run the Lighthouse doctor after both services are configured:
 
 ```bash
-cd /opt/whalebro/codewhale
+cd /opt/whalebro/helpofai
 sudo bash scripts/tencent-lighthouse/doctor.sh
 ```
 
 For Telegram, run:
 
 ```bash
-sudo CODEWHALE_BRIDGE=telegram bash scripts/tencent-lighthouse/doctor.sh
+sudo HELPOFAI_BRIDGE=telegram bash scripts/tencent-lighthouse/doctor.sh
 ```
 
 Enable on boot is done by `install-services.sh`; if needed:
 
 ```bash
-sudo systemctl enable codewhale-runtime codewhale-feishu-bridge
+sudo systemctl enable helpofai-runtime helpofai-feishu-bridge
 ```
 
-For Telegram, enable `codewhale-telegram-bridge` instead of
-`codewhale-feishu-bridge`.
+For Telegram, enable `helpofai-telegram-bridge` instead of
+`helpofai-feishu-bridge`.
 
 ## Phone Commands
 
@@ -294,7 +294,7 @@ Do not use EdgeOne to expose:
 
 - `http://127.0.0.1:7878`
 - `/v1/*` runtime endpoints
-- any endpoint that accepts `CODEWHALE_RUNTIME_TOKEN`
+- any endpoint that accepts `HELPOFAI_RUNTIME_TOKEN`
 
 ## End-to-End Validation
 
@@ -308,14 +308,14 @@ From a phone DM to the bot:
 5. Trigger a tool approval and verify both `/allow <approval_id>` and
    `/deny <approval_id>` paths.
 6. Restart both services and re-run `/status`.
-7. Reboot the instance, then confirm `systemctl status codewhale-runtime` and
-   `systemctl status codewhale-feishu-bridge` return to active.
+7. Reboot the instance, then confirm `systemctl status helpofai-runtime` and
+   `systemctl status helpofai-feishu-bridge` return to active.
 
 ## Operational Notes
 
-- Bind `codewhale serve --http` to `127.0.0.1`.
+- Bind `helpofai serve --http` to `127.0.0.1`.
 - Keep the Lighthouse firewall focused on SSH for this setup.
 - Use SSH key auth.
 - Use `tmux` for emergency terminal work from Blink/Termius.
-- Keep `/opt/whalebro/codewhale` on a personal branch while working from the
+- Keep `/opt/whalebro/helpofai` on a personal branch while working from the
   phone.

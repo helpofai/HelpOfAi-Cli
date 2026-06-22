@@ -1,6 +1,6 @@
 workflow(
     id = "rlm-cache-change",
-    goal = "Evaluate an RLM/cache routing change with safe mock WhaleFlow IR",
+    goal = "Evaluate an RLM/cache routing change with safe mock HelpFlow IR",
     nodes = [
         branch(
             id = "candidate-branches",
@@ -40,7 +40,7 @@ workflow(
                     children = [
                         test(
                             id = "regression-tests",
-                            command = "cargo test -p codewhale-tui rlm --locked",
+                            command = "cargo test -p helpofai-tui rlm --locked",
                             file_scope = ["crates/tui/src/rlm/**"],
                         ),
                     ],

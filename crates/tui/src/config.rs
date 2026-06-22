@@ -1,4 +1,4 @@
-//! Configuration loading and defaults for codewhale.
+//! Configuration loading and defaults for helpofai.
 
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use codewhale_execpolicy::ExecPolicyEngine;
+use helpofai_execpolicy::ExecPolicyEngine;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 #[cfg(unix)]
@@ -253,7 +253,7 @@ impl ApiProvider {
         {
             return Some(Self::DeepseekCN);
         }
-        codewhale_config::ProviderKind::parse(value).map(Self::from_kind)
+        helpofai_config::ProviderKind::parse(value).map(Self::from_kind)
     }
 
     #[must_use]
@@ -278,7 +278,7 @@ impl ApiProvider {
     /// Returns `None` only for the TUI-only legacy `DeepseekCN` variant, which
     /// intentionally keeps its own config table while sharing DeepSeek auth envs.
     #[must_use]
-    pub fn metadata(self) -> Option<&'static dyn codewhale_config::provider::Provider> {
+    pub fn metadata(self) -> Option<&'static dyn helpofai_config::provider::Provider> {
         self.kind().map(|kind| kind.provider())
     }
 
@@ -286,7 +286,7 @@ impl ApiProvider {
     #[must_use]
     pub fn env_vars(self) -> &'static [&'static str] {
         self.metadata().map_or(
-            codewhale_config::ProviderKind::Deepseek
+            helpofai_config::ProviderKind::Deepseek
                 .provider()
                 .env_vars(),
             |provider| provider.env_vars(),
@@ -302,7 +302,7 @@ impl ApiProvider {
     /// Providers ordered for picker/browsing surfaces.
     #[must_use]
     pub fn sorted_for_display() -> Vec<Self> {
-        codewhale_config::provider::providers_sorted_for_display()
+        helpofai_config::provider::providers_sorted_for_display()
             .iter()
             .map(|provider| Self::from_kind(provider.kind()))
             .collect()
@@ -328,33 +328,33 @@ impl ApiProvider {
 
     /// `ApiProvider` discriminant → `ProviderKind` lookup.
     /// Index 1 is `None` for the legacy `DeepseekCN` variant.
-    const KIND_LOOKUP: [Option<codewhale_config::ProviderKind>; 26] = [
-        Some(codewhale_config::ProviderKind::Deepseek),
+    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 26] = [
+        Some(helpofai_config::ProviderKind::Deepseek),
         None, // DeepseekCN
-        Some(codewhale_config::ProviderKind::NvidiaNim),
-        Some(codewhale_config::ProviderKind::Openai),
-        Some(codewhale_config::ProviderKind::Atlascloud),
-        Some(codewhale_config::ProviderKind::WanjieArk),
-        Some(codewhale_config::ProviderKind::Volcengine),
-        Some(codewhale_config::ProviderKind::Openrouter),
-        Some(codewhale_config::ProviderKind::XiaomiMimo),
-        Some(codewhale_config::ProviderKind::Novita),
-        Some(codewhale_config::ProviderKind::Fireworks),
-        Some(codewhale_config::ProviderKind::Siliconflow),
-        Some(codewhale_config::ProviderKind::SiliconflowCN),
-        Some(codewhale_config::ProviderKind::Arcee),
-        Some(codewhale_config::ProviderKind::Moonshot),
-        Some(codewhale_config::ProviderKind::Sglang),
-        Some(codewhale_config::ProviderKind::Vllm),
-        Some(codewhale_config::ProviderKind::Ollama),
-        Some(codewhale_config::ProviderKind::Huggingface),
-        Some(codewhale_config::ProviderKind::Together),
-        Some(codewhale_config::ProviderKind::OpenaiCodex),
-        Some(codewhale_config::ProviderKind::Anthropic),
-        Some(codewhale_config::ProviderKind::Zai),
-        Some(codewhale_config::ProviderKind::Stepfun),
-        Some(codewhale_config::ProviderKind::Minimax),
-        Some(codewhale_config::ProviderKind::Deepinfra),
+        Some(helpofai_config::ProviderKind::NvidiaNim),
+        Some(helpofai_config::ProviderKind::Openai),
+        Some(helpofai_config::ProviderKind::Atlascloud),
+        Some(helpofai_config::ProviderKind::WanjieArk),
+        Some(helpofai_config::ProviderKind::Volcengine),
+        Some(helpofai_config::ProviderKind::Openrouter),
+        Some(helpofai_config::ProviderKind::XiaomiMimo),
+        Some(helpofai_config::ProviderKind::Novita),
+        Some(helpofai_config::ProviderKind::Fireworks),
+        Some(helpofai_config::ProviderKind::Siliconflow),
+        Some(helpofai_config::ProviderKind::SiliconflowCN),
+        Some(helpofai_config::ProviderKind::Arcee),
+        Some(helpofai_config::ProviderKind::Moonshot),
+        Some(helpofai_config::ProviderKind::Sglang),
+        Some(helpofai_config::ProviderKind::Vllm),
+        Some(helpofai_config::ProviderKind::Ollama),
+        Some(helpofai_config::ProviderKind::Huggingface),
+        Some(helpofai_config::ProviderKind::Together),
+        Some(helpofai_config::ProviderKind::OpenaiCodex),
+        Some(helpofai_config::ProviderKind::Anthropic),
+        Some(helpofai_config::ProviderKind::Zai),
+        Some(helpofai_config::ProviderKind::Stepfun),
+        Some(helpofai_config::ProviderKind::Minimax),
+        Some(helpofai_config::ProviderKind::Deepinfra),
     ];
 
     /// `ProviderKind` discriminant → `ApiProvider` lookup.
@@ -389,13 +389,13 @@ impl ApiProvider {
     /// Map to the config-level `ProviderKind`.
     /// Returns `None` for the legacy `DeepseekCN` variant.
     #[must_use]
-    pub fn kind(self) -> Option<codewhale_config::ProviderKind> {
+    pub fn kind(self) -> Option<helpofai_config::ProviderKind> {
         Self::KIND_LOOKUP[self as usize]
     }
 
     /// Construct from a config-level `ProviderKind`.
     #[must_use]
-    pub fn from_kind(kind: codewhale_config::ProviderKind) -> Self {
+    pub fn from_kind(kind: helpofai_config::ProviderKind) -> Self {
         Self::FROM_KIND_LOOKUP[kind as usize]
     }
 }
@@ -1492,7 +1492,7 @@ pub struct ToolsConfig {
     /// frontmatter header (`# name:`, `# description:`, `# schema:`) are
     /// auto-discovered and registered as tools.
     ///
-    /// Defaults to `~/.codewhale/tools/` when `None`.
+    /// Defaults to `~/.helpofai/tools/` when `None`.
     #[serde(default)]
     pub plugin_dir: Option<String>,
 
@@ -1782,8 +1782,8 @@ pub struct SubagentsConfig {
     /// How many levels of nested sub-agents the interactive `agent` tool may
     /// spawn. `0` disables sub-agents entirely — the `agent` tool refuses to
     /// spawn, a full opt-out; `1` allows one level, `2` two, and so on. When
-    /// unset, defaults to [`codewhale_config::DEFAULT_SPAWN_DEPTH`]; any value
-    /// is clamped to [`codewhale_config::MAX_SPAWN_DEPTH_CEILING`]. Fleet
+    /// unset, defaults to [`helpofai_config::DEFAULT_SPAWN_DEPTH`]; any value
+    /// is clamped to [`helpofai_config::MAX_SPAWN_DEPTH_CEILING`]. Fleet
     /// workers are governed separately by `[fleet.exec] max_spawn_depth`; both
     /// share the same default and ceiling so the limit cannot drift.
     #[serde(default)]
@@ -1909,7 +1909,7 @@ pub struct Config {
     #[serde(alias = "sandboxMode")]
     pub sandbox_mode: Option<String>,
     #[serde(default, alias = "fallbackProviders")]
-    pub fallback_providers: Vec<codewhale_config::ProviderKind>,
+    pub fallback_providers: Vec<helpofai_config::ProviderKind>,
     pub yolo: Option<bool>,
     pub verbosity: Option<String>,
     /// External sandbox backend: `"none"` or `"opensandbox"`.
@@ -1945,7 +1945,7 @@ pub struct Config {
     #[serde(default)]
     pub hooks: Option<HooksConfig>,
 
-    /// Provider-specific credentials and defaults shared with the `codewhale` facade.
+    /// Provider-specific credentials and defaults shared with the `helpofai` facade.
     #[serde(default)]
     pub providers: Option<ProvidersConfig>,
 
@@ -1992,9 +1992,9 @@ pub struct Config {
     pub auto: Option<AutoConfig>,
 
     /// Optional 1-8 hotbar slot bindings (#2064). When absent, hotbar UI and
-    /// dispatch layers use the built-in defaults from `codewhale_config`.
+    /// dispatch layers use the built-in defaults from `helpofai_config`.
     #[serde(default)]
-    pub hotbar: Option<Vec<codewhale_config::HotbarBindingToml>>,
+    pub hotbar: Option<Vec<helpofai_config::HotbarBindingToml>>,
 
     /// Startup update-check behavior. When absent, the TUI keeps the default
     /// fire-and-forget latest-release check.
@@ -2012,13 +2012,13 @@ pub struct Config {
 
     /// Agent Fleet trust/security/role/exec config.
     #[serde(default)]
-    pub fleet: Option<codewhale_config::FleetConfigToml>,
+    pub fleet: Option<helpofai_config::FleetConfigToml>,
 
     /// Sub-agent model overrides.
     #[serde(default)]
     pub subagents: Option<SubagentsConfig>,
 
-    /// Runtime API server tuning (`codewhale serve --http`). Currently only
+    /// Runtime API server tuning (`helpofai serve --http`). Currently only
     /// hosts the CORS allow-list extension (whalescale#255 / #561). When the
     /// table is absent, the daemon ships with localhost:3000 / localhost:1420
     /// / tauri://localhost as the only allowed dev origins.
@@ -2049,7 +2049,7 @@ pub enum ToolOverride {
     /// Run a local script file. The script receives the tool's JSON input
     /// on stdin and must return a JSON `ToolResult` on stdout.
     Script {
-        /// Path to the script (absolute, or relative to `~/.codewhale/tools/`).
+        /// Path to the script (absolute, or relative to `~/.helpofai/tools/`).
         path: String,
         /// Optional static arguments prepended before the tool's JSON input.
         #[serde(default)]
@@ -2108,11 +2108,11 @@ pub struct SkillsConfig {
     /// this limit are rejected during validation. Defaults to 5 MiB.
     #[serde(default)]
     pub max_install_size_bytes: Option<u64>,
-    /// When true, skill discovery scans only CodeWhale-owned skill roots
+    /// When true, skill discovery scans only HelpOfAi-owned skill roots
     /// (plus any explicit `skills_dir`) instead of importing compatible
     /// directories from other AI tools such as Claude, OpenCode, or Cursor.
     #[serde(default, alias = "scanCodewhaleOnly")]
-    pub scan_codewhale_only: Option<bool>,
+    pub scan_helpofai_only: Option<bool>,
 }
 
 impl SkillsConfig {
@@ -2134,12 +2134,12 @@ impl SkillsConfig {
     /// Resolve whether session-time discovery should ignore cross-tool skill
     /// directories. Defaults to the compatibility-preserving broad scan.
     #[must_use]
-    pub fn scan_codewhale_only(&self) -> bool {
-        self.scan_codewhale_only.unwrap_or(false)
+    pub fn scan_helpofai_only(&self) -> bool {
+        self.scan_helpofai_only.unwrap_or(false)
     }
 }
 
-/// `[network]` table — mirrors `codewhale_config::NetworkPolicyToml` so the live
+/// `[network]` table — mirrors `helpofai_config::NetworkPolicyToml` so the live
 /// TUI runtime can construct a [`crate::network_policy::NetworkPolicy`]
 /// without reaching into the workspace config crate. See `config.example.toml`
 /// for documentation.
@@ -2926,7 +2926,7 @@ impl Config {
         // intentional override must win over the saved root key. This is
         // essential for DeepSeek-compatible subscription endpoints where the
         // user runs something like:
-        //   codewhale --provider deepseek --api-key ark-... --base-url ... --model auto
+        //   helpofai --provider deepseek --api-key ark-... --base-url ... --model auto
         if matches!(provider, ApiProvider::Deepseek | ApiProvider::DeepseekCN)
             && std::env::var("DEEPSEEK_API_KEY_SOURCE").as_deref() == Ok("cli")
             && let Some(env_key) = provider_env_api_key(provider)
@@ -2960,7 +2960,7 @@ impl Config {
         }
 
         // 1. Config file (provider-scoped slot). This intentionally wins
-        // over ambient env so `codewhale auth set` fixes stale shell exports.
+        // over ambient env so `helpofai auth set` fixes stale shell exports.
         if let Some(configured) = self
             .provider_config_string_with_runtime_fallback(provider, |entry| entry.api_key.clone())
             && !configured.trim().is_empty()
@@ -2995,23 +2995,23 @@ impl Config {
                  \n\
                  1. Get a key:  https://platform.deepseek.com/api_keys\n\
                  2. Save it (works in every folder, no OS prompts):\n\
-                        codewhale auth set --provider deepseek\n\
+                        helpofai auth set --provider deepseek\n\
                  \n\
                  Alternatives:\n\
                    • export DEEPSEEK_API_KEY=<your-key>      (current shell only;\n\
                      also note: zsh users — exports in ~/.zshrc only reach interactive\n\
                      shells, prefer ~/.zshenv for everything)\n\
-                   • api_key = \"<your-key>\"  in ~/.codewhale/config.toml"
+                   • api_key = \"<your-key>\"  in ~/.helpofai/config.toml"
             ),
             ApiProvider::SiliconflowCn => anyhow::bail!(
-                "SiliconFlow China API key not found. Run 'codewhale auth set --provider siliconflow-CN', \
-                 set {}, or add [{}] api_key in ~/.codewhale/config.toml. \
+                "SiliconFlow China API key not found. Run 'helpofai auth set --provider siliconflow-CN', \
+                 set {}, or add [{}] api_key in ~/.helpofai/config.toml. \
                  [providers.siliconflow] remains a fallback when the CN table omits api_key.",
                 provider.env_vars_label(),
                 provider_config_table_name(provider)?
             ),
             ApiProvider::Moonshot => anyhow::bail!(
-                "Moonshot/Kimi API key not found. Run 'codewhale auth set --provider moonshot', \
+                "Moonshot/Kimi API key not found. Run 'helpofai auth set --provider moonshot', \
                  set {}, or add [{}] api_key. \
                  For a Kimi Code plan key, set [providers.moonshot] base_url = \
                  \"https://api.kimi.com/coding/v1\" and model = \"kimi-for-coding\".",
@@ -3025,9 +3025,9 @@ impl Config {
             ApiProvider::OpenaiCodex => anyhow::bail!(
                 "OpenAI Codex OAuth credentials not found.\n\
                  \n\
-                 CodeWhale uses your existing ChatGPT/Codex login.\n\
+                 HelpOfAi uses your existing ChatGPT/Codex login.\n\
                  1. Run: codex login      (or use the Codex CLI to authenticate)\n\
-                 2. CodeWhale will read credentials from ~/.codex/auth.json\n\
+                 2. HelpOfAi will read credentials from ~/.codex/auth.json\n\
                  \n\
                  Env overrides:\n\
                    OPENAI_CODEX_ACCESS_TOKEN  or  CODEX_ACCESS_TOKEN"
@@ -3174,17 +3174,17 @@ impl Config {
 
     /// How many levels of nested sub-agents the interactive `agent` tool may
     /// spawn. Reads `[subagents] max_depth`; when unset it defaults to
-    /// [`codewhale_config::DEFAULT_SPAWN_DEPTH`]. `0` is a valid value that
+    /// [`helpofai_config::DEFAULT_SPAWN_DEPTH`]. `0` is a valid value that
     /// disables sub-agent spawning entirely (full opt-out). Any value is
-    /// clamped to [`codewhale_config::MAX_SPAWN_DEPTH_CEILING`] so the
+    /// clamped to [`helpofai_config::MAX_SPAWN_DEPTH_CEILING`] so the
     /// operator's choice can never exceed the hard recursion ceiling.
     #[must_use]
     pub fn subagent_max_spawn_depth(&self) -> u32 {
         self.subagents
             .as_ref()
             .and_then(|cfg| cfg.max_depth)
-            .unwrap_or(codewhale_config::DEFAULT_SPAWN_DEPTH)
-            .min(codewhale_config::MAX_SPAWN_DEPTH_CEILING)
+            .unwrap_or(helpofai_config::DEFAULT_SPAWN_DEPTH)
+            .min(helpofai_config::MAX_SPAWN_DEPTH_CEILING)
     }
 
     /// Number of direct (depth-1) sub-agents that may execute concurrently
@@ -3354,8 +3354,8 @@ impl Config {
     pub fn resolve_hotbar_bindings(
         &self,
         known_action_ids: &[&str],
-    ) -> codewhale_config::HotbarConfigResolution {
-        codewhale_config::resolve_hotbar_bindings(self.hotbar.as_deref(), known_action_ids)
+    ) -> helpofai_config::HotbarConfigResolution {
+        helpofai_config::resolve_hotbar_bindings(self.hotbar.as_deref(), known_action_ids)
     }
 
     /// Resolve enabled features from defaults and config entries.
@@ -3435,8 +3435,8 @@ fn default_config_path() -> Option<PathBuf> {
     env_config_path().or_else(home_config_path)
 }
 
-fn codewhale_home_dir() -> Option<PathBuf> {
-    std::env::var_os("CODEWHALE_HOME").and_then(|path| {
+fn helpofai_home_dir() -> Option<PathBuf> {
+    std::env::var_os("HELPOFAI_HOME").and_then(|path| {
         let path = PathBuf::from(path);
         (!path.as_os_str().is_empty()).then_some(path)
     })
@@ -3474,12 +3474,12 @@ pub(crate) fn effective_home_dir() -> Option<PathBuf> {
 }
 
 fn home_config_path() -> Option<PathBuf> {
-    if let Some(home) = codewhale_home_dir() {
+    if let Some(home) = helpofai_home_dir() {
         return Some(home.join("config.toml"));
     }
 
     effective_home_dir().map(|home| {
-        let primary = home.join(".codewhale").join("config.toml");
+        let primary = home.join(".helpofai").join("config.toml");
         if primary.exists() {
             return primary;
         }
@@ -3496,15 +3496,15 @@ pub(crate) fn workspace_trust_config_candidate_paths() -> Vec<PathBuf> {
         return vec![path];
     }
 
-    if let Some(codewhale_home) = codewhale_home_dir() {
-        return vec![codewhale_home.join("config.toml")];
+    if let Some(helpofai_home) = helpofai_home_dir() {
+        return vec![helpofai_home.join("config.toml")];
     }
 
     let Some(home) = effective_home_dir() else {
         return Vec::new();
     };
     vec![
-        home.join(".codewhale").join("config.toml"),
+        home.join(".helpofai").join("config.toml"),
         home.join(".deepseek").join("config.toml"),
     ]
 }
@@ -3587,7 +3587,7 @@ fn canonicalize_or_keep(path: &Path) -> PathBuf {
 }
 
 fn env_config_path() -> Option<PathBuf> {
-    if let Ok(path) = std::env::var("CODEWHALE_CONFIG_PATH") {
+    if let Ok(path) = std::env::var("HELPOFAI_CONFIG_PATH") {
         let trimmed = path.trim();
         if !trimmed.is_empty() {
             return Some(expand_path(trimmed));
@@ -3633,7 +3633,7 @@ pub(crate) fn resolve_load_config_path(path: Option<PathBuf>) -> Option<PathBuf>
 
 /// Create an inspectable config file on first interactive launch.
 ///
-/// The file intentionally omits `api_key`; onboarding or `codewhale auth set`
+/// The file intentionally omits `api_key`; onboarding or `helpofai auth set`
 /// writes that field after the user supplies a key.
 pub fn ensure_config_file_exists(path: Option<PathBuf>) -> Result<Option<PathBuf>> {
     let config_path = path
@@ -3646,9 +3646,9 @@ pub fn ensure_config_file_exists(path: Option<PathBuf>) -> Result<Option<PathBuf
 
     ensure_parent_dir(&config_path)?;
     let content = format!(
-        r#"# codewhale Configuration
+        r#"# helpofai Configuration
 # Get your API key from https://platform.deepseek.com
-# Save it with: codewhale auth set --provider deepseek
+# Save it with: helpofai auth set --provider deepseek
 
 # Base URL (default: https://api.deepseek.com/beta)
 # Set https://api.deepseek.com to opt out of beta features.
@@ -3665,7 +3665,7 @@ reasoning_effort = "auto"
 # Startup update check
 [update]
 check_for_updates = true
-# update_uri = "https://internal.mirror.example/codewhale/releases/latest"
+# update_uri = "https://internal.mirror.example/helpofai/releases/latest"
 "#
     );
     write_config_file_secure(&config_path, &content)
@@ -3681,7 +3681,7 @@ fn default_managed_config_path() -> Option<PathBuf> {
     #[cfg(not(unix))]
     {
         effective_home_dir().map(|home| {
-            let primary = home.join(".codewhale").join("managed_config.toml");
+            let primary = home.join(".helpofai").join("managed_config.toml");
             if primary.exists() {
                 return primary;
             }
@@ -3698,7 +3698,7 @@ fn default_requirements_path() -> Option<PathBuf> {
     #[cfg(not(unix))]
     {
         effective_home_dir().map(|home| {
-            let primary = home.join(".codewhale").join("requirements.toml");
+            let primary = home.join(".helpofai").join("requirements.toml");
             if primary.exists() {
                 return primary;
             }
@@ -3724,12 +3724,12 @@ pub(crate) fn expand_path(path: &str) -> PathBuf {
 }
 
 fn default_skills_dir() -> Option<PathBuf> {
-    effective_home_dir().map(|home| home.join(".codewhale").join("skills"))
+    effective_home_dir().map(|home| home.join(".helpofai").join("skills"))
 }
 
 fn default_mcp_config_path() -> Option<PathBuf> {
     effective_home_dir().map(|home| {
-        let primary = home.join(".codewhale").join("mcp.json");
+        let primary = home.join(".helpofai").join("mcp.json");
         if primary.exists() {
             return primary;
         }
@@ -3743,7 +3743,7 @@ fn default_mcp_config_path() -> Option<PathBuf> {
 
 fn default_notes_path() -> Option<PathBuf> {
     effective_home_dir().map(|home| {
-        let primary = home.join(".codewhale").join("notes.txt");
+        let primary = home.join(".helpofai").join("notes.txt");
         if primary.exists() {
             return primary;
         }
@@ -3757,7 +3757,7 @@ fn default_notes_path() -> Option<PathBuf> {
 
 fn default_memory_path() -> Option<PathBuf> {
     effective_home_dir().map(|home| {
-        let primary = home.join(".codewhale").join("memory.md");
+        let primary = home.join(".helpofai").join("memory.md");
         if primary.exists() {
             return primary;
         }
@@ -3771,23 +3771,20 @@ fn default_memory_path() -> Option<PathBuf> {
 
 // === Environment Overrides ===
 
-/// Read the `DEEPSEEK_BASE_URL` / `CODEWHALE_BASE_URL` env var that the CLI
+/// Read the `DEEPSEEK_BASE_URL` / `HELPOFAI_BASE_URL` env var that the CLI
 /// dispatcher forwards from `--base-url`.  Returns `None` when the var is
 /// absent or empty so that provider-specific defaults still apply.
 fn env_base_url_override() -> Option<String> {
-    codewhale_env_var("CODEWHALE_BASE_URL", "DEEPSEEK_BASE_URL")
+    helpofai_env_var("HELPOFAI_BASE_URL", "DEEPSEEK_BASE_URL")
         .ok()
         .filter(|v| !v.trim().is_empty())
 }
 
-/// Resolve an env var, preferring the `CODEWHALE_*` form over the
+/// Resolve an env var, preferring the `HELPOFAI_*` form over the
 /// legacy `DEEPSEEK_*` form. Empty values are ignored so a blank shell export
 /// does not erase configured provider settings.
-fn codewhale_env_var(
-    codewhale_name: &str,
-    legacy_name: &str,
-) -> Result<String, std::env::VarError> {
-    std::env::var(codewhale_name)
+fn helpofai_env_var(helpofai_name: &str, legacy_name: &str) -> Result<String, std::env::VarError> {
+    std::env::var(helpofai_name)
         .ok()
         .filter(|value| !value.trim().is_empty())
         .or_else(|| {
@@ -3799,10 +3796,10 @@ fn codewhale_env_var(
 }
 
 fn apply_env_overrides(config: &mut Config) {
-    if let Ok(value) = codewhale_env_var("CODEWHALE_PROVIDER", "DEEPSEEK_PROVIDER") {
+    if let Ok(value) = helpofai_env_var("HELPOFAI_PROVIDER", "DEEPSEEK_PROVIDER") {
         config.provider = Some(value);
     }
-    if let Ok(value) = codewhale_env_var("CODEWHALE_BASE_URL", "DEEPSEEK_BASE_URL") {
+    if let Ok(value) = helpofai_env_var("HELPOFAI_BASE_URL", "DEEPSEEK_BASE_URL") {
         match config.api_provider() {
             ApiProvider::Deepseek | ApiProvider::DeepseekCN => {
                 config.base_url = Some(value);
@@ -4334,7 +4331,7 @@ fn apply_env_overrides(config: &mut Config) {
             .huggingface
             .model = Some(value);
     }
-    if let Some(value) = codewhale_env_var("CODEWHALE_MODEL", "DEEPSEEK_MODEL")
+    if let Some(value) = helpofai_env_var("HELPOFAI_MODEL", "DEEPSEEK_MODEL")
         .ok()
         .or_else(|| {
             std::env::var("DEEPSEEK_DEFAULT_TEXT_MODEL")
@@ -4429,7 +4426,7 @@ fn apply_env_overrides(config: &mut Config) {
         config.yolo = Some(value == "1" || value.eq_ignore_ascii_case("true"));
     }
     if let Ok(value) =
-        std::env::var("CODEWHALE_VERBOSITY").or_else(|_| std::env::var("DEEPSEEK_VERBOSITY"))
+        std::env::var("HELPOFAI_VERBOSITY").or_else(|_| std::env::var("DEEPSEEK_VERBOSITY"))
     {
         config.verbosity = Some(value);
     }
@@ -4453,7 +4450,7 @@ fn apply_env_overrides(config: &mut Config) {
             .get_or_insert_with(SearchConfig::default)
             .api_key = Some(value);
     }
-    if let Ok(value) = codewhale_env_var("CODEWHALE_SEARCH_BASE_URL", "DEEPSEEK_SEARCH_BASE_URL") {
+    if let Ok(value) = helpofai_env_var("HELPOFAI_SEARCH_BASE_URL", "DEEPSEEK_SEARCH_BASE_URL") {
         config
             .search
             .get_or_insert_with(SearchConfig::default)
@@ -5005,7 +5002,7 @@ fn load_sibling_exec_policy_engine(config_path: Option<&Path>) -> Result<ExecPol
     let Some(config_path) = config_path else {
         return Ok(ExecPolicyEngine::new(Vec::new(), Vec::new()));
     };
-    let permissions_path = codewhale_config::permissions_path_for_config_path(config_path);
+    let permissions_path = helpofai_config::permissions_path_for_config_path(config_path);
     if !permissions_path.exists() {
         return Ok(ExecPolicyEngine::new(Vec::new(), Vec::new()));
     }
@@ -5016,7 +5013,7 @@ fn load_sibling_exec_policy_engine(config_path: Option<&Path>) -> Result<ExecPol
             permissions_path.display()
         )
     })?;
-    let permissions: codewhale_config::PermissionsToml =
+    let permissions: helpofai_config::PermissionsToml =
         toml::from_str(&raw).with_context(|| {
             format!(
                 "Failed to parse permissions file: {}",
@@ -5043,9 +5040,7 @@ fn merge_skills_config(
             max_install_size_bytes: override_cfg
                 .max_install_size_bytes
                 .or(base.max_install_size_bytes),
-            scan_codewhale_only: override_cfg
-                .scan_codewhale_only
-                .or(base.scan_codewhale_only),
+            scan_helpofai_only: override_cfg.scan_helpofai_only.or(base.scan_helpofai_only),
         }),
     }
 }
@@ -5113,7 +5108,7 @@ fn load_single_config_file(path: &Path) -> Result<Config> {
 }
 
 /// Build a one-line warning when top-level-only keys are nested under a section
-/// CodeWhale does not define (`[general]` / `[sandbox]`). TOML silently drops
+/// HelpOfAi does not define (`[general]` / `[sandbox]`). TOML silently drops
 /// those keys, so e.g. `[general]\nallow_shell = true` never takes effect and
 /// the shell tools (`exec_shell`, `task_shell_start`, …) are absent from the
 /// catalog with no explanation. Returns `None` when nothing is misplaced.
@@ -5122,7 +5117,7 @@ fn load_single_config_file(path: &Path) -> Result<Config> {
 /// belong at the top of the file, above any `[section]` header.
 fn warn_on_misplaced_top_level_keys(raw: &str) -> Option<String> {
     let doc = toml::from_str::<toml::Value>(raw).ok()?;
-    // Sections CodeWhale does not recognize but users nest settings under.
+    // Sections HelpOfAi does not recognize but users nest settings under.
     const UNKNOWN_SECTIONS: &[&str] = &["general", "sandbox"];
     // Keys that are only ever read from the top level of the config.
     const TOP_LEVEL_KEYS: &[&str] = &[
@@ -5147,7 +5142,7 @@ fn warn_on_misplaced_top_level_keys(raw: &str) -> Option<String> {
         return None;
     }
     Some(format!(
-        "Ignoring {} — CodeWhale has no `[general]` or `[sandbox]` section, so these \
+        "Ignoring {} — HelpOfAi has no `[general]` or `[sandbox]` section, so these \
          keys are silently dropped. Move them to the TOP of the config file (above any \
          `[section]` header), e.g. `allow_shell = true`. Until then, shell tools stay \
          disabled. (#2589)",
@@ -5262,7 +5257,7 @@ pub fn ensure_parent_dir(path: &Path) -> Result<()> {
                     perms.set_mode(mode & !0o077);
                     if let Err(err) = fs::set_permissions(parent, perms) {
                         tracing::warn!(
-                            target: "codewhale::config",
+                            target: "helpofai::config",
                             path = %parent.display(),
                             error = %err,
                             "could not tighten parent dir permissions; \
@@ -5300,7 +5295,7 @@ fn write_config_file_secure(path: &Path, content: &str) -> Result<()> {
         // system's native ACL model is doing the access control.
         if let Err(err) = file.set_permissions(fs::Permissions::from_mode(0o600)) {
             tracing::warn!(
-                target: "codewhale::config",
+                target: "helpofai::config",
                 path = %path.display(),
                 error = %err,
                 "could not enforce 0o600 on config file; filesystem may \
@@ -5320,22 +5315,22 @@ fn write_config_file_secure(path: &Path, content: &str) -> Result<()> {
 /// the caller can show a confirmation message without leaking the key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavedCredential {
-    /// Stored in **both** the OS keyring and the codewhale config file.
+    /// Stored in **both** the OS keyring and the helpofai config file.
     /// This is the default outcome on platforms with a working keyring
     /// backend: writing both layers defeats the
     /// `keyring → env → config-file` resolution-order shadow that
     /// would otherwise let a stale OS-keyring entry from a previous
     /// install hide the freshly-entered key (#593). The `backend`
-    /// label is the value of [`codewhale_secrets::Secrets::backend_name`]
+    /// label is the value of [`helpofai_secrets::Secrets::backend_name`]
     /// at write time so the toast text can name the actual backend
-    /// (`"system keyring"`, `"file-based (~/.codewhale/secrets/)"`).
+    /// (`"system keyring"`, `"file-based (~/.helpofai/secrets/)"`).
     KeyringAndConfigFile {
         /// `Secrets::backend_name()` at write time.
         backend: String,
         /// Absolute path to the config file that was also updated.
         path: PathBuf,
     },
-    /// Stored in the codewhale config file only. Fallback when no
+    /// Stored in the helpofai config file only. Fallback when no
     /// keyring backend is reachable, or under `cfg(test)` so unit
     /// tests don't pollute the host keyring.
     ConfigFile(PathBuf),
@@ -5357,8 +5352,8 @@ impl SavedCredential {
 
 /// Save the active provider's API key.
 ///
-/// **Dual-write strategy (#593):** writes to `~/.codewhale/config.toml`
-/// (always) and to the OS keyring via [`codewhale_secrets::Secrets`]
+/// **Dual-write strategy (#593):** writes to `~/.helpofai/config.toml`
+/// (always) and to the OS keyring via [`helpofai_secrets::Secrets`]
 /// (when a backend is reachable). The runtime resolves credentials in
 /// `keyring → env → config-file` order; writing to the config file
 /// alone — as v0.8.8 through v0.8.10 did — let a stale keyring entry
@@ -5396,7 +5391,7 @@ pub fn save_api_key(api_key: &str) -> Result<SavedCredential> {
     // cross-test contamination).
     #[cfg(not(test))]
     {
-        let secrets = codewhale_secrets::Secrets::auto_detect();
+        let secrets = helpofai_secrets::Secrets::auto_detect();
         match secrets.set("deepseek", trimmed) {
             Ok(()) => {
                 let backend = secrets.backend_name().to_string();
@@ -5458,7 +5453,7 @@ fn save_api_key_to_config_file(api_key: &str) -> Result<PathBuf> {
     } else {
         // Create new minimal config
         format!(
-            r#"# codewhale Configuration
+            r#"# helpofai Configuration
 # Get your API key from https://platform.deepseek.com
 # Or set DEEPSEEK_API_KEY environment variable
 
@@ -5498,7 +5493,7 @@ reasoning_effort = "max"
 /// Platform credential stores are intentionally not queried here.
 /// Startup/onboarding checks must be cheap and prompt-free, so v0.8.8
 /// keeps the default auth path to environment variables and
-/// `~/.codewhale/config.toml`.
+/// `~/.helpofai/config.toml`.
 ///
 /// Used by [`crate::tui::app::App::new`] to decide whether to gate
 /// the user behind the in-TUI api-key onboarding screen — getting
@@ -5614,7 +5609,7 @@ pub fn has_api_key_for(config: &Config, provider: ApiProvider) -> bool {
 
 /// Save an API key to the appropriate place for the given provider.
 /// DeepSeek goes through [`save_api_key`]. Other providers write
-/// `[providers.<name>] api_key = "..."` to `~/.codewhale/config.toml`.
+/// `[providers.<name>] api_key = "..."` to `~/.helpofai/config.toml`.
 /// Returns the config file path.
 pub fn save_api_key_for(provider: ApiProvider, api_key: &str) -> Result<PathBuf> {
     if matches!(provider, ApiProvider::Deepseek | ApiProvider::DeepseekCN) {
@@ -5745,7 +5740,7 @@ fn provider_env_api_key(provider: ApiProvider) -> Option<String> {
 
 fn missing_provider_api_key_message(provider: ApiProvider) -> Result<String> {
     Ok(format!(
-        "{} API key not found. Run 'codewhale auth set --provider {}', set {}, or add [{}] api_key in ~/.codewhale/config.toml.",
+        "{} API key not found. Run 'helpofai auth set --provider {}', set {}, or add [{}] api_key in ~/.helpofai/config.toml.",
         provider.display_name(),
         provider.as_str(),
         provider.env_vars_label(),
@@ -5903,7 +5898,7 @@ fn write_kimi_oauth_credential(path: &Path, credential: &KimiOAuthCredential) ->
     #[cfg(unix)]
     if let Err(err) = fs::set_permissions(path, fs::Permissions::from_mode(0o600)) {
         tracing::warn!(
-            target: "codewhale::config",
+            target: "helpofai::config",
             path = %path.display(),
             error = %err,
             "could not enforce 0o600 on Kimi OAuth credentials; relying on host ACLs"
@@ -6056,13 +6051,13 @@ mod tests {
     fn api_provider_metadata_helpers_follow_config_provider_metadata() {
         let sorted = ApiProvider::sorted_for_display();
         let expected_sorted: Vec<ApiProvider> =
-            codewhale_config::provider::providers_sorted_for_display()
+            helpofai_config::provider::providers_sorted_for_display()
                 .iter()
                 .map(|provider| ApiProvider::from_kind(provider.kind()))
                 .collect();
         assert_eq!(sorted, expected_sorted);
 
-        for kind in codewhale_config::ProviderKind::ALL {
+        for kind in helpofai_config::ProviderKind::ALL {
             let provider = ApiProvider::from_kind(kind);
             let metadata = provider.metadata().expect("metadata-backed provider");
             assert_eq!(metadata.kind(), kind);
@@ -6076,7 +6071,7 @@ mod tests {
         assert_eq!(ApiProvider::DeepseekCN.metadata().map(|p| p.kind()), None);
         assert_eq!(
             ApiProvider::DeepseekCN.env_vars(),
-            codewhale_config::ProviderKind::Deepseek
+            helpofai_config::ProviderKind::Deepseek
                 .provider()
                 .env_vars()
         );
@@ -6088,9 +6083,9 @@ mod tests {
 
     #[test]
     fn provider_config_key_follows_config_provider_metadata() {
-        for kind in codewhale_config::ProviderKind::ALL
+        for kind in helpofai_config::ProviderKind::ALL
             .into_iter()
-            .filter(|kind| *kind != codewhale_config::ProviderKind::Deepseek)
+            .filter(|kind| *kind != helpofai_config::ProviderKind::Deepseek)
         {
             let provider = ApiProvider::from_kind(kind);
             assert_eq!(
@@ -6189,7 +6184,7 @@ mod tests {
         let config_path = dir.path().join("config.toml");
         fs::write(&config_path, "model = \"deepseek-v4-pro\"\n").expect("write config");
         fs::write(
-            dir.path().join(codewhale_config::PERMISSIONS_FILE_NAME),
+            dir.path().join(helpofai_config::PERMISSIONS_FILE_NAME),
             r#"
 [[rules]]
 tool = "exec_shell"
@@ -6201,12 +6196,12 @@ command = "cargo test"
         let config = Config::load(Some(config_path), None).expect("load config");
         let decision = config
             .exec_policy_engine
-            .check(codewhale_execpolicy::ExecPolicyContext {
+            .check(helpofai_execpolicy::ExecPolicyContext {
                 command: "cargo test --workspace",
                 cwd: dir.path().to_string_lossy().as_ref(),
                 tool: Some("exec_shell"),
                 path: None,
-                ask_for_approval: codewhale_execpolicy::AskForApproval::OnFailure,
+                ask_for_approval: helpofai_execpolicy::AskForApproval::OnFailure,
                 sandbox_mode: None,
             })
             .expect("check permission");
@@ -6224,7 +6219,7 @@ command = "cargo test"
         let dir = tempfile::tempdir().expect("tempdir");
         let config_path = dir.path().join("config.toml");
         fs::write(
-            dir.path().join(codewhale_config::PERMISSIONS_FILE_NAME),
+            dir.path().join(helpofai_config::PERMISSIONS_FILE_NAME),
             r#"
 [[rules]]
 tool = "exec_shell"
@@ -6236,12 +6231,12 @@ command = "npm test"
         let config = Config::load(Some(config_path), None).expect("load config");
         let decision = config
             .exec_policy_engine
-            .check(codewhale_execpolicy::ExecPolicyContext {
+            .check(helpofai_execpolicy::ExecPolicyContext {
                 command: "npm test -- --runInBand",
                 cwd: dir.path().to_string_lossy().as_ref(),
                 tool: Some("exec_shell"),
                 path: None,
-                ask_for_approval: codewhale_execpolicy::AskForApproval::OnFailure,
+                ask_for_approval: helpofai_execpolicy::AskForApproval::OnFailure,
                 sandbox_mode: None,
             })
             .expect("check permission");
@@ -6275,17 +6270,17 @@ command = "npm test"
     }
 
     #[test]
-    fn load_honors_codewhale_home_for_primary_config_path() -> Result<()> {
+    fn load_honors_helpofai_home_for_primary_config_path() -> Result<()> {
         let _lock = lock_test_env();
         let dir = tempfile::tempdir()?;
-        let codewhale_home = dir.path().join("isolated-codewhale");
-        fs::create_dir_all(&codewhale_home)?;
-        fs::write(codewhale_home.join("config.toml"), "provider = \"zai\"\n")?;
-        let _codewhale_home = EnvVarGuard::set("CODEWHALE_HOME", codewhale_home.as_os_str());
-        let _codewhale_config = EnvVarGuard::remove("CODEWHALE_CONFIG_PATH");
+        let helpofai_home = dir.path().join("isolated-helpofai");
+        fs::create_dir_all(&helpofai_home)?;
+        fs::write(helpofai_home.join("config.toml"), "provider = \"zai\"\n")?;
+        let _helpofai_home = EnvVarGuard::set("HELPOFAI_HOME", helpofai_home.as_os_str());
+        let _helpofai_config = EnvVarGuard::remove("HELPOFAI_CONFIG_PATH");
         let _deepseek_config = EnvVarGuard::remove("DEEPSEEK_CONFIG_PATH");
 
-        let expected = codewhale_home.join("config.toml");
+        let expected = helpofai_home.join("config.toml");
         assert_eq!(default_config_path().as_deref(), Some(expected.as_path()));
         let config = Config::load(None, None)?;
 
@@ -6297,10 +6292,10 @@ command = "npm test"
     fn load_accepts_dispatcher_written_camel_case_config_shape() -> Result<()> {
         let _lock = lock_test_env();
         let dir = tempfile::tempdir()?;
-        let codewhale_home = dir.path().join("isolated-codewhale");
-        fs::create_dir_all(&codewhale_home)?;
+        let helpofai_home = dir.path().join("isolated-helpofai");
+        fs::create_dir_all(&helpofai_home)?;
         fs::write(
-            codewhale_home.join("config.toml"),
+            helpofai_home.join("config.toml"),
             r#"
 provider = "zai"
 fallbackProviders = []
@@ -6323,8 +6318,8 @@ subagents = true
 web_search = true
 "#,
         )?;
-        let _codewhale_home = EnvVarGuard::set("CODEWHALE_HOME", codewhale_home.as_os_str());
-        let _codewhale_config = EnvVarGuard::remove("CODEWHALE_CONFIG_PATH");
+        let _helpofai_home = EnvVarGuard::set("HELPOFAI_HOME", helpofai_home.as_os_str());
+        let _helpofai_config = EnvVarGuard::remove("HELPOFAI_CONFIG_PATH");
         let _deepseek_config = EnvVarGuard::remove("DEEPSEEK_CONFIG_PATH");
 
         let config = Config::load(None, None)?;
@@ -6654,10 +6649,10 @@ action = "session.compact"
     #[test]
     fn apply_env_overrides_sets_search_base_url() {
         let _guard = lock_test_env();
-        let prev_codewhale = env::var_os("CODEWHALE_SEARCH_BASE_URL");
+        let prev_helpofai = env::var_os("HELPOFAI_SEARCH_BASE_URL");
         let prev_deepseek = env::var_os("DEEPSEEK_SEARCH_BASE_URL");
         unsafe {
-            env::remove_var("CODEWHALE_SEARCH_BASE_URL");
+            env::remove_var("HELPOFAI_SEARCH_BASE_URL");
             env::set_var(
                 "DEEPSEEK_SEARCH_BASE_URL",
                 "https://search.internal.example/html/",
@@ -6668,7 +6663,7 @@ action = "session.compact"
         apply_env_overrides(&mut config);
 
         unsafe {
-            EnvGuard::restore_var("CODEWHALE_SEARCH_BASE_URL", prev_codewhale);
+            EnvGuard::restore_var("HELPOFAI_SEARCH_BASE_URL", prev_helpofai);
             EnvGuard::restore_var("DEEPSEEK_SEARCH_BASE_URL", prev_deepseek);
         }
         assert_eq!(
@@ -6678,14 +6673,14 @@ action = "session.compact"
     }
 
     #[test]
-    fn codewhale_search_base_url_env_wins_over_legacy_alias() {
+    fn helpofai_search_base_url_env_wins_over_legacy_alias() {
         let _guard = lock_test_env();
-        let prev_codewhale = env::var_os("CODEWHALE_SEARCH_BASE_URL");
+        let prev_helpofai = env::var_os("HELPOFAI_SEARCH_BASE_URL");
         let prev_deepseek = env::var_os("DEEPSEEK_SEARCH_BASE_URL");
         unsafe {
             env::set_var(
-                "CODEWHALE_SEARCH_BASE_URL",
-                "https://codewhale-search.example/html/",
+                "HELPOFAI_SEARCH_BASE_URL",
+                "https://helpofai-search.example/html/",
             );
             env::set_var(
                 "DEEPSEEK_SEARCH_BASE_URL",
@@ -6697,12 +6692,12 @@ action = "session.compact"
         apply_env_overrides(&mut config);
 
         unsafe {
-            EnvGuard::restore_var("CODEWHALE_SEARCH_BASE_URL", prev_codewhale);
+            EnvGuard::restore_var("HELPOFAI_SEARCH_BASE_URL", prev_helpofai);
             EnvGuard::restore_var("DEEPSEEK_SEARCH_BASE_URL", prev_deepseek);
         }
         assert_eq!(
             config.search.and_then(|search| search.base_url),
-            Some("https://codewhale-search.example/html/".to_string())
+            Some("https://helpofai-search.example/html/".to_string())
         );
     }
 
@@ -6729,10 +6724,10 @@ action = "session.compact"
     struct EnvGuard {
         home: Option<OsString>,
         userprofile: Option<OsString>,
-        codewhale_home: Option<OsString>,
-        codewhale_config_path: Option<OsString>,
+        helpofai_home: Option<OsString>,
+        helpofai_config_path: Option<OsString>,
         deepseek_config_path: Option<OsString>,
-        codewhale_secret_backend: Option<OsString>,
+        helpofai_secret_backend: Option<OsString>,
         deepseek_secret_backend: Option<OsString>,
         deepseek_provider: Option<OsString>,
         deepseek_api_key: Option<OsString>,
@@ -6740,9 +6735,9 @@ action = "session.compact"
         deepseek_http_headers: Option<OsString>,
         deepseek_model: Option<OsString>,
         deepseek_default_text_model: Option<OsString>,
-        codewhale_provider: Option<OsString>,
-        codewhale_model: Option<OsString>,
-        codewhale_base_url: Option<OsString>,
+        helpofai_provider: Option<OsString>,
+        helpofai_model: Option<OsString>,
+        helpofai_base_url: Option<OsString>,
         nvidia_api_key: Option<OsString>,
         nvidia_nim_api_key: Option<OsString>,
         nim_base_url: Option<OsString>,
@@ -6833,10 +6828,10 @@ action = "session.compact"
             let config_str = OsString::from(config_path.as_os_str());
             let home_prev = env::var_os("HOME");
             let userprofile_prev = env::var_os("USERPROFILE");
-            let codewhale_home_prev = env::var_os("CODEWHALE_HOME");
-            let codewhale_config_prev = env::var_os("CODEWHALE_CONFIG_PATH");
+            let helpofai_home_prev = env::var_os("HELPOFAI_HOME");
+            let helpofai_config_prev = env::var_os("HELPOFAI_CONFIG_PATH");
             let deepseek_config_prev = env::var_os("DEEPSEEK_CONFIG_PATH");
-            let codewhale_secret_backend_prev = env::var_os("CODEWHALE_SECRET_BACKEND");
+            let helpofai_secret_backend_prev = env::var_os("HELPOFAI_SECRET_BACKEND");
             let deepseek_secret_backend_prev = env::var_os("DEEPSEEK_SECRET_BACKEND");
             let deepseek_provider_prev = env::var_os("DEEPSEEK_PROVIDER");
             let api_key_prev = env::var_os("DEEPSEEK_API_KEY");
@@ -6844,9 +6839,9 @@ action = "session.compact"
             let http_headers_prev = env::var_os("DEEPSEEK_HTTP_HEADERS");
             let model_prev = env::var_os("DEEPSEEK_MODEL");
             let default_text_model_prev = env::var_os("DEEPSEEK_DEFAULT_TEXT_MODEL");
-            let codewhale_provider_prev = env::var_os("CODEWHALE_PROVIDER");
-            let codewhale_model_prev = env::var_os("CODEWHALE_MODEL");
-            let codewhale_base_url_prev = env::var_os("CODEWHALE_BASE_URL");
+            let helpofai_provider_prev = env::var_os("HELPOFAI_PROVIDER");
+            let helpofai_model_prev = env::var_os("HELPOFAI_MODEL");
+            let helpofai_base_url_prev = env::var_os("HELPOFAI_BASE_URL");
             let nvidia_api_key_prev = env::var_os("NVIDIA_API_KEY");
             let nvidia_nim_api_key_prev = env::var_os("NVIDIA_NIM_API_KEY");
             let nim_base_url_prev = env::var_os("NIM_BASE_URL");
@@ -6932,10 +6927,10 @@ action = "session.compact"
             unsafe {
                 env::set_var("HOME", &home_str);
                 env::set_var("USERPROFILE", &home_str);
-                env::remove_var("CODEWHALE_HOME");
-                env::remove_var("CODEWHALE_CONFIG_PATH");
+                env::remove_var("HELPOFAI_HOME");
+                env::remove_var("HELPOFAI_CONFIG_PATH");
                 env::set_var("DEEPSEEK_CONFIG_PATH", &config_str);
-                env::remove_var("CODEWHALE_SECRET_BACKEND");
+                env::remove_var("HELPOFAI_SECRET_BACKEND");
                 env::remove_var("DEEPSEEK_SECRET_BACKEND");
                 env::remove_var("DEEPSEEK_PROVIDER");
                 env::remove_var("DEEPSEEK_API_KEY");
@@ -6943,9 +6938,9 @@ action = "session.compact"
                 env::remove_var("DEEPSEEK_HTTP_HEADERS");
                 env::remove_var("DEEPSEEK_MODEL");
                 env::remove_var("DEEPSEEK_DEFAULT_TEXT_MODEL");
-                env::remove_var("CODEWHALE_PROVIDER");
-                env::remove_var("CODEWHALE_MODEL");
-                env::remove_var("CODEWHALE_BASE_URL");
+                env::remove_var("HELPOFAI_PROVIDER");
+                env::remove_var("HELPOFAI_MODEL");
+                env::remove_var("HELPOFAI_BASE_URL");
                 env::remove_var("NVIDIA_API_KEY");
                 env::remove_var("NVIDIA_NIM_API_KEY");
                 env::remove_var("NIM_BASE_URL");
@@ -7031,10 +7026,10 @@ action = "session.compact"
             Self {
                 home: home_prev,
                 userprofile: userprofile_prev,
-                codewhale_home: codewhale_home_prev,
-                codewhale_config_path: codewhale_config_prev,
+                helpofai_home: helpofai_home_prev,
+                helpofai_config_path: helpofai_config_prev,
                 deepseek_config_path: deepseek_config_prev,
-                codewhale_secret_backend: codewhale_secret_backend_prev,
+                helpofai_secret_backend: helpofai_secret_backend_prev,
                 deepseek_secret_backend: deepseek_secret_backend_prev,
                 deepseek_provider: deepseek_provider_prev,
                 deepseek_api_key: api_key_prev,
@@ -7042,9 +7037,9 @@ action = "session.compact"
                 deepseek_http_headers: http_headers_prev,
                 deepseek_model: model_prev,
                 deepseek_default_text_model: default_text_model_prev,
-                codewhale_provider: codewhale_provider_prev,
-                codewhale_model: codewhale_model_prev,
-                codewhale_base_url: codewhale_base_url_prev,
+                helpofai_provider: helpofai_provider_prev,
+                helpofai_model: helpofai_model_prev,
+                helpofai_base_url: helpofai_base_url_prev,
                 nvidia_api_key: nvidia_api_key_prev,
                 nvidia_nim_api_key: nvidia_nim_api_key_prev,
                 nim_base_url: nim_base_url_prev,
@@ -7136,12 +7131,12 @@ action = "session.compact"
             unsafe {
                 Self::restore_var("HOME", self.home.take());
                 Self::restore_var("USERPROFILE", self.userprofile.take());
-                Self::restore_var("CODEWHALE_HOME", self.codewhale_home.take());
-                Self::restore_var("CODEWHALE_CONFIG_PATH", self.codewhale_config_path.take());
+                Self::restore_var("HELPOFAI_HOME", self.helpofai_home.take());
+                Self::restore_var("HELPOFAI_CONFIG_PATH", self.helpofai_config_path.take());
                 Self::restore_var("DEEPSEEK_CONFIG_PATH", self.deepseek_config_path.take());
                 Self::restore_var(
-                    "CODEWHALE_SECRET_BACKEND",
-                    self.codewhale_secret_backend.take(),
+                    "HELPOFAI_SECRET_BACKEND",
+                    self.helpofai_secret_backend.take(),
                 );
                 Self::restore_var(
                     "DEEPSEEK_SECRET_BACKEND",
@@ -7156,9 +7151,9 @@ action = "session.compact"
                     "DEEPSEEK_DEFAULT_TEXT_MODEL",
                     self.deepseek_default_text_model.take(),
                 );
-                Self::restore_var("CODEWHALE_PROVIDER", self.codewhale_provider.take());
-                Self::restore_var("CODEWHALE_MODEL", self.codewhale_model.take());
-                Self::restore_var("CODEWHALE_BASE_URL", self.codewhale_base_url.take());
+                Self::restore_var("HELPOFAI_PROVIDER", self.helpofai_provider.take());
+                Self::restore_var("HELPOFAI_MODEL", self.helpofai_model.take());
+                Self::restore_var("HELPOFAI_BASE_URL", self.helpofai_base_url.take());
                 Self::restore_var("NVIDIA_API_KEY", self.nvidia_api_key.take());
                 Self::restore_var("NVIDIA_NIM_API_KEY", self.nvidia_nim_api_key.take());
                 Self::restore_var("NIM_BASE_URL", self.nim_base_url.take());
@@ -7376,7 +7371,7 @@ action = "session.compact"
     fn subagent_max_spawn_depth_defaults_allows_zero_and_clamps() {
         assert_eq!(
             Config::default().subagent_max_spawn_depth(),
-            codewhale_config::DEFAULT_SPAWN_DEPTH
+            helpofai_config::DEFAULT_SPAWN_DEPTH
         );
 
         let disabled = Config {
@@ -7390,14 +7385,14 @@ action = "session.compact"
 
         let high = Config {
             subagents: Some(SubagentsConfig {
-                max_depth: Some(codewhale_config::MAX_SPAWN_DEPTH_CEILING + 10),
+                max_depth: Some(helpofai_config::MAX_SPAWN_DEPTH_CEILING + 10),
                 ..SubagentsConfig::default()
             }),
             ..Config::default()
         };
         assert_eq!(
             high.subagent_max_spawn_depth(),
-            codewhale_config::MAX_SPAWN_DEPTH_CEILING
+            helpofai_config::MAX_SPAWN_DEPTH_CEILING
         );
     }
 
@@ -7581,7 +7576,7 @@ action = "session.compact"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-test-{}-{}",
+            "helpofai-tui-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -7617,7 +7612,7 @@ action = "session.compact"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-first-run-config-{}-{}",
+            "helpofai-tui-first-run-config-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -7643,7 +7638,7 @@ action = "session.compact"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-workspace-trust-{}-{}",
+            "helpofai-tui-workspace-trust-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -7679,7 +7674,7 @@ action = "session.compact"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-existing-project-trust-{}-{}",
+            "helpofai-tui-existing-project-trust-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -7921,7 +7916,7 @@ action = "session.compact"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-clear-{}-{}",
+            "helpofai-tui-clear-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -7954,7 +7949,7 @@ api_key = "old-openrouter-key"
         );
         assert!(
             !after.contains("old-provider-key"),
-            "provider-scoped codewhale key must be stripped: {after}"
+            "provider-scoped helpofai key must be stripped: {after}"
         );
         assert!(
             !after.contains("old-openrouter-key"),
@@ -7977,7 +7972,7 @@ api_key = "old-openrouter-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-override-{}-{}",
+            "helpofai-tui-override-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8003,7 +7998,7 @@ api_key = "old-openrouter-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-config-over-env-{}-{}",
+            "helpofai-tui-config-over-env-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8028,7 +8023,7 @@ api_key = "old-openrouter-key"
     fn active_provider_detects_env_only_api_key() -> Result<()> {
         let _lock = lock_test_env();
         let temp_root =
-            env::temp_dir().join(format!("codewhale-tui-env-only-key-{}", std::process::id()));
+            env::temp_dir().join(format!("helpofai-tui-env-only-key-{}", std::process::id()));
         fs::create_dir_all(&temp_root)?;
         let _guard = EnvGuard::new(&temp_root);
 
@@ -8058,7 +8053,7 @@ api_key = "old-openrouter-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-sentinel-{}-{}",
+            "helpofai-tui-sentinel-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8079,14 +8074,14 @@ api_key = "old-openrouter-key"
     }
 
     #[test]
-    fn default_user_paths_use_codewhale_home_for_fresh_installs() -> Result<()> {
+    fn default_user_paths_use_helpofai_home_for_fresh_installs() -> Result<()> {
         let _lock = lock_test_env();
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-fresh-home-test-{}-{}",
+            "helpofai-tui-fresh-home-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8102,19 +8097,19 @@ api_key = "old-openrouter-key"
         let config = Config::default();
         assert_eq!(
             default_config_path().unwrap(),
-            temp_root.join(".codewhale").join("config.toml")
+            temp_root.join(".helpofai").join("config.toml")
         );
         assert_eq!(
             config.mcp_config_path(),
-            temp_root.join(".codewhale").join("mcp.json")
+            temp_root.join(".helpofai").join("mcp.json")
         );
         assert_eq!(
             config.notes_path(),
-            temp_root.join(".codewhale").join("notes.txt")
+            temp_root.join(".helpofai").join("notes.txt")
         );
         assert_eq!(
             config.memory_path(),
-            temp_root.join(".codewhale").join("memory.md")
+            temp_root.join(".helpofai").join("memory.md")
         );
 
         Ok(())
@@ -8128,7 +8123,7 @@ api_key = "old-openrouter-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-legacy-home-test-{}-{}",
+            "helpofai-tui-legacy-home-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8156,16 +8151,16 @@ api_key = "old-openrouter-key"
     }
 
     #[test]
-    fn codewhale_config_path_env_wins_over_legacy_env() -> Result<()> {
+    fn helpofai_config_path_env_wins_over_legacy_env() -> Result<()> {
         let _lock = lock_test_env();
-        let prev_codewhale = env::var_os("CODEWHALE_CONFIG_PATH");
+        let prev_helpofai = env::var_os("HELPOFAI_CONFIG_PATH");
         let prev_deepseek = env::var_os("DEEPSEEK_CONFIG_PATH");
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-config-env-test-{}-{}",
+            "helpofai-tui-config-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8173,14 +8168,14 @@ api_key = "old-openrouter-key"
         let legacy = temp_root.join("legacy.toml");
 
         unsafe {
-            env::set_var("CODEWHALE_CONFIG_PATH", &preferred);
+            env::set_var("HELPOFAI_CONFIG_PATH", &preferred);
             env::set_var("DEEPSEEK_CONFIG_PATH", &legacy);
         }
 
         assert_eq!(env_config_path().unwrap(), preferred);
 
         unsafe {
-            EnvGuard::restore_var("CODEWHALE_CONFIG_PATH", prev_codewhale);
+            EnvGuard::restore_var("HELPOFAI_CONFIG_PATH", prev_helpofai);
             EnvGuard::restore_var("DEEPSEEK_CONFIG_PATH", prev_deepseek);
         }
 
@@ -8195,7 +8190,7 @@ api_key = "old-openrouter-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-tilde-test-{}-{}",
+            "helpofai-tui-tilde-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8217,17 +8212,17 @@ api_key = "old-openrouter-key"
     }
 
     #[test]
-    fn skills_scan_codewhale_only_defaults_false_and_parses_true() -> Result<()> {
-        assert!(!Config::default().skills_config().scan_codewhale_only());
+    fn skills_scan_helpofai_only_defaults_false_and_parses_true() -> Result<()> {
+        assert!(!Config::default().skills_config().scan_helpofai_only());
 
         let config: Config = toml::from_str(
             r#"
 [skills]
-scan_codewhale_only = true
+scan_helpofai_only = true
 "#,
         )?;
 
-        assert!(config.skills_config().scan_codewhale_only());
+        assert!(config.skills_config().scan_helpofai_only());
         Ok(())
     }
 
@@ -8239,7 +8234,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-load-tilde-test-{}-{}",
+            "helpofai-tui-load-tilde-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8268,7 +8263,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-load-fallback-test-{}-{}",
+            "helpofai-tui-load-fallback-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8327,7 +8322,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-api-key-test-{}-{}",
+            "helpofai-tui-api-key-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8374,7 +8369,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-empty-key-{}-{}",
+            "helpofai-tui-empty-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8407,7 +8402,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-env-key-not-config-{}-{}",
+            "helpofai-tui-env-key-not-config-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -8893,7 +8888,7 @@ scan_codewhale_only = true
     #[test]
     fn normalize_model_name_rejects_invalid_or_non_deepseek_ids() {
         assert!(normalize_model_name("qwen3-coder").is_none());
-        assert!(normalize_model_name("codewhale v4").is_none());
+        assert!(normalize_model_name("helpofai v4").is_none());
         assert!(normalize_model_name("").is_none());
     }
 
@@ -8950,7 +8945,7 @@ scan_codewhale_only = true
             "strict".to_string(),
             Config {
                 skills: Some(SkillsConfig {
-                    scan_codewhale_only: Some(true),
+                    scan_helpofai_only: Some(true),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -8975,7 +8970,7 @@ scan_codewhale_only = true
             Some("https://registry.example/skills.json")
         );
         assert_eq!(skills.max_install_size_bytes, Some(1234));
-        assert_eq!(skills.scan_codewhale_only, Some(true));
+        assert_eq!(skills.scan_helpofai_only, Some(true));
     }
 
     #[test]
@@ -9067,7 +9062,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-model-env-test-{}-{}",
+            "helpofai-tui-model-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9096,7 +9091,7 @@ scan_codewhale_only = true
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-http-headers-root-{}-{}",
+            "helpofai-tui-http-headers-root-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9160,7 +9155,7 @@ http_headers = { "X-Model-Provider-Id" = "tongyi" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-http-headers-env-{}-{}",
+            "helpofai-tui-http-headers-env-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9214,7 +9209,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-model-alias-test-{}-{}",
+            "helpofai-tui-nim-model-alias-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9258,7 +9253,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-env-test-{}-{}",
+            "helpofai-tui-nim-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9287,7 +9282,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-base-url-alias-test-{}-{}",
+            "helpofai-tui-nim-base-url-alias-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9314,7 +9309,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-forwarded-base-url-test-{}-{}",
+            "helpofai-tui-nim-forwarded-base-url-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9437,7 +9432,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-xiaomi-mimo-defaults-{}-{}",
+            "helpofai-tui-xiaomi-mimo-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9560,7 +9555,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-xiaomi-mimo-env-test-{}-{}",
+            "helpofai-tui-xiaomi-mimo-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9594,7 +9589,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-xiaomi-mimo-token-plan-env-test-{}-{}",
+            "helpofai-tui-xiaomi-mimo-token-plan-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9629,7 +9624,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-xiaomi-mimo-payg-env-test-{}-{}",
+            "helpofai-tui-xiaomi-mimo-payg-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9676,7 +9671,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-atlascloud-env-test-{}-{}",
+            "helpofai-tui-atlascloud-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9720,7 +9715,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-wanjie-env-test-{}-{}",
+            "helpofai-tui-wanjie-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9750,7 +9745,7 @@ mode = "token-plan-usa"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-wanjie-table-{}-{}",
+            "helpofai-tui-wanjie-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9789,7 +9784,7 @@ model = "account-model-id"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-openai-table-{}-{}",
+            "helpofai-tui-openai-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9820,7 +9815,7 @@ model = "glm-5"
         Ok(())
     }
 
-    // Regression for issue #1714: `codewhale --provider openai --model
+    // Regression for issue #1714: `helpofai --provider openai --model
     // MiniMax-M2.7` forwards the choice via DEEPSEEK_MODEL (never
     // OPENAI_MODEL) and uses the DEFAULT base_url. The explicit custom model
     // must pass through verbatim instead of silently becoming a
@@ -9833,7 +9828,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-1714-passthrough-{}-{}",
+            "helpofai-tui-1714-passthrough-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9886,7 +9881,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-openai-env-test-{}-{}",
+            "helpofai-tui-openai-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9920,7 +9915,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-openai-forwarded-base-url-test-{}-{}",
+            "helpofai-tui-openai-forwarded-base-url-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9954,7 +9949,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-or-defaults-{}-{}",
+            "helpofai-tui-or-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -9980,7 +9975,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-novita-defaults-{}-{}",
+            "helpofai-tui-novita-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10006,7 +10001,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-fireworks-defaults-{}-{}",
+            "helpofai-tui-fireworks-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10046,7 +10041,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-volcengine-auth-test-{}-{}",
+            "helpofai-tui-volcengine-auth-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10072,7 +10067,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-volcengine-env-test-{}-{}",
+            "helpofai-tui-volcengine-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10103,7 +10098,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-defaults-{}-{}",
+            "helpofai-tui-siliconflow-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10133,7 +10128,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-sglang-defaults-{}-{}",
+            "helpofai-tui-sglang-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10161,7 +10156,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-ollama-defaults-{}-{}",
+            "helpofai-tui-ollama-defaults-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10189,7 +10184,7 @@ model = "glm-5"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-ollama-model-test-{}-{}",
+            "helpofai-tui-ollama-model-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10223,7 +10218,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-self-hosted-base-url-test-{}-{}",
+            "helpofai-tui-self-hosted-base-url-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10258,7 +10253,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-vllm-lan-http-test-{}-{}",
+            "helpofai-tui-vllm-lan-http-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10287,7 +10282,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-ollama-env-test-{}-{}",
+            "helpofai-tui-ollama-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10316,7 +10311,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-or-env-key-{}-{}",
+            "helpofai-tui-or-env-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10345,7 +10340,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-novita-env-key-{}-{}",
+            "helpofai-tui-novita-env-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10374,7 +10369,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-fireworks-env-key-{}-{}",
+            "helpofai-tui-fireworks-env-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10409,7 +10404,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-env-test-{}-{}",
+            "helpofai-tui-siliconflow-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10418,7 +10413,7 @@ model = "qwen2.5-coder:7b"
 
         // Safety: test-only environment mutation guarded by a global mutex.
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "siliconflow");
+            env::set_var("HELPOFAI_PROVIDER", "siliconflow");
             env::set_var("SILICONFLOW_API_KEY", "sf-env-key");
             env::set_var("SILICONFLOW_BASE_URL", "https://sf-mirror.example/v1");
             env::set_var("SILICONFLOW_MODEL", "deepseek-v4-flash");
@@ -10440,7 +10435,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-arcee-defaults-test-{}-{}",
+            "helpofai-tui-arcee-defaults-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10448,7 +10443,7 @@ model = "qwen2.5-coder:7b"
         let _guard = EnvGuard::new(&temp_root);
 
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "arcee");
+            env::set_var("HELPOFAI_PROVIDER", "arcee");
             env::set_var("ARCEE_API_KEY", "arcee-env-key");
         }
 
@@ -10468,7 +10463,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-arcee-env-test-{}-{}",
+            "helpofai-tui-arcee-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10476,7 +10471,7 @@ model = "qwen2.5-coder:7b"
         let _guard = EnvGuard::new(&temp_root);
 
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "arcee");
+            env::set_var("HELPOFAI_PROVIDER", "arcee");
             env::set_var("ARCEE_API_KEY", "arcee-env-key");
             env::set_var("ARCEE_BASE_URL", "https://arcee-mirror.example/api/v1");
             env::set_var("ARCEE_MODEL", "arcee-trinity-large-preview");
@@ -10501,7 +10496,7 @@ model = "qwen2.5-coder:7b"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-arcee-table-test-{}-{}",
+            "helpofai-tui-arcee-table-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10536,7 +10531,7 @@ model = "arcee-trinity-large-preview"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-cn-env-test-{}-{}",
+            "helpofai-tui-siliconflow-cn-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10545,7 +10540,7 @@ model = "arcee-trinity-large-preview"
 
         // Safety: test-only environment mutation guarded by a global mutex.
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "siliconflow-CN");
+            env::set_var("HELPOFAI_PROVIDER", "siliconflow-CN");
             env::set_var("SILICONFLOW_API_KEY", "sf-env-key");
             env::set_var("SILICONFLOW_BASE_URL", "https://api.siliconflow.cn/v1");
             env::set_var("SILICONFLOW_MODEL", "deepseek-reasoner");
@@ -10567,7 +10562,7 @@ model = "arcee-trinity-large-preview"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-or-base-url-{}-{}",
+            "helpofai-tui-or-base-url-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10594,7 +10589,7 @@ model = "arcee-trinity-large-preview"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-or-table-{}-{}",
+            "helpofai-tui-or-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10628,7 +10623,7 @@ base_url = "https://or-table.example/v1"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-table-{}-{}",
+            "helpofai-tui-siliconflow-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10663,7 +10658,7 @@ model = "deepseek-v4-flash"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-cn-table-{}-{}",
+            "helpofai-tui-siliconflow-cn-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10700,7 +10695,7 @@ model = "deepseek-reasoner"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-cn-fallback-{}-{}",
+            "helpofai-tui-siliconflow-cn-fallback-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10740,7 +10735,7 @@ base_url = "https://api.siliconflow.cn/v1"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-siliconflow-cn-env-table-{}-{}",
+            "helpofai-tui-siliconflow-cn-env-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10795,7 +10790,7 @@ model = "deepseek-reasoner"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-or-custom-model-{}-{}",
+            "helpofai-tui-or-custom-model-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10831,7 +10826,7 @@ model = "DeepSeek-V4-Pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-novita-table-{}-{}",
+            "helpofai-tui-novita-table-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10864,7 +10859,7 @@ api_key = "novita-table-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-code-oauth-key-{}-{}",
+            "helpofai-tui-kimi-code-oauth-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10922,7 +10917,7 @@ api_key = "stale-api-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-oauth-key-{}-{}",
+            "helpofai-tui-kimi-oauth-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -10980,7 +10975,7 @@ api_key = "stale-api-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-code-key-{}-{}",
+            "helpofai-tui-kimi-code-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11008,8 +11003,8 @@ base_url = "https://api.kimi.com/coding/v1"
         Ok(())
     }
 
-    /// Env-var-only path: `CODEWHALE_BASE_URL=https://api.kimi.com/coding/v1`
-    /// combined with `CODEWHALE_PROVIDER=moonshot` must trigger Kimi Code
+    /// Env-var-only path: `HELPOFAI_BASE_URL=https://api.kimi.com/coding/v1`
+    /// combined with `HELPOFAI_PROVIDER=moonshot` must trigger Kimi Code
     /// model selection even when the TOML has no `base_url`.
     #[test]
     fn moonshot_kimi_code_env_base_url_selects_coding_model() -> Result<()> {
@@ -11019,7 +11014,7 @@ base_url = "https://api.kimi.com/coding/v1"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-code-env-url-{}-{}",
+            "helpofai-tui-kimi-code-env-url-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11036,8 +11031,8 @@ api_key = "kimi-code-env-key"
         )?;
         // Safety: test-only env mutation guarded by lock_test_env().
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "moonshot");
-            env::set_var("CODEWHALE_BASE_URL", "https://api.kimi.com/coding/v1");
+            env::set_var("HELPOFAI_PROVIDER", "moonshot");
+            env::set_var("HELPOFAI_BASE_URL", "https://api.kimi.com/coding/v1");
         }
 
         let config = Config::load(None, None)?;
@@ -11052,9 +11047,9 @@ api_key = "kimi-code-env-key"
     /// Regression for issue #2160: a stale root `default_text_model` carried
     /// over from a DeepSeek setup must not steer the Kimi Code endpoint to
     /// `deepseek-v4-pro`. The user-facing trigger here is the legacy
-    /// `DEEPSEEK_PROVIDER` env var (still produced by the `codewhale
+    /// `DEEPSEEK_PROVIDER` env var (still produced by the `helpofai
     /// --provider moonshot` dispatcher for compat); the test also has a
-    /// `CODEWHALE_PROVIDER` twin below for the public env path.
+    /// `HELPOFAI_PROVIDER` twin below for the public env path.
     #[test]
     fn moonshot_kimi_code_model_overrides_root_deepseek_default() -> Result<()> {
         let _lock = lock_test_env();
@@ -11063,7 +11058,7 @@ api_key = "kimi-code-env-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-code-root-model-{}-{}",
+            "helpofai-tui-kimi-code-root-model-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11092,20 +11087,20 @@ base_url = "https://api.kimi.com/coding/v1"
         Ok(())
     }
 
-    /// Same regression as above, but driven by the public `CODEWHALE_PROVIDER`
+    /// Same regression as above, but driven by the public `HELPOFAI_PROVIDER`
     /// env var. Documents the recommended user-facing setup path: never
-    /// `DEEPSEEK_PROVIDER=moonshot`, always `CODEWHALE_PROVIDER=moonshot`
-    /// (or `codewhale --provider moonshot`, which also resolves through
+    /// `DEEPSEEK_PROVIDER=moonshot`, always `HELPOFAI_PROVIDER=moonshot`
+    /// (or `helpofai --provider moonshot`, which also resolves through
     /// this code path internally).
     #[test]
-    fn moonshot_kimi_code_model_resolves_via_codewhale_provider_env() -> Result<()> {
+    fn moonshot_kimi_code_model_resolves_via_helpofai_provider_env() -> Result<()> {
         let _lock = lock_test_env();
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-kimi-code-cw-env-{}-{}",
+            "helpofai-tui-kimi-code-cw-env-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11125,7 +11120,7 @@ base_url = "https://api.kimi.com/coding/v1"
 "#,
         )?;
         // Safety: test-only env mutation guarded by lock_test_env().
-        unsafe { env::set_var("CODEWHALE_PROVIDER", "moonshot") };
+        unsafe { env::set_var("HELPOFAI_PROVIDER", "moonshot") };
 
         let config = Config::load(None, None)?;
         assert_eq!(config.api_provider(), ApiProvider::Moonshot);
@@ -11134,18 +11129,18 @@ base_url = "https://api.kimi.com/coding/v1"
         Ok(())
     }
 
-    /// `CODEWHALE_PROVIDER` wins when both it and the legacy
+    /// `HELPOFAI_PROVIDER` wins when both it and the legacy
     /// `DEEPSEEK_PROVIDER` are set, so a user adding the new alias to their
     /// shell isn't surprised by a stale legacy export.
     #[test]
-    fn codewhale_provider_env_takes_precedence_over_deepseek_provider() -> Result<()> {
+    fn helpofai_provider_env_takes_precedence_over_deepseek_provider() -> Result<()> {
         let _lock = lock_test_env();
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-cw-vs-ds-provider-{}-{}",
+            "helpofai-tui-cw-vs-ds-provider-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11157,7 +11152,7 @@ base_url = "https://api.kimi.com/coding/v1"
         fs::write(&config_path, "provider = \"deepseek\"\n")?;
         // Safety: test-only env mutation guarded by lock_test_env().
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "moonshot");
+            env::set_var("HELPOFAI_PROVIDER", "moonshot");
             env::set_var("DEEPSEEK_PROVIDER", "openrouter");
         }
 
@@ -11179,7 +11174,7 @@ base_url = "https://api.kimi.com/coding/v1"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-moonshot-platform-{}-{}",
+            "helpofai-tui-moonshot-platform-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11213,7 +11208,7 @@ api_key = "moonshot-platform-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-has-key-{}-{}",
+            "helpofai-tui-has-key-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11286,7 +11281,7 @@ api_key = "moonshot-platform-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-has-key-cn-{}-{}",
+            "helpofai-tui-has-key-cn-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11323,15 +11318,15 @@ api_key = "moonshot-platform-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-save-key-or-{}-{}",
+            "helpofai-tui-save-key-or-{}-{}",
             std::process::id(),
             nanos
         ));
         fs::create_dir_all(&temp_root)?;
         let _guard = EnvGuard::new(&temp_root);
         let config_path = temp_root.join(".deepseek").join("config.toml");
-        let _config_path = EnvVarGuard::set("CODEWHALE_CONFIG_PATH", config_path.as_os_str());
-        let _secret_backend = EnvVarGuard::set("CODEWHALE_SECRET_BACKEND", "local");
+        let _config_path = EnvVarGuard::set("HELPOFAI_CONFIG_PATH", config_path.as_os_str());
+        let _secret_backend = EnvVarGuard::set("HELPOFAI_SECRET_BACKEND", "local");
 
         let path = save_api_key_for(ApiProvider::Openrouter, "or-saved-key")?;
         assert_eq!(path, config_path);
@@ -11456,14 +11451,14 @@ api_key = "moonshot-platform-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-save-key-cn-{}-{}",
+            "helpofai-tui-save-key-cn-{}-{}",
             std::process::id(),
             nanos
         ));
         fs::create_dir_all(&temp_root)?;
         let _guard = EnvGuard::new(&temp_root);
         let config_path = temp_root.join(".deepseek").join("config.toml");
-        let _config_path = EnvVarGuard::set("CODEWHALE_CONFIG_PATH", config_path.as_os_str());
+        let _config_path = EnvVarGuard::set("HELPOFAI_CONFIG_PATH", config_path.as_os_str());
         let _secret_backend = EnvVarGuard::set("DEEPSEEK_SECRET_BACKEND", "local");
 
         let path = save_api_key_for(ApiProvider::DeepseekCN, "cn-saved-key")?;
@@ -11486,7 +11481,7 @@ api_key = "moonshot-platform-key"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-provider-table-test-{}-{}",
+            "helpofai-tui-nim-provider-table-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11525,7 +11520,7 @@ model = "deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-nim-root-key-precedence-test-{}-{}",
+            "helpofai-tui-nim-root-key-precedence-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -11536,7 +11531,7 @@ model = "deepseek-v4-pro"
         ensure_parent_dir(&config_path)?;
         fs::write(
             &config_path,
-            r#"api_key = "codewhale-root-key"
+            r#"api_key = "helpofai-root-key"
 provider = "nvidia-nim"
 
 [providers.nvidia_nim]
@@ -12079,7 +12074,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-huggingface-defaults-test-{}-{}",
+            "helpofai-tui-huggingface-defaults-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -12087,7 +12082,7 @@ model = "deepseek-ai/deepseek-v4-pro"
         let _guard = EnvGuard::new(&temp_root);
 
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "huggingface");
+            env::set_var("HELPOFAI_PROVIDER", "huggingface");
             env::set_var("HUGGINGFACE_API_KEY", "hf-env-key");
         }
 
@@ -12107,7 +12102,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-huggingface-hf-token-test-{}-{}",
+            "helpofai-tui-huggingface-hf-token-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -12115,7 +12110,7 @@ model = "deepseek-ai/deepseek-v4-pro"
         let _guard = EnvGuard::new(&temp_root);
 
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "huggingface");
+            env::set_var("HELPOFAI_PROVIDER", "huggingface");
             env::set_var("HF_TOKEN", "hf-token-value");
         }
 
@@ -12133,7 +12128,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-huggingface-missing-key-test-{}-{}",
+            "helpofai-tui-huggingface-missing-key-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -12162,7 +12157,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-huggingface-env-test-{}-{}",
+            "helpofai-tui-huggingface-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -12173,7 +12168,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             let _guard = EnvGuard::new(&long_form_root);
 
             unsafe {
-                env::set_var("CODEWHALE_PROVIDER", "huggingface");
+                env::set_var("HELPOFAI_PROVIDER", "huggingface");
                 env::set_var("HUGGINGFACE_API_KEY", "hf-env-key");
                 env::set_var("HF_TOKEN", "hf-token-fallback");
                 env::set_var("HUGGINGFACE_BASE_URL", "https://custom-hf.example/v1");
@@ -12195,7 +12190,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             let _guard = EnvGuard::new(&short_form_root);
 
             unsafe {
-                env::set_var("CODEWHALE_PROVIDER", "huggingface");
+                env::set_var("HELPOFAI_PROVIDER", "huggingface");
                 env::set_var("HF_TOKEN", "hf-env-key");
                 env::set_var("HF_BASE_URL", "https://custom-hf.example/v1");
                 env::set_var("HF_MODEL", "meta-llama/Llama-3-70B");
@@ -12237,7 +12232,7 @@ model = "deepseek-ai/deepseek-v4-pro"
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-huggingface-short-env-test-{}-{}",
+            "helpofai-tui-huggingface-short-env-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -12245,7 +12240,7 @@ model = "deepseek-ai/deepseek-v4-pro"
         let _guard = EnvGuard::new(&temp_root);
 
         unsafe {
-            env::set_var("CODEWHALE_PROVIDER", "hf");
+            env::set_var("HELPOFAI_PROVIDER", "hf");
             env::set_var("HF_TOKEN", "hf-token-value");
             env::set_var("HF_BASE_URL", "https://short-hf.example/v1");
             env::set_var("HF_MODEL", "org/short-model");

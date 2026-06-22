@@ -1,6 +1,6 @@
-# Contributing to codewhale
+# Contributing to helpofai
 
-Thank you for your interest in contributing to codewhale! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to helpofai! This document provides guidelines and instructions for contributing.
 
 ## Getting Started
 
@@ -14,8 +14,8 @@ Thank you for your interest in contributing to codewhale! This document provides
 
 1. Fork and clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/CodeWhale.git
-   cd CodeWhale
+   git clone https://github.com/YOUR_USERNAME/HelpOfAi.git
+   cd HelpOfAi
    ```
 
 2. Build the project:
@@ -30,7 +30,7 @@ Thank you for your interest in contributing to codewhale! This document provides
 
 4. Run with development settings:
    ```bash
-   cargo run --bin codewhale
+   cargo run --bin helpofai
    ```
 
 ## Development Workflow
@@ -207,7 +207,7 @@ What this means for you:
 
 ## Contribution Gate
 
-CodeWhale uses a maintainer-managed contribution gate for the community front
+HelpOfAi uses a maintainer-managed contribution gate for the community front
 door. Maintainers and collaborators bypass this gate automatically. The gate
 workflows default to dry-run / comment-only mode so maintainers can observe the
 signal before changing contributor flow.
@@ -218,7 +218,7 @@ keeping good-faith contributors seen, credited, and able to keep helping.
 
 Issues are never auto-closed by the contribution gate. Unapproved external
 issues receive a short welcome note that asks for reproduction details and then
-remain open for maintainer triage. CodeWhale depends on real edge cases from
+remain open for maintainer triage. HelpOfAi depends on real edge cases from
 real users, so issue intake should stay warm and open.
 
 Pull requests are different because they can touch code, CI, release plumbing,
@@ -251,7 +251,7 @@ reopened, ask the contributor to resubmit after the allowlist PR is merged.
 
 ## Agent-Assisted Improvements
 
-CodeWhale is allowed to help improve CodeWhale, but the contribution still has
+HelpOfAi is allowed to help improve HelpOfAi, but the contribution still has
 to be shaped for human review. The recommended workflow is the
 [recursive self-improvement prompt](docs/RECURSIVE_SELF_IMPROVEMENT.md): run it
 from a fresh fork or branch, let the agent find exactly one small friction point,
@@ -272,14 +272,14 @@ branding, or global prompts without prior maintainer sign-off.
 
 ## Project Structure
 
-codewhale is a Cargo workspace. The live runtime and the majority of TUI,
+helpofai is a Cargo workspace. The live runtime and the majority of TUI,
 engine, and tool code currently live in `crates/tui/src/`. Smaller workspace
 crates provide shared abstractions that are being extracted incrementally.
 
 ```
 crates/
-├── tui/           codewhale-tui binary (interactive TUI + runtime API)
-├── cli/           codewhale binary (dispatcher facade)
+├── tui/           helpofai-tui binary (interactive TUI + runtime API)
+├── cli/           helpofai binary (dispatcher facade)
 ├── app-server/    HTTP/SSE + JSON-RPC transport
 ├── core/          Agent loop / session / turn management
 ├── protocol/      Request/response framing
@@ -364,7 +364,7 @@ Issue reports should include:
 
 - Operating system and version
 - Rust version (`rustc --version`)
-- codewhale version (`codewhale --version`)
+- helpofai version (`helpofai --version`)
 - Steps to reproduce the issue
 - Expected vs actual behavior
 - Relevant error messages or logs
@@ -383,7 +383,7 @@ code of conduct.
 
 ## License
 
-By contributing to codewhale, you agree that your contributions will be licensed under the MIT License.
+By contributing to helpofai, you agree that your contributions will be licensed under the MIT License.
 
 ## Questions?
 

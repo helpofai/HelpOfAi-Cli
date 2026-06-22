@@ -1,6 +1,6 @@
 //! Cross-session composer input history (#366).
 //!
-//! Persists user-typed prompts to `~/.codewhale/composer_history.txt`
+//! Persists user-typed prompts to `~/.helpofai/composer_history.txt`
 //! (falling back to a legacy `~/.deepseek/composer_history.txt` only when
 //! one already exists, #3240) so pressing Up-arrow at the composer recalls
 //! submissions from previous sessions, not just the current one. One entry
@@ -40,18 +40,18 @@ fn default_history_path() -> Option<PathBuf> {
     history_path_with_home(dirs::home_dir())
 }
 
-/// Resolve the composer-history file under `home`, preferring the CodeWhale
+/// Resolve the composer-history file under `home`, preferring the HelpOfAi
 /// root and only falling back to the legacy `.deepseek` root when a legacy
 /// file already exists.
 ///
-/// On a fresh install (neither file present) this returns the `.codewhale`
+/// On a fresh install (neither file present) this returns the `.helpofai`
 /// path, so the writer never recreates `~/.deepseek/` at runtime (#3240),
 /// while users who haven't migrated keep reading and appending to their
 /// existing legacy history. Mirrors the primary/legacy resolution used by
 /// `snapshot::paths` and `artifacts`.
 fn history_path_with_home(home: Option<PathBuf>) -> Option<PathBuf> {
     let home = home?;
-    let primary = home.join(".codewhale").join(HISTORY_FILE_NAME);
+    let primary = home.join(".helpofai").join(HISTORY_FILE_NAME);
     if primary.exists() {
         return Some(primary);
     }
@@ -309,14 +309,14 @@ mod tests {
             .expect("history writer flush timed out");
     }
 
-    // #3240: a fresh install must resolve the history file under `.codewhale`,
+    // #3240: a fresh install must resolve the history file under `.helpofai`,
     // never the legacy `.deepseek` dir, so normal use doesn't recreate it.
     #[test]
-    fn fresh_install_uses_codewhale_not_legacy() {
+    fn fresh_install_uses_helpofai_not_legacy() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let path = history_path_with_home(Some(tmp.path().to_path_buf()))
             .expect("path resolves with a home dir");
-        assert_eq!(path, tmp.path().join(".codewhale").join(HISTORY_FILE_NAME));
+        assert_eq!(path, tmp.path().join(".helpofai").join(HISTORY_FILE_NAME));
         assert!(
             !path.starts_with(tmp.path().join(".deepseek")),
             "fresh install must not target the legacy .deepseek dir: {path:?}"
@@ -334,11 +334,11 @@ mod tests {
         assert_eq!(path, legacy);
     }
 
-    // Once a `.codewhale` history exists it wins over any legacy file.
+    // Once a `.helpofai` history exists it wins over any legacy file.
     #[test]
-    fn codewhale_history_preferred_over_legacy() {
+    fn helpofai_history_preferred_over_legacy() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let primary = tmp.path().join(".codewhale").join(HISTORY_FILE_NAME);
+        let primary = tmp.path().join(".helpofai").join(HISTORY_FILE_NAME);
         let legacy = tmp.path().join(".deepseek").join(HISTORY_FILE_NAME);
         for p in [&primary, &legacy] {
             fs::create_dir_all(p.parent().expect("parent")).expect("mkdir");

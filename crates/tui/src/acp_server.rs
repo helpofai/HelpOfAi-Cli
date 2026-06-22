@@ -144,7 +144,7 @@ impl AcpServer {
             .and_then(Value::as_str)
             .map(PathBuf::from)
             .unwrap_or_else(|| self.default_cwd.clone());
-        let session_id = format!("codewhale-{}", uuid::Uuid::new_v4());
+        let session_id = format!("helpofai-{}", uuid::Uuid::new_v4());
         self.sessions.insert(session_id.clone(), AcpSession { cwd });
         Ok(json!({ "sessionId": session_id }))
     }
@@ -287,8 +287,8 @@ fn initialize_result(client_protocol_version: Option<u64>, config: &Config) -> V
             "sessionCapabilities": {}
         },
         "agentInfo": {
-            "name": "codewhale",
-            "title": "codewhale",
+            "name": "helpofai",
+            "title": "helpofai",
             "version": env!("CARGO_PKG_VERSION")
         },
         "authMethods": acp_auth_methods(config)
@@ -299,9 +299,9 @@ fn acp_auth_methods(config: &Config) -> Value {
     let provider = config.api_provider().as_str();
     json!([
         {
-            "id": "codewhale-terminal-auth",
-            "name": "Set CodeWhale API key",
-            "description": format!("Run CodeWhale's terminal credential setup for the {provider} provider."),
+            "id": "helpofai-terminal-auth",
+            "name": "Set HelpOfAi API key",
+            "description": format!("Run HelpOfAi's terminal credential setup for the {provider} provider."),
             "type": "terminal",
             "args": ["auth", "set", "--provider", provider],
             "env": {}
@@ -440,7 +440,7 @@ mod tests {
         let result = initialize_result(Some(1), &Config::default());
 
         assert_eq!(result["protocolVersion"], 1);
-        assert_eq!(result["agentInfo"]["name"], "codewhale");
+        assert_eq!(result["agentInfo"]["name"], "helpofai");
         assert_eq!(result["agentCapabilities"]["loadSession"], false);
         assert_eq!(
             result["agentCapabilities"]["promptCapabilities"]["embeddedContext"],

@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn user_command_shadows_builtin_before_group_dispatch() {
         let temp = tempdir().unwrap();
-        let commands_dir = temp.path().join(".codewhale").join("commands");
+        let commands_dir = temp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         std::fs::write(
             commands_dir.join("help.md"),
@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn removed_user_command_reloads_and_falls_back_to_builtin() {
         let temp = tempdir().unwrap();
-        let commands_dir = temp.path().join(".codewhale").join("commands");
+        let commands_dir = temp.path().join(".helpofai").join("commands");
         std::fs::create_dir_all(&commands_dir).unwrap();
         let command_path = commands_dir.join("help.md");
         std::fs::write(&command_path, "user help").unwrap();

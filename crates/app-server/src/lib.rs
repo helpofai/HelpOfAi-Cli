@@ -9,17 +9,17 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use codewhale_agent::ModelRegistry;
-use codewhale_config::{CliRuntimeOverrides, ConfigStore};
-use codewhale_core::Runtime;
-use codewhale_hooks::{HookDispatcher, JsonlHookSink, StdoutHookSink, UnixSocketHookSink};
-use codewhale_mcp::McpManager;
-use codewhale_protocol::{
+use helpofai_agent::ModelRegistry;
+use helpofai_config::{CliRuntimeOverrides, ConfigStore};
+use helpofai_core::Runtime;
+use helpofai_hooks::{HookDispatcher, JsonlHookSink, StdoutHookSink, UnixSocketHookSink};
+use helpofai_mcp::McpManager;
+use helpofai_protocol::{
     AppRequest, AppResponse, PromptRequest, PromptResponse, ThreadGoalClearParams,
     ThreadGoalGetParams, ThreadGoalSetParams, ThreadRequest, ThreadResponse, UserInputAnswerEvent,
 };
-use codewhale_state::StateStore;
-use codewhale_tools::{ToolCall, ToolRegistry};
+use helpofai_state::StateStore;
+use helpofai_tools::{ToolCall, ToolRegistry};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -30,7 +30,7 @@ use uuid::Uuid;
 
 /// Answers submitted for a pending `request_user_input` clarification.
 ///
-/// The headless runtime emits [`codewhale_protocol::EventFrame::UserInputRequest`]
+/// The headless runtime emits [`helpofai_protocol::EventFrame::UserInputRequest`]
 /// fire-and-return (it has no resume channel, mirroring headless approval).
 /// Clients POST answers back via [`AppRequest::SubmitUserInput`]; we record
 /// them here keyed by `request_id` so a driver can retrieve and feed them into
@@ -77,7 +77,7 @@ impl std::fmt::Debug for AppServerOptions {
 #[derive(Clone)]
 struct AppState {
     config_path: Option<PathBuf>,
-    config: Arc<RwLock<codewhale_config::ConfigToml>>,
+    config: Arc<RwLock<helpofai_config::ConfigToml>>,
     runtime: Arc<Mutex<Runtime>>,
     registry: ModelRegistry,
     auth_token: Option<String>,
@@ -304,11 +304,11 @@ async fn tool_handler(
         cfg.approval_policy
             .as_deref()
             .and_then(|p| match p.trim().to_ascii_lowercase().as_str() {
-                "auto" | "yolo" => Some(codewhale_execpolicy::AskForApproval::UnlessTrusted),
-                "never" | "deny" => Some(codewhale_execpolicy::AskForApproval::Never),
+                "auto" | "yolo" => Some(helpofai_execpolicy::AskForApproval::UnlessTrusted),
+                "never" | "deny" => Some(helpofai_execpolicy::AskForApproval::Never),
                 _ => None,
             })
-            .unwrap_or(codewhale_execpolicy::AskForApproval::OnRequest)
+            .unwrap_or(helpofai_execpolicy::AskForApproval::OnRequest)
     };
     match runtime.invoke_tool(req.call, approval_mode, &cwd).await {
         Ok(value) => Json(value),
@@ -409,7 +409,7 @@ fn resolve_auth_token(options: &AppServerOptions) -> Result<Option<String>> {
     } else {
         eprintln!("app-server auth: generated bearer token for this process.");
         eprintln!("  Authorization: Bearer {token}");
-        eprintln!("  Pass --auth-token or set CODEWHALE_APP_SERVER_TOKEN for a stable token.");
+        eprintln!("  Pass --auth-token or set HELPOFAI_APP_SERVER_TOKEN for a stable token.");
     }
     Ok(Some(token))
 }
@@ -987,8 +987,8 @@ async fn process_app_request(
         AppRequest::ThreadLoadedList => {
             let mut runtime = state.runtime.lock().await;
             let response = runtime
-                .handle_thread(codewhale_protocol::ThreadRequest::List(
-                    codewhale_protocol::ThreadListParams {
+                .handle_thread(helpofai_protocol::ThreadRequest::List(
+                    helpofai_protocol::ThreadListParams {
                         include_archived: false,
                         limit: Some(50),
                     },
@@ -1037,7 +1037,7 @@ async fn process_app_request(
     }
 }
 
-async fn persist_config(state: &AppState, config: codewhale_config::ConfigToml) -> Result<()> {
+async fn persist_config(state: &AppState, config: helpofai_config::ConfigToml) -> Result<()> {
     if state.config_path.is_none() {
         return Ok(());
     }
@@ -1050,7 +1050,7 @@ async fn persist_config(state: &AppState, config: codewhale_config::ConfigToml) 
 mod tests {
     use super::*;
     use axum::body::{Body, to_bytes};
-    use codewhale_protocol::AppRequest;
+    use helpofai_protocol::AppRequest;
     use std::fs;
     use tower::ServiceExt;
 
@@ -1165,12 +1165,12 @@ mod tests {
         let runtime = state.runtime.lock().await;
         let decision = runtime
             .exec_policy
-            .check(codewhale_execpolicy::ExecPolicyContext {
+            .check(helpofai_execpolicy::ExecPolicyContext {
                 command: "cargo test --workspace",
                 cwd: "/workspace",
                 tool: Some("exec_shell"),
                 path: None,
-                ask_for_approval: codewhale_execpolicy::AskForApproval::UnlessTrusted,
+                ask_for_approval: helpofai_execpolicy::AskForApproval::UnlessTrusted,
                 sandbox_mode: Some("workspace-write"),
             })
             .expect("policy check");

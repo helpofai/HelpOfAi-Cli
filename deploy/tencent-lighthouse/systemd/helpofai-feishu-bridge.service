@@ -1,0 +1,23 @@
+[Unit]
+Description=HelpOfAi Feishu/Lark Phone Bridge
+Wants=network-online.target helpofai-runtime.service
+After=network-online.target helpofai-runtime.service
+
+[Service]
+Type=simple
+User=helpofai
+Group=helpofai
+WorkingDirectory=/opt/helpofai/bridge
+# Legacy /etc/deepseek is loaded first for old installs; /etc/helpofai wins.
+EnvironmentFile=-/etc/deepseek/feishu-bridge.env
+EnvironmentFile=-/etc/helpofai/feishu-bridge.env
+ExecStart=/usr/bin/node /opt/helpofai/bridge/src/index.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/helpofai-feishu-bridge
+
+[Install]
+WantedBy=multi-user.target

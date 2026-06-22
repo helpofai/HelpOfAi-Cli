@@ -4,8 +4,8 @@
 # Usage: ./scripts/release/prepare-release.sh <new-version>
 #
 # Touches: Cargo.toml (workspace version), crates/*/Cargo.toml (internal
-# codewhale-* dependency pins), npm/codewhale/package.json (version +
-# codewhaleBinaryVersion), README*.md install-tag examples, Cargo.lock,
+# helpofai-* dependency pins), npm/helpofai/package.json (version +
+# helpofaiBinaryVersion), README*.md install-tag examples, Cargo.lock,
 # crates/tui/CHANGELOG.md (via sync-changelog.sh) and
 # web/lib/facts.generated.ts (via derive-facts.mjs).
 #
@@ -52,12 +52,12 @@ def bump(path, pattern, repl, minimum):
 # 1) Workspace version.
 bump("Cargo.toml", rf'^version = "{old_re}"$', f'version = "{new}"', 1)
 
-# 2) Internal codewhale-* dependency pins in every crate manifest.
+# 2) Internal helpofai-* dependency pins in every crate manifest.
 total = 0
 for manifest in sorted(pathlib.Path("crates").glob("*/Cargo.toml")):
     text = manifest.read_text()
     out, n = re.subn(
-        rf'(codewhale-[a-z0-9-]+\s*=\s*\{{[^}}]*version = "){old_re}(")',
+        rf'(helpofai-[a-z0-9-]+\s*=\s*\{{[^}}]*version = "){old_re}(")',
         rf"\g<1>{new}\g<2>",
         text,
     )
@@ -70,8 +70,8 @@ if total == 0:
 
 # 3) npm wrapper.
 bump(
-    "npm/codewhale/package.json",
-    rf'("(?:version|codewhaleBinaryVersion)": "){old_re}(")',
+    "npm/helpofai/package.json",
+    rf'("(?:version|helpofaiBinaryVersion)": "){old_re}(")',
     rf"\g<1>{new}\g<2>",
     2,
 )

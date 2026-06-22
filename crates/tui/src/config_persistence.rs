@@ -259,7 +259,7 @@ pub(crate) fn config_toml_path(config_path: Option<&Path>) -> anyhow::Result<Pat
     if let Some(path) = config_path {
         return Ok(expand_path(path.to_string_lossy().as_ref()));
     }
-    if let Ok(env) = std::env::var("CODEWHALE_CONFIG_PATH") {
+    if let Ok(env) = std::env::var("HELPOFAI_CONFIG_PATH") {
         let trimmed = env.trim();
         if !trimmed.is_empty() {
             return Ok(PathBuf::from(trimmed));
@@ -273,7 +273,7 @@ pub(crate) fn config_toml_path(config_path: Option<&Path>) -> anyhow::Result<Pat
     }
     let home =
         effective_home_dir().context("failed to resolve home directory for config.toml path")?;
-    let primary = home.join(".codewhale").join("config.toml");
+    let primary = home.join(".helpofai").join("config.toml");
     if primary.exists() {
         return Ok(primary);
     }
@@ -293,7 +293,7 @@ fn save_toml_preserving_comments(
 ) -> anyhow::Result<()> {
     use anyhow::Context;
     let serialized = toml::to_string_pretty(doc).context("failed to serialize config.toml")?;
-    let body = codewhale_config::merge_and_preserve_comments(&serialized, original_raw)
+    let body = helpofai_config::merge_and_preserve_comments(&serialized, original_raw)
         .unwrap_or_else(|e| {
             tracing::warn!("failed to merge config comments, saving without them: {e:#}");
             serialized
@@ -315,7 +315,7 @@ mod tests {
     struct EnvGuard {
         home: Option<OsString>,
         userprofile: Option<OsString>,
-        codewhale_config_path: Option<OsString>,
+        helpofai_config_path: Option<OsString>,
         deepseek_config_path: Option<OsString>,
         _lock: std::sync::MutexGuard<'static, ()>,
     }
@@ -328,21 +328,21 @@ mod tests {
             let config_str = OsString::from(config_path.as_os_str());
             let home_prev = env::var_os("HOME");
             let userprofile_prev = env::var_os("USERPROFILE");
-            let codewhale_config_prev = env::var_os("CODEWHALE_CONFIG_PATH");
+            let helpofai_config_prev = env::var_os("HELPOFAI_CONFIG_PATH");
             let deepseek_config_prev = env::var_os("DEEPSEEK_CONFIG_PATH");
 
             // Safety: test-only environment mutation guarded by process-wide mutex.
             unsafe {
                 env::set_var("HOME", &home_str);
                 env::set_var("USERPROFILE", &home_str);
-                env::remove_var("CODEWHALE_CONFIG_PATH");
+                env::remove_var("HELPOFAI_CONFIG_PATH");
                 env::set_var("DEEPSEEK_CONFIG_PATH", &config_str);
             }
 
             Self {
                 home: home_prev,
                 userprofile: userprofile_prev,
-                codewhale_config_path: codewhale_config_prev,
+                helpofai_config_path: helpofai_config_prev,
                 deepseek_config_path: deepseek_config_prev,
                 _lock: lock,
             }
@@ -375,15 +375,15 @@ mod tests {
                 }
             }
 
-            if let Some(value) = self.codewhale_config_path.take() {
+            if let Some(value) = self.helpofai_config_path.take() {
                 // Safety: test-only environment mutation guarded by a global mutex.
                 unsafe {
-                    env::set_var("CODEWHALE_CONFIG_PATH", value);
+                    env::set_var("HELPOFAI_CONFIG_PATH", value);
                 }
             } else {
                 // Safety: test-only environment mutation guarded by a global mutex.
                 unsafe {
-                    env::remove_var("CODEWHALE_CONFIG_PATH");
+                    env::remove_var("HELPOFAI_CONFIG_PATH");
                 }
             }
 
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn persist_status_items_writes_tui_section_to_config_toml() {
-        let temp_root = temp_root("codewhale-statusline-persist");
+        let temp_root = temp_root("helpofai-statusline-persist");
         fs::create_dir_all(&temp_root).unwrap();
         let _guard = EnvGuard::new(&temp_root);
 
@@ -433,8 +433,8 @@ mod tests {
     }
 
     #[test]
-    fn config_toml_path_uses_codewhale_home_for_fresh_installs() {
-        let temp_root = temp_root("codewhale-config-path-fresh");
+    fn config_toml_path_uses_helpofai_home_for_fresh_installs() {
+        let temp_root = temp_root("helpofai-config-path-fresh");
         fs::create_dir_all(&temp_root).unwrap();
         let _guard = EnvGuard::new(&temp_root);
 
@@ -444,13 +444,13 @@ mod tests {
 
         assert_eq!(
             config_toml_path(None).unwrap(),
-            temp_root.join(".codewhale").join("config.toml")
+            temp_root.join(".helpofai").join("config.toml")
         );
     }
 
     #[test]
     fn config_toml_path_preserves_legacy_config_when_it_exists() {
-        let temp_root = temp_root("codewhale-config-path-legacy");
+        let temp_root = temp_root("helpofai-config-path-legacy");
         let legacy_config = temp_root.join(".deepseek").join("config.toml");
         fs::create_dir_all(legacy_config.parent().unwrap()).unwrap();
         fs::write(&legacy_config, "").unwrap();
@@ -464,15 +464,15 @@ mod tests {
     }
 
     #[test]
-    fn config_toml_path_prefers_codewhale_env_over_legacy_env() {
-        let temp_root = temp_root("codewhale-config-path-env");
+    fn config_toml_path_prefers_helpofai_env_over_legacy_env() {
+        let temp_root = temp_root("helpofai-config-path-env");
         fs::create_dir_all(&temp_root).unwrap();
         let _guard = EnvGuard::new(&temp_root);
         let preferred = temp_root.join("preferred.toml");
         let legacy = temp_root.join("legacy.toml");
 
         unsafe {
-            env::set_var("CODEWHALE_CONFIG_PATH", &preferred);
+            env::set_var("HELPOFAI_CONFIG_PATH", &preferred);
             env::set_var("DEEPSEEK_CONFIG_PATH", &legacy);
         }
 
@@ -481,7 +481,7 @@ mod tests {
 
     #[test]
     fn persist_status_items_preserves_existing_unrelated_keys() {
-        let temp_root = temp_root("codewhale-statusline-preserve");
+        let temp_root = temp_root("helpofai-statusline-preserve");
         fs::create_dir_all(&temp_root).unwrap();
         let _guard = EnvGuard::new(&temp_root);
 
@@ -512,7 +512,7 @@ mod tests {
 
     #[test]
     fn persist_bool_key_preserves_comments() {
-        let temp_root = temp_root("codewhale-persist-comments");
+        let temp_root = temp_root("helpofai-persist-comments");
         fs::create_dir_all(&temp_root).unwrap();
         let _guard = EnvGuard::new(&temp_root);
 

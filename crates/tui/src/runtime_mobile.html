@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>CodeWhale Mobile</title>
+  <title>HelpOfAi Mobile</title>
   <style>
     :root {
       color-scheme: dark;
@@ -207,7 +207,7 @@
 </head>
 <body>
   <header>
-    <h1>CodeWhale Mobile</h1>
+    <h1>HelpOfAi Mobile</h1>
     <button id="refresh" title="Refresh threads">Refresh</button>
   </header>
 
@@ -283,7 +283,7 @@
       const params = new URLSearchParams(location.search);
       const urlToken = params.get("token");
       if (!urlToken) return;
-      localStorage.setItem("codewhale_runtime_token", urlToken);
+      localStorage.setItem("helpofai_runtime_token", urlToken);
       params.delete("token");
       const qs = params.toString();
       history.replaceState(null, "", location.pathname + (qs ? "?" + qs : ""));
@@ -538,9 +538,9 @@
 
     async function boot() {
       takeTokenFromUrl();
-      $("token").value = localStorage.getItem("codewhale_runtime_token") || "";
+      $("token").value = localStorage.getItem("helpofai_runtime_token") || "";
       $("save-token").onclick = async () => {
-        localStorage.setItem("codewhale_runtime_token", token());
+        localStorage.setItem("helpofai_runtime_token", token());
         await loadThreads().catch((err) => setStatus(err.message, "bad"));
       };
       $("refresh").onclick = () => loadThreads().catch((err) => setStatus(err.message, "bad"));

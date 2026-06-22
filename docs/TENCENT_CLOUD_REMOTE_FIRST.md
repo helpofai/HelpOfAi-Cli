@@ -1,24 +1,24 @@
 # Tencent Cloud Remote-First Quickstart
 
-This is the opinionated Tencent-native teaching path for codewhale users
+This is the opinionated Tencent-native teaching path for helpofai users
 who want an always-on agent workspace, a phone control surface, and a stack
 that works well from mainland China.
 
-It complements the local install path. If you only want to use `codewhale` on a
-laptop, start with the README quickstart. If you want "CodeWhale as a remote
+It complements the local install path. If you only want to use `helpofai` on a
+laptop, start with the README quickstart. If you want "HelpOfAi as a remote
 workbench I can control from my phone", start here.
 
 ## Default Stack
 
 ```text
 GitHub main/tags
-  -> CNB mirror: cnb.cool/codewhale.net/codewhale
+  -> CNB mirror: cnb.cool/helpofai.net/helpofai
   -> optional CNB build/deploy pipeline
   -> Tencent Lighthouse HK
-       /opt/whalebro/codewhale
+       /opt/whalebro/helpofai
        /opt/whalebro/worktrees
-       codewhale-runtime.service on 127.0.0.1:7878
-       codewhale-feishu-bridge.service or codewhale-telegram-bridge.service
+       helpofai-runtime.service on 127.0.0.1:7878
+       helpofai-feishu-bridge.service or helpofai-telegram-bridge.service
   -> Feishu/Lark or Telegram phone DM
 
 EdgeOne is optional:
@@ -32,7 +32,7 @@ EdgeOne is optional:
   slow. Optional CNB deploy templates live under
   `deploy/tencent-lighthouse/cnb/`.
 - **Lighthouse** is the private always-on host. It owns `/opt/whalebro`,
-  systemd, Rust/Node installs, and the `codewhale serve --http` runtime.
+  systemd, Rust/Node installs, and the `helpofai serve --http` runtime.
 - **Telegram** is the simplest phone MVP. The bridge uses long polling, so the
   first setup does not need a public webhook URL.
 - **Feishu/Lark** is the Tencent-native enterprise phone UI. The bridge uses
@@ -47,8 +47,8 @@ EdgeOne is optional:
 2. Clone from CNB by default when the branch or tag exists there:
 
    ```bash
-   export CODEWHALE_REPO_URL=https://cnb.cool/codewhale.net/codewhale.git
-   git ls-remote "$CODEWHALE_REPO_URL" refs/heads/main
+   export HELPOFAI_REPO_URL=https://cnb.cool/helpofai.net/helpofai.git
+   git ls-remote "$HELPOFAI_REPO_URL" refs/heads/main
    ```
 
    Tencent setup branches matching `work/v*-feishu-*` or
@@ -58,19 +58,19 @@ EdgeOne is optional:
 3. Bootstrap `/opt/whalebro` on the server:
 
    ```bash
-   export CODEWHALE_BRANCH=main
-   git clone --branch "$CODEWHALE_BRANCH" "$CODEWHALE_REPO_URL" /tmp/codewhale
-   cd /tmp/codewhale
-   sudo CODEWHALE_REPO_URL="$CODEWHALE_REPO_URL" \
-     CODEWHALE_REPO_BRANCH="$CODEWHALE_BRANCH" \
+   export HELPOFAI_BRANCH=main
+   git clone --branch "$HELPOFAI_BRANCH" "$HELPOFAI_REPO_URL" /tmp/helpofai
+   cd /tmp/helpofai
+   sudo HELPOFAI_REPO_URL="$HELPOFAI_REPO_URL" \
+     HELPOFAI_REPO_BRANCH="$HELPOFAI_BRANCH" \
      bash scripts/tencent-lighthouse/bootstrap-ubuntu.sh
    ```
 
-4. Install Rust for the `codewhale` user, build both binaries, and install the
+4. Install Rust for the `helpofai` user, build both binaries, and install the
    systemd units using `docs/TENCENT_LIGHTHOUSE_HK.md`.
-5. Configure either a Telegram bot (`CODEWHALE_BRIDGE=telegram` and
-   `/etc/codewhale/telegram-bridge.env`) or a Feishu/Lark self-built app
-   (`CODEWHALE_BRIDGE=feishu` and `/etc/codewhale/feishu-bridge.env`), run the
+5. Configure either a Telegram bot (`HELPOFAI_BRIDGE=telegram` and
+   `/etc/helpofai/telegram-bridge.env`) or a Feishu/Lark self-built app
+   (`HELPOFAI_BRIDGE=feishu` and `/etc/helpofai/feishu-bridge.env`), run the
    validator, then run the VPS doctor.
 6. From your phone DM, validate `/status`, a harmless prompt, `/interrupt`,
    `/threads`, `/resume`, approval allow/deny, service restart, and reboot
@@ -88,7 +88,7 @@ The intended deploy button should:
 
 1. Run bridge validation/tests and lightweight release-version checks.
 2. SSH to Lighthouse with a deploy key stored as a CNB secret.
-3. Update `/opt/whalebro/codewhale`.
+3. Update `/opt/whalebro/helpofai`.
 4. Rebuild/install both binaries.
 5. Reinstall/restart systemd services.
 6. Run `scripts/tencent-lighthouse/doctor.sh`.
@@ -108,22 +108,22 @@ you want a public domain in front of a deliberate HTTP service:
 
 Keep these rules:
 
-- `codewhale serve --http` stays bound to `127.0.0.1`.
+- `helpofai serve --http` stays bound to `127.0.0.1`.
 - `/v1/*` runtime endpoints are never public.
-- `CODEWHALE_RUNTIME_TOKEN` never leaves the server env files.
+- `HELPOFAI_RUNTIME_TOKEN` never leaves the server env files.
 - Phone-bridge group control stays off until a specific group allowlist is set.
 - Auto-approval stays off for the phone bridge unless a maintainer explicitly
   accepts the risk.
 
 ## Teaching Order
 
-Use this sequence when explaining codewhale to a new remote-first user:
+Use this sequence when explaining helpofai to a new remote-first user:
 
-1. **Local mental model:** `codewhale` is the dispatcher, `codewhale-tui` is the
+1. **Local mental model:** `helpofai` is the dispatcher, `helpofai-tui` is the
    companion runtime, and both binaries matter.
 2. **Agent safety:** Plan/Agent/YOLO are separate from approval mode and
    sandboxing.
-3. **Remote runtime:** `codewhale serve --http` is a localhost runtime API, not
+3. **Remote runtime:** `helpofai serve --http` is a localhost runtime API, not
    a public web app.
 4. **Phone bridge:** Telegram or Feishu/Lark messages become runtime requests
    through an allowlisted bridge.

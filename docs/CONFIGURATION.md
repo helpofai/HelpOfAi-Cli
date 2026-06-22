@@ -1,6 +1,6 @@
 # Configuration
 
-codewhale reads configuration from a TOML file plus environment variables.
+helpofai reads configuration from a TOML file plus environment variables.
 At process startup it also loads a workspace-local `.env` file when present.
 Use the tracked `.env.example` as the template; copy it to `.env`, then edit
 only the provider and safety knobs you need.
@@ -13,9 +13,9 @@ Each repo can carry two distinct, complementary files:
   canonical file for "how should an agent work in this repo." Run `/init` to
   scaffold one. `CLAUDE.md` and `.claude/instructions.md` are read as
   compatibility fallbacks.
-- **`.codewhale/constitution.json`** — CodeWhale-specific **repo authority /
-  prioritization policy**: when local sources conflict, which should CodeWhale
-  trust first, and what to verify before claiming a task is done. `.codewhale/`
+- **`.helpofai/constitution.json`** — HelpOfAi-specific **repo authority /
+  prioritization policy**: when local sources conflict, which should HelpOfAi
+  trust first, and what to verify before claiming a task is done. `.helpofai/`
   lives inside the repo (like `.github/`). Example:
 
   ```json
@@ -46,34 +46,34 @@ Each repo can carry two distinct, complementary files:
   prompt as concise prose in a higher-authority block and takes precedence over
   a legacy `WHALE.md`.
 
-  This is the **local-law** layer in CodeWhale's hierarchy: *base myth & global
+  This is the **local-law** layer in HelpOfAi's hierarchy: *base myth & global
   Constitution* (the model prompt in `prompts/constitution.md`, including the Brother
-  Whale identity anchor) → *repo constitution* (`.codewhale/constitution.json`,
+  Whale identity anchor) → *repo constitution* (`.helpofai/constitution.json`,
   this file) → *task packet* (the current objective) → *runtime policy*
   (permissions/sandbox/cost limits enforced in code). The repo constitution
   gives decision rules; it does not replace the global Constitution or the
   current user request.
 
 > **`WHALE.md` is deprecated.** It overlapped confusingly with `AGENTS.md`.
-> CodeWhale still **reads** an existing `WHALE.md` (below `AGENTS.md`) so old
+> HelpOfAi still **reads** an existing `WHALE.md` (below `AGENTS.md`) so old
 > repos keep working, and emits a deprecation notice, but it is no longer
 > created or recommended and will be dropped from default discovery after a
 > deprecation window. Move ordinary instructions to `AGENTS.md` and
-> CodeWhale-specific authority policy to `.codewhale/constitution.json`. (The
-> global CodeWhale Constitution shipped in the model prompt is a separate thing
+> HelpOfAi-specific authority policy to `.helpofai/constitution.json`. (The
+> global HelpOfAi Constitution shipped in the model prompt is a separate thing
 > and is unaffected.)
 
 ## Where It Looks
 
 Default config path:
 
-- `~/.codewhale/config.toml`
+- `~/.helpofai/config.toml`
 - Legacy fallback: `~/.deepseek/config.toml`
 
 Overrides:
 
-- CLI: `codewhale --config /path/to/config.toml`
-- Env: `CODEWHALE_CONFIG_PATH=/path/to/config.toml`
+- CLI: `helpofai --config /path/to/config.toml`
+- Env: `HELPOFAI_CONFIG_PATH=/path/to/config.toml`
 - Legacy env alias: `DEEPSEEK_CONFIG_PATH=/path/to/config.toml`
 
 If both are set, `--config` wins. Environment variable overrides are applied after the file is loaded.
@@ -93,18 +93,18 @@ The legacy `[projects."/absolute/path/to/project"]` table is also accepted for
 this user-owned override.
 
 In interactive mode, the per-project overlay
-`<workspace>/.codewhale/config.toml` is applied after this user entry. A
+`<workspace>/.helpofai/config.toml` is applied after this user entry. A
 project-level `allow_shell = false` still takes precedence.
 
 ### Per-project overlay (#485)
 
 When the TUI starts in a workspace that contains a
-`<workspace>/.codewhale/config.toml` file, the values declared in that
+`<workspace>/.helpofai/config.toml` file, the values declared in that
 file are merged on top of the global config. Legacy
 `<workspace>/.deepseek/config.toml` files are still read when the
-CodeWhale path is absent. This lets a repo lock its own provider,
+HelpOfAi path is absent. This lets a repo lock its own provider,
 model, sandbox policy, or approval policy without touching the user's
-`~/.codewhale/config.toml`. Pass
+`~/.helpofai/config.toml`. Pass
 `--no-project-config` to skip the overlay for one launch.
 
 Supported keys in the project overlay (top-level fields only):
@@ -130,15 +130,15 @@ Other settings (skills_dir, hooks, capacity, retry, etc.) stay
 user-global. If your repo needs more, file an issue describing the
 specific use case.
 
-The `codewhale` facade and `codewhale-tui` binary share the same config file for
-DeepSeek auth and model defaults. `codewhale auth set --provider deepseek` (and
-the legacy `codewhale login --api-key ...` alias) saves the key to
-`~/.codewhale/config.toml` (migrating legacy `~/.deepseek/config.toml` on first
-launch when needed), and `codewhale --model deepseek-v4-flash` is forwarded to
+The `helpofai` facade and `helpofai-tui` binary share the same config file for
+DeepSeek auth and model defaults. `helpofai auth set --provider deepseek` (and
+the legacy `helpofai login --api-key ...` alias) saves the key to
+`~/.helpofai/config.toml` (migrating legacy `~/.deepseek/config.toml` on first
+launch when needed), and `helpofai --model deepseek-v4-flash` is forwarded to
 the TUI as `DEEPSEEK_MODEL`.
 
 Credential lookup uses `config -> keyring -> env` after any explicit CLI
-`--api-key`. Run `codewhale auth status` to inspect the active provider's config
+`--api-key`. Run `helpofai auth status` to inspect the active provider's config
 file, OS keyring backend, environment variable, winning source, and last-four
 label without printing the key itself. The command only probes the active
 provider's keyring entry.
@@ -148,19 +148,19 @@ For hosted, generic OpenAI-compatible, or self-hosted providers, set
 `"volcengine"`, `"openrouter"`, `"xiaomi-mimo"`, `"novita"`, `"fireworks"`,
 `"siliconflow"`, `"siliconflow-CN"`, `"arcee"`, `"moonshot"`, `"sglang"`,
 `"vllm"`, or `"ollama"` or pass
-`codewhale --provider <name>`.
+`helpofai --provider <name>`.
 For the provider-by-provider registry, including auth variables, default base
 URLs, model IDs, and capability metadata, see [PROVIDERS.md](PROVIDERS.md).
 The facade saves provider credentials to the shared user config and forwards
 the resolved key, base URL, provider, and model to the TUI process. Use
-`codewhale auth set --provider nvidia-nim --api-key "YOUR_NVIDIA_API_KEY"` or
-`codewhale auth set --provider openai --api-key "YOUR_OPENAI_COMPATIBLE_API_KEY"` or
-`codewhale auth set --provider atlascloud --api-key "YOUR_ATLASCLOUD_API_KEY"` or
-`codewhale auth set --provider wanjie-ark --api-key "YOUR_WANJIE_API_KEY"` or
-`codewhale auth set --provider xiaomi-mimo --api-key "YOUR_XIAOMI_KEY"` or
-`codewhale auth set --provider fireworks --api-key "YOUR_FIREWORKS_API_KEY"` or
-`codewhale auth set --provider siliconflow --api-key "YOUR_SILICONFLOW_API_KEY"` or
-`codewhale auth set --provider arcee --api-key "YOUR_ARCEE_API_KEY"`
+`helpofai auth set --provider nvidia-nim --api-key "YOUR_NVIDIA_API_KEY"` or
+`helpofai auth set --provider openai --api-key "YOUR_OPENAI_COMPATIBLE_API_KEY"` or
+`helpofai auth set --provider atlascloud --api-key "YOUR_ATLASCLOUD_API_KEY"` or
+`helpofai auth set --provider wanjie-ark --api-key "YOUR_WANJIE_API_KEY"` or
+`helpofai auth set --provider xiaomi-mimo --api-key "YOUR_XIAOMI_KEY"` or
+`helpofai auth set --provider fireworks --api-key "YOUR_FIREWORKS_API_KEY"` or
+`helpofai auth set --provider siliconflow --api-key "YOUR_SILICONFLOW_API_KEY"` or
+`helpofai auth set --provider arcee --api-key "YOUR_ARCEE_API_KEY"`
 to save provider keys through the facade. The generic `openai` provider defaults
 to `https://api.openai.com/v1`, accepts `OPENAI_BASE_URL`, and defaults to
 `deepseek-v4-pro` for OpenAI-compatible gateways. `atlascloud` defaults to
@@ -171,7 +171,7 @@ Wanjie Ark's OpenAI-compatible endpoint at
 and passes model IDs through unchanged because Wanjie model access is
 account-scoped. SGLang, vLLM, and Ollama are
 self-hosted and can run without an API key by default. Ollama defaults to
-`http://localhost:11434/v1` and sends model tags such as `codewhale-coder:1.3b`
+`http://localhost:11434/v1` and sends model tags such as `helpofai-coder:1.3b`
 or `qwen2.5-coder:7b` unchanged. Self-hosted providers and loopback custom
 URLs (`localhost`, `127.0.0.1`, `[::1]`, `0.0.0.0`) do not read the secret store
 unless API-key auth is explicitly requested; use an env var or config-file key
@@ -182,7 +182,7 @@ SiliconFlow defaults to `https://api.siliconflow.com/v1`, accepts
 `https://api.siliconflow.cn/v1` while sharing the same
 `[providers.siliconflow]` table and `SILICONFLOW_API_KEY` credential slot.
 Arcee AI defaults to `https://api.arcee.ai/api/v1`, accepts `ARCEE_BASE_URL`,
-and uses `trinity-large-thinking` by default for CodeWhale agent work.
+and uses `trinity-large-thinking` by default for HelpOfAi agent work.
 `trinity-large-preview` is also listed as a direct Arcee API model; OpenRouter's
 `arcee-ai/trinity-large-thinking` remains the OpenRouter namespaced form, while
 the direct Arcee provider uses the bare `trinity-large-thinking` ID. Direct
@@ -227,20 +227,20 @@ For private gateways with broken or intercepted certificates, prefer
 `SSL_CERT_FILE` with a trusted CA bundle. As a last resort, a provider table can
 set `insecure_skip_tls_verify = true`; this disables certificate verification
 only for the active LLM provider client, leaves other HTTP clients unchanged,
-and is reported by `codewhale doctor`.
+and is reported by `helpofai doctor`.
 
 Local HTTP endpoints such as Ollama, SGLang, and vLLM are allowed by default
 when they use localhost or loopback addresses. For a non-local `http://`
 gateway, launch with `DEEPSEEK_ALLOW_INSECURE_HTTP=1` only on a trusted network:
 
 ```bash
-DEEPSEEK_ALLOW_INSECURE_HTTP=1 codewhale
+DEEPSEEK_ALLOW_INSECURE_HTTP=1 helpofai
 ```
 
 Third-party OpenAI-compatible gateways that need extra request headers can set
 `http_headers = { "X-Model-Provider-Id" = "your-model-provider" }` at the top
 level or under a provider table such as `[providers.deepseek]`. When configured,
-codewhale sends those custom headers on model API requests. The equivalent
+helpofai sends those custom headers on model API requests. The equivalent
 environment override is `DEEPSEEK_HTTP_HEADERS`, using comma-separated
 `name=value` pairs such as
 `X-Model-Provider-Id=your-model-provider,X-Gateway-Route=dev`. `Authorization`
@@ -249,7 +249,7 @@ setting.
 
 ### Vision Model
 
-CodeWhale's chat provider and `image_analyze` tool are configured separately.
+HelpOfAi's chat provider and `image_analyze` tool are configured separately.
 The main chat path remains the selected text/tool provider; image analysis runs
 through `[vision_model]` when the `vision_model` feature is enabled.
 
@@ -273,18 +273,18 @@ auto-select MiMo endpoints. Use
 `https://token-plan-sgp.xiaomimimo.com/v1` for Singapore accounts or
 `https://token-plan-cn.xiaomimimo.com/v1` for China-region accounts.
 
-To bootstrap MCP and skills directories at their resolved paths, run `codewhale-tui setup`.
-To only scaffold MCP, run `codewhale-tui mcp init`.
+To bootstrap MCP and skills directories at their resolved paths, run `helpofai-tui setup`.
+To only scaffold MCP, run `helpofai-tui mcp init`.
 
 Note: setup, doctor, mcp, features, sessions, resume/fork, exec, review, and eval
-are subcommands of the `codewhale-tui` binary. The `codewhale` dispatcher exposes a
+are subcommands of the `helpofai-tui` binary. The `helpofai` dispatcher exposes a
 distinct set of commands (`auth`, `config`, `model`, `thread`, `sandbox`,
 `app-server`, `mcp-server`, `completion`) and forwards plain prompts to
-`codewhale-tui`.
+`helpofai-tui`.
 
 ### Startup Update Checks
 
-By default, the TUI starts a background check for the latest stable CodeWhale
+By default, the TUI starts a background check for the latest stable HelpOfAi
 release and shows a short toast only when a newer release is available and the
 official release assets are complete.
 
@@ -298,17 +298,17 @@ check_for_updates = false
 
 To redirect the startup check, set `update_uri` to an internal endpoint that
 returns GitHub-compatible latest-release JSON. Minimal mirror metadata with a
-`tag_name` field is accepted; if `assets` are present, CodeWhale requires the
+`tag_name` field is accepted; if `assets` are present, HelpOfAi requires the
 same uploaded asset set as the official release before showing the toast.
 
 ```toml
 [update]
 check_for_updates = true
-update_uri = "https://internal.mirror.example/codewhale/releases/latest"
+update_uri = "https://internal.mirror.example/helpofai/releases/latest"
 ```
 
 When `update_uri` is not set, startup checks honor release mirror environment
-variables such as `CODEWHALE_RELEASE_BASE_URL` before falling back to the
+variables such as `HELPOFAI_RELEASE_BASE_URL` before falling back to the
 official GitHub API endpoint. If a configured `update_uri` cannot be fetched or
 parsed and a release mirror env var is set, the TUI falls back to that mirror
 instead of failing startup.
@@ -369,15 +369,15 @@ default_text_model = "deepseek-ai/DeepSeek-V4-Pro"
 [profiles.ollama]
 provider = "ollama"
 base_url = "http://localhost:11434/v1"
-default_text_model = "codewhale-coder:1.3b"
+default_text_model = "helpofai-coder:1.3b"
 ```
 
 Select a profile with:
 
-- CLI: `codewhale --profile work`
+- CLI: `helpofai --profile work`
 - Env: `DEEPSEEK_PROFILE=work`
 
-If a profile is selected but missing, codewhale exits with an error listing available profiles.
+If a profile is selected but missing, helpofai exits with an error listing available profiles.
 
 ## Harness Profiles
 
@@ -413,14 +413,14 @@ The v0.9 implementation order and automatic-creator boundary are documented in
 Most runtime environment variables override config values. API-key variables are
 fallbacks after saved config and keyring credentials.
 
-The three user-facing slots — provider, model, base URL — expose `CODEWHALE_*`
-aliases. When both forms are set the `CODEWHALE_*` value wins; the
+The three user-facing slots — provider, model, base URL — expose `HELPOFAI_*`
+aliases. When both forms are set the `HELPOFAI_*` value wins; the
 `DEEPSEEK_*` form is kept for older shells:
 
-- `CODEWHALE_PROVIDER` (preferred) / `DEEPSEEK_PROVIDER` (legacy alias) —
+- `HELPOFAI_PROVIDER` (preferred) / `DEEPSEEK_PROVIDER` (legacy alias) —
   `deepseek|nvidia-nim|openai|atlascloud|wanjie-ark|volcengine|openrouter|xiaomi-mimo|novita|fireworks|siliconflow|siliconflow-CN|arcee|moonshot|sglang|vllm|ollama`
-- `CODEWHALE_MODEL` (preferred) / `DEEPSEEK_MODEL` (legacy alias) — default model for the active provider
-- `CODEWHALE_BASE_URL` (preferred) / `DEEPSEEK_BASE_URL` (legacy alias) — base URL for the active provider
+- `HELPOFAI_MODEL` (preferred) / `DEEPSEEK_MODEL` (legacy alias) — default model for the active provider
+- `HELPOFAI_BASE_URL` (preferred) / `DEEPSEEK_BASE_URL` (legacy alias) — base URL for the active provider
 
 Remaining variables:
 
@@ -491,18 +491,18 @@ Remaining variables:
 - `DEEPSEEK_REQUIREMENTS_PATH`
 - `DEEPSEEK_MAX_SUBAGENTS` (clamped to `1..=20`)
 - `DEEPSEEK_TASKS_DIR` (runtime task queue/artifact storage, default
-  `~/.codewhale/tasks`, with legacy `~/.deepseek/tasks` fallback when only the
+  `~/.helpofai/tasks`, with legacy `~/.deepseek/tasks` fallback when only the
   legacy directory exists)
 - `DEEPSEEK_ALLOW_INSECURE_HTTP` (`1`/`true` allows non-local `http://` base URLs; default is reject)
 - `DEEPSEEK_FORCE_HTTP1` (`1|true|yes|on` pins the HTTP client to HTTP/1.1, disabling HTTP/2; useful on Windows or behind proxies that mishandle long-lived H2 streams)
-- `CODEWHALE_HOME` (override the base data directory; defaults to `~/.codewhale`).
-  If you previously exported `DEEPSEEK_HOME`, rename it to `CODEWHALE_HOME`;
-  the old env var is not used for new CodeWhale state paths.
-- `CODEWHALE_RELEASE_BASE_URL` (release asset mirror used by `codewhale update`
+- `HELPOFAI_HOME` (override the base data directory; defaults to `~/.helpofai`).
+  If you previously exported `DEEPSEEK_HOME`, rename it to `HELPOFAI_HOME`;
+  the old env var is not used for new HelpOfAi state paths.
+- `HELPOFAI_RELEASE_BASE_URL` (release asset mirror used by `helpofai update`
   and by TUI startup update checks when `[update].update_uri` is not set, or as
   a fallback when that configured URI cannot be fetched)
 - `DEEPSEEK_AUTOMATIONS_DIR` (override the automations storage directory; uses
-  `~/.codewhale/automations` by default, with legacy `~/.deepseek/automations`
+  `~/.helpofai/automations` by default, with legacy `~/.deepseek/automations`
   fallback when only the legacy directory exists)
 - `DEEPSEEK_CAPACITY_ENABLED`
 - `DEEPSEEK_CAPACITY_LOW_RISK_MAX`
@@ -537,7 +537,7 @@ concatenated, in declared order, alongside the auto-loaded
 ```toml
 instructions = [
     "./AGENTS.md",
-    "~/.codewhale/global.md",
+    "~/.helpofai/global.md",
     "~/team/agents-shared.md",
 ]
 ```
@@ -549,7 +549,7 @@ Rules:
   truncated with a `[…elided]` marker rather than skipped.
 - Missing files are skipped with a tracing warning so a stale
   entry doesn't fail the launch.
-- Project config (`<workspace>/.codewhale/config.toml`, or legacy
+- Project config (`<workspace>/.helpofai/config.toml`, or legacy
   `<workspace>/.deepseek/config.toml`)
   **replaces** the user array wholesale rather than merging.
   If you want both, list `~/global.md` inside the project
@@ -576,7 +576,7 @@ submitted text.
 ```toml
 [[hooks.hooks]]
 event = "message_submit"
-command = "~/.codewhale/hooks/inject-context.sh"
+command = "~/.helpofai/hooks/inject-context.sh"
 timeout_secs = 2
 continue_on_error = true
 ```
@@ -676,7 +676,7 @@ Example input rewrite:
 ```toml
 [[hooks.hooks]]
 event = "tool_call_before"
-command = "~/.codewhale/hooks/clamp-shell-timeout.sh"
+command = "~/.helpofai/hooks/clamp-shell-timeout.sh"
 condition = { type = "tool_name", name = "exec_shell" }
 ```
 
@@ -690,10 +690,10 @@ metacharacters in the pattern are matched literally.
 
 ### Project-local hooks
 
-Repositories can ship policy in `<workspace>/.codewhale/hooks.toml`,
+Repositories can ship policy in `<workspace>/.helpofai/hooks.toml`,
 using the same shape as the `[hooks]` table (top-level fields plus
 `[[hooks]]` entries). Project hooks are executable shell
-configuration, so CodeWhale only loads them after the workspace has
+configuration, so HelpOfAi only loads them after the workspace has
 been trusted in user-owned config through the trust prompt or a
 `[projects."<workspace>"] trust_level = "trusted"` entry. Session
 `/trust on` mode does not enable repo-supplied hooks by itself, and
@@ -704,7 +704,7 @@ win ties. A malformed trusted project file logs a warning and startup
 falls back to global hooks only.
 
 ```toml
-# .codewhale/hooks.toml
+# .helpofai/hooks.toml
 [[hooks]]
 event = "tool_call_before"
 command = '''echo '{"decision":"deny","reason":"no shell in this repo"}' '''
@@ -723,7 +723,7 @@ next queued follow-up.
 ```toml
 [[hooks.hooks]]
 event = "turn_end"
-command = "~/.codewhale/hooks/turn-audit.sh"
+command = "~/.helpofai/hooks/turn-audit.sh"
 timeout_secs = 2
 continue_on_error = true
 ```
@@ -778,7 +778,7 @@ earlier hook exits non-zero.
 ```toml
 [[hooks.hooks]]
 event = "subagent_complete"
-command = "~/.codewhale/hooks/subagent-audit.sh"
+command = "~/.helpofai/hooks/subagent-audit.sh"
 timeout_secs = 2
 continue_on_error = true
 ```
@@ -823,7 +823,7 @@ returned by `agent` when full sub-agent details are needed.
 ### Composer stash (`/stash`, Ctrl+S)
 
 Press **Ctrl+S** in the composer to park the current draft to
-`~/.codewhale/composer_stash.jsonl`. `/stash list` shows parked
+`~/.helpofai/composer_stash.jsonl`. `/stash list` shows parked
 drafts with one-line previews and timestamps; `/stash pop`
 restores the most recently parked draft (LIFO); `/stash clear`
 wipes the file. Capped at 200 entries; multiline drafts
@@ -831,9 +831,9 @@ round-trip intact.
 
 ## Settings File (Persistent UI Preferences)
 
-codewhale also stores user preferences in:
+helpofai also stores user preferences in:
 
-- `~/.codewhale/settings.toml` on new installs
+- `~/.helpofai/settings.toml` on new installs
 - `~/.deepseek/settings.toml` or the legacy platform config-dir
   `deepseek/settings.toml` when an existing settings file is present
 
@@ -935,7 +935,7 @@ capacity controller remains disabled unless configured.
 
 If you are upgrading from older releases:
 
-- Old: `/codewhale`
+- Old: `/helpofai`
   New: `/links` (aliases: `/dashboard`, `/api`)
 - Old: `/set model deepseek-reasoner`
   New: `/config` and edit the `model` row to `deepseek-v4-pro` or `deepseek-v4-flash`
@@ -952,14 +952,14 @@ If you are upgrading from older releases:
 - `api_key` (string, required for hosted providers): must be non-empty for DeepSeek/hosted providers (or set the provider API key env var). Self-hosted SGLang, vLLM, and Ollama can omit it.
 - `base_url` (string, optional): defaults to `https://api.deepseek.com/beta` for DeepSeek's OpenAI-compatible Chat Completions API, including legacy `provider = "deepseek-cn"` configs. Other defaults are `https://integrate.api.nvidia.com/v1` for `nvidia-nim`, `https://api.openai.com/v1` for `openai`, `https://api.atlascloud.ai/v1` for `atlascloud`, `https://maas-openapi.wanjiedata.com/api/v1` for `wanjie-ark`, `https://ark.cn-beijing.volces.com/api/coding/v3` for `volcengine`, `https://openrouter.ai/api/v1` for `openrouter`, `https://token-plan-sgp.xiaomimimo.com/v1` for `xiaomi-mimo` when the API key starts with `tp-...` and `https://api.xiaomimimo.com/v1` otherwise, `https://api.novita.ai/openai/v1` for `novita`, `https://api.fireworks.ai/inference/v1` for `fireworks`, `https://api.siliconflow.com/v1` for `siliconflow`, `https://api.siliconflow.cn/v1` for `siliconflow-CN`, `https://api.arcee.ai/api/v1` for `arcee`, `https://api.moonshot.ai/v1` for `moonshot`, `https://api.minimax.io/v1` for `minimax`, `https://api.z.ai/api/coding/paas/v4` for `zai`, `https://api.stepfun.ai/v1` for `stepfun`, `https://api.deepinfra.com/v1/openai` for `deepinfra`, `https://router.huggingface.co/v1` for `huggingface`, `https://api.together.xyz/v1` for `together`, `https://chatgpt.com/backend-api` for `openai-codex`, `https://api.anthropic.com` for `anthropic`, `http://localhost:30000/v1` for `sglang`, `http://localhost:8000/v1` for `vllm`, and `http://localhost:11434/v1` for `ollama`. Set `base_url = "https://token-plan-cn.xiaomimimo.com/v1"` explicitly if your Xiaomi MiMo Token Plan account is provisioned in the China region. Set `https://api.deepseek.com` or `https://api.deepseek.com/v1` explicitly to opt out of DeepSeek beta features.
 - `path_suffix` (string, optional provider-table key): override the chat-completions path for OpenAI-compatible gateways that do not serve `/v1/chat/completions`. For example, `[providers.openai] path_suffix = "/chat/completions"` sends chat requests to the unversioned base URL plus `/chat/completions`; `models` and `beta/*` requests keep their normal routing.
-- `insecure_skip_tls_verify` (bool, optional provider-table key): disabled by default. When true on the active provider table, only the LLM provider HTTP client skips TLS certificate verification. Prefer `SSL_CERT_FILE` for corporate or private CA bundles; `codewhale doctor` reports this setting when enabled.
-- `default_text_model` (string, optional): defaults to `deepseek-v4-pro` for DeepSeek and generic OpenAI-compatible endpoints, `deepseek-ai/deepseek-v4-pro` for NVIDIA NIM, `deepseek-ai/deepseek-v4-flash` for AtlasCloud, `deepseek-reasoner` for Wanjie Ark, `DeepSeek-V4-Pro` for Volcengine Ark, `deepseek/deepseek-v4-pro` for OpenRouter and Novita, `mimo-v2.5-pro` for Xiaomi MiMo, `accounts/fireworks/models/deepseek-v4-pro` for Fireworks, `deepseek-ai/DeepSeek-V4-Pro` for SiliconFlow and DeepInfra, `trinity-large-thinking` for Arcee AI, `kimi-k2.7-code` for Moonshot, `MiniMax-M3` for MiniMax, `GLM-5.2` for Z.ai, `step-3.7-flash` for StepFun, `deepseek-ai/DeepSeek-V4-Pro` for SGLang/vLLM, and `deepseek-coder:1.3b` for Ollama. Hugging Face and Together AI both default to `deepseek-ai/DeepSeek-V4-Pro`. Current public DeepSeek IDs are `deepseek-v4-pro` and `deepseek-v4-flash`, both with 1M context windows, 384K max output, and thinking mode enabled by default. Legacy `deepseek-chat` and `deepseek-reasoner` remain compatibility aliases for `deepseek-v4-flash` until July 24, 2026, except SiliconFlow maps `deepseek-reasoner` and `deepseek-r1` to its Pro model while `deepseek-chat` and `deepseek-v3` map to Flash. Provider-specific mappings translate `deepseek-v4-pro` / `deepseek-v4-flash` to each provider's model ID where supported. OpenRouter also recognizes recent large IDs such as `arcee-ai/trinity-large-thinking`, `minimax/minimax-m3`, `minimax/minimax-2.7`, `xiaomi/mimo-v2.5-pro`, `qwen/qwen3.6-flash`, `qwen/qwen3.6-35b-a3b`, `qwen/qwen3.6-max-preview`, `qwen/qwen3.6-27b`, `qwen/qwen3.6-plus`, `qwen/qwen3.7-max`, `google/gemma-4-31b-it`, `moonshotai/kimi-k2.7-code`, `moonshotai/kimi-k2.6`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, and `nvidia/nemotron-3-ultra-550b-a55b`; direct Arcee uses bare IDs such as `trinity-large-thinking` and `trinity-large-preview`; direct Moonshot recognizes `kimi-k2.7-code`, `kimi-k2.6`, and Kimi Code's stable `kimi-for-coding`; direct MiniMax recognizes `MiniMax-M3` and the documented M2.x chat model IDs; direct Xiaomi MiMo recognizes chat IDs `mimo-v2.5-pro` and `mimo-v2.5`, while TTS IDs are selected through `codewhale speech` / `tts`. Generic `openai`, `atlascloud`, `wanjie-ark`, `xiaomi-mimo`, `arcee`, `moonshot`, `minimax`, `zai`, `stepfun`, and Ollama model IDs are passed through unchanged after known aliases are normalized. OpenRouter and SiliconFlow provider configs with a custom `base_url` also preserve explicit model values, which lets OpenAI-compatible gateways accept bare model IDs. Use `/models` or `codewhale models` to discover live IDs from your configured endpoint. `CODEWHALE_MODEL` overrides this for a single process; `DEEPSEEK_MODEL` is the legacy alias.
+- `insecure_skip_tls_verify` (bool, optional provider-table key): disabled by default. When true on the active provider table, only the LLM provider HTTP client skips TLS certificate verification. Prefer `SSL_CERT_FILE` for corporate or private CA bundles; `helpofai doctor` reports this setting when enabled.
+- `default_text_model` (string, optional): defaults to `deepseek-v4-pro` for DeepSeek and generic OpenAI-compatible endpoints, `deepseek-ai/deepseek-v4-pro` for NVIDIA NIM, `deepseek-ai/deepseek-v4-flash` for AtlasCloud, `deepseek-reasoner` for Wanjie Ark, `DeepSeek-V4-Pro` for Volcengine Ark, `deepseek/deepseek-v4-pro` for OpenRouter and Novita, `mimo-v2.5-pro` for Xiaomi MiMo, `accounts/fireworks/models/deepseek-v4-pro` for Fireworks, `deepseek-ai/DeepSeek-V4-Pro` for SiliconFlow and DeepInfra, `trinity-large-thinking` for Arcee AI, `kimi-k2.7-code` for Moonshot, `MiniMax-M3` for MiniMax, `GLM-5.2` for Z.ai, `step-3.7-flash` for StepFun, `deepseek-ai/DeepSeek-V4-Pro` for SGLang/vLLM, and `deepseek-coder:1.3b` for Ollama. Hugging Face and Together AI both default to `deepseek-ai/DeepSeek-V4-Pro`. Current public DeepSeek IDs are `deepseek-v4-pro` and `deepseek-v4-flash`, both with 1M context windows, 384K max output, and thinking mode enabled by default. Legacy `deepseek-chat` and `deepseek-reasoner` remain compatibility aliases for `deepseek-v4-flash` until July 24, 2026, except SiliconFlow maps `deepseek-reasoner` and `deepseek-r1` to its Pro model while `deepseek-chat` and `deepseek-v3` map to Flash. Provider-specific mappings translate `deepseek-v4-pro` / `deepseek-v4-flash` to each provider's model ID where supported. OpenRouter also recognizes recent large IDs such as `arcee-ai/trinity-large-thinking`, `minimax/minimax-m3`, `minimax/minimax-2.7`, `xiaomi/mimo-v2.5-pro`, `qwen/qwen3.6-flash`, `qwen/qwen3.6-35b-a3b`, `qwen/qwen3.6-max-preview`, `qwen/qwen3.6-27b`, `qwen/qwen3.6-plus`, `qwen/qwen3.7-max`, `google/gemma-4-31b-it`, `moonshotai/kimi-k2.7-code`, `moonshotai/kimi-k2.6`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, and `nvidia/nemotron-3-ultra-550b-a55b`; direct Arcee uses bare IDs such as `trinity-large-thinking` and `trinity-large-preview`; direct Moonshot recognizes `kimi-k2.7-code`, `kimi-k2.6`, and Kimi Code's stable `kimi-for-coding`; direct MiniMax recognizes `MiniMax-M3` and the documented M2.x chat model IDs; direct Xiaomi MiMo recognizes chat IDs `mimo-v2.5-pro` and `mimo-v2.5`, while TTS IDs are selected through `helpofai speech` / `tts`. Generic `openai`, `atlascloud`, `wanjie-ark`, `xiaomi-mimo`, `arcee`, `moonshot`, `minimax`, `zai`, `stepfun`, and Ollama model IDs are passed through unchanged after known aliases are normalized. OpenRouter and SiliconFlow provider configs with a custom `base_url` also preserve explicit model values, which lets OpenAI-compatible gateways accept bare model IDs. Use `/models` or `helpofai models` to discover live IDs from your configured endpoint. `HELPOFAI_MODEL` overrides this for a single process; `DEEPSEEK_MODEL` is the legacy alias.
 - `reasoning_effort` (string, optional): `off`, `low`, `medium`, `high`, `max`, `xhigh`, or `ultracode`; defaults to the configured UI tier. DeepSeek Platform receives top-level `thinking` / `reasoning_effort` fields. OpenAI Codex normalizes stale `off` to `low` and sends `max` / `ultracode` as Responses `xhigh`. Z.ai receives documented `thinking` controls and treats enabled thinking as the GLM coding high/max lane. NVIDIA NIM receives equivalent settings through `chat_template_kwargs`.
 - `verbosity` (string, optional): `normal` or `concise`. `normal` keeps the
   default conversational prompt. `concise` appends a prompt discipline block
   for direct, low-chatter output; CLI noninteractive commands (`exec`, `eval`,
   and `swebench`) default to `concise` unless config/env/CLI overrides it.
-  Override per process with `CODEWHALE_VERBOSITY` or the legacy
+  Override per process with `HELPOFAI_VERBOSITY` or the legacy
   `DEEPSEEK_VERBOSITY` alias.
 - `allow_shell` (bool, optional): defaults to `false`; shell tools must be explicitly enabled.
 - `approval_policy` (string, optional): `on-request`, `untrusted`, or `never`. Runtime `approval_mode` editing in `/config` also accepts `on-request` and `untrusted` aliases.
@@ -972,7 +972,7 @@ If you are upgrading from older releases:
   registry isolation, or AppContainer isolation until those are implemented.
 - `permissions.toml` (sibling file, optional): ask-only typed permission rule
   records loaded next to `config.toml`, for example
-  `~/.codewhale/permissions.toml`. This schema foundation accepts
+  `~/.helpofai/permissions.toml`. This schema foundation accepts
   `[[rules]]` entries with `tool` plus optional `command` or `path` fields.
   Loaded rules feed the execution policy engine and force approval in approval
   modes that can ask; under `approval_policy = "never"`, matching ask rules are
@@ -1001,7 +1001,7 @@ If you are upgrading from older releases:
   `[subagents.models]` accepts lower-case role or type keys such as `worker`,
   `explorer`, `general`, `explore`, `plan`, and `review`. Values must normalize
   to a supported DeepSeek model id before an agent is spawned.
-- `skills_dir` (string, optional): defaults to `~/.codewhale/skills` (each skill is
+- `skills_dir` (string, optional): defaults to `~/.helpofai/skills` (each skill is
   a directory containing `SKILL.md`). Workspace-local `.agents/skills` or
   `./skills` are preferred when present; the runtime also discovers global
   agentskills.io-compatible `~/.agents/skills` and the broader Claude-ecosystem
@@ -1010,26 +1010,26 @@ If you are upgrading from older releases:
   documents, presentations, spreadsheets, PDFs, and Feishu/Lark. See
   [CLAUDE_PLUGIN_COMPAT.md](CLAUDE_PLUGIN_COMPAT.md) for the supported boundary
   between portable `SKILL.md` bundles and Claude Code plugin runtimes.
-- `[skills].scan_codewhale_only` (bool, default `false`): when `true`, session
+- `[skills].scan_helpofai_only` (bool, default `false`): when `true`, session
   skill discovery ignores cross-tool roots such as `.claude/skills`,
-  `.opencode/skills`, `.cursor/skills`, and `~/.agents/skills`. CodeWhale still
-  scans `<workspace>/.codewhale/skills`, `~/.codewhale/skills`, and any explicit
+  `.opencode/skills`, `.cursor/skills`, and `~/.agents/skills`. HelpOfAi still
+  scans `<workspace>/.helpofai/skills`, `~/.helpofai/skills`, and any explicit
   `skills_dir` override.
-- `mcp_config_path` (string, optional): defaults to `~/.codewhale/mcp.json`, with
-  legacy `~/.deepseek/mcp.json` fallback when the CodeWhale path is absent.
+- `mcp_config_path` (string, optional): defaults to `~/.helpofai/mcp.json`, with
+  legacy `~/.deepseek/mcp.json` fallback when the HelpOfAi path is absent.
   It is visible in `/config` and can be changed from the TUI. The new path is
   used immediately by `/mcp`, but rebuilding the model-visible MCP tool pool
   requires restarting the TUI.
-- `notes_path` (string, optional): defaults to `~/.codewhale/notes.txt`, with
-  legacy `~/.deepseek/notes.txt` fallback when the CodeWhale path is absent, and
+- `notes_path` (string, optional): defaults to `~/.helpofai/notes.txt`, with
+  legacy `~/.deepseek/notes.txt` fallback when the HelpOfAi path is absent, and
   is used by the model-visible `note` tool.
 - `[memory].enabled` (bool, optional): defaults to `false`. When `true`,
   the TUI loads the user memory file into a `<user_memory>` prompt block,
   enables `# foo` quick-capture in the composer, surfaces the `/memory`
   slash command, and registers the `remember` tool. The same toggle is
   available via `DEEPSEEK_MEMORY=on`.
-- `memory_path` (string, optional): defaults to `~/.codewhale/memory.md`, with
-  legacy `~/.deepseek/memory.md` fallback when the CodeWhale path is absent.
+- `memory_path` (string, optional): defaults to `~/.helpofai/memory.md`, with
+  legacy `~/.deepseek/memory.md` fallback when the HelpOfAi path is absent.
   Used by the user-memory feature when enabled — see
   [`MEMORY.md`](MEMORY.md) for the full feature surface (`# foo`
   composer prefix, `/memory` slash command, `remember` tool, opt-in
@@ -1038,7 +1038,7 @@ If you are upgrading from older releases:
   - `[snapshots].enabled` (bool, default `true`)
   - `[snapshots].max_age_days` (int, default `7`)
   - snapshots live under
-    `~/.codewhale/snapshots/<project_hash>/<worktree_hash>/.git`, with legacy
+    `~/.helpofai/snapshots/<project_hash>/<worktree_hash>/.git`, with legacy
     `~/.deepseek/snapshots/...` fallback when only the legacy state exists, and
     never use the workspace's own `.git` directory
 - `context.*` (optional): append-only Fin seam manager, currently opt-in.
@@ -1127,7 +1127,7 @@ User memory is split across one top-level path setting and one opt-in
 toggle table:
 
 ```toml
-memory_path = "~/.codewhale/memory.md"
+memory_path = "~/.helpofai/memory.md"
 
 [memory]
 enabled = true
@@ -1180,7 +1180,7 @@ These keys are accepted by the config loader but not currently used by the inter
 
 ## Tool Catalog
 
-CodeWhale loads a small core native tool catalog by default and leaves less
+HelpOfAi loads a small core native tool catalog by default and leaves less
 common native tools discoverable through ToolSearch. To keep specific native
 tools loaded on every request, add them to `[tools].always_load`:
 
@@ -1207,16 +1207,16 @@ exec_policy = true
 
 You can also override features for a single run:
 
-- `codewhale-tui --enable web_search`
-- `codewhale-tui --disable subagents`
+- `helpofai-tui --enable web_search`
+- `helpofai-tui --disable subagents`
 
-Use `codewhale-tui features list` to inspect known flags and their effective state.
+Use `helpofai-tui features list` to inspect known flags and their effective state.
 The native `/config` view also includes a read-only **Experimental** section
 for experimental feature flags. It shows each flag's effective enabled/disabled
 state and whether that state comes from the default or a configured override.
 Change feature flags in `[features]` or with `--enable` / `--disable`; the
 `/config` section is an audit surface, not a stability promise. Goal and
-WhaleFlow preview rows may appear there as placeholders until those workflows
+HelpFlow preview rows may appear there as placeholders until those workflows
 graduate behind real gated flags.
 
 ## Web Search Provider
@@ -1228,9 +1228,9 @@ and Tavily, Bocha, Metaso, Baidu, Volcengine, or Sofya can be selected when an
 API-backed provider is preferred.
 
 For a private/internal search service that serves DuckDuckGo-compatible HTML,
-keep `provider = "duckduckgo"` and set `base_url`; CodeWhale appends the `q`
+keep `provider = "duckduckgo"` and set `base_url`; HelpOfAi appends the `q`
 query parameter to that endpoint and applies network policy to its host.
-Custom endpoints do not fall back to public Bing. `CODEWHALE_SEARCH_BASE_URL`
+Custom endpoints do not fall back to public Bing. `HELPOFAI_SEARCH_BASE_URL`
 can override this per process; `DEEPSEEK_SEARCH_BASE_URL` remains accepted as
 the legacy alias.
 
@@ -1267,7 +1267,7 @@ the composer, press `↑` to select an attachment row, then press `Backspace` or
 
 ## Managed Configuration and Requirements
 
-codewhale supports a policy layering model:
+helpofai supports a policy layering model:
 
 1. user config + profile + env overrides
 2. managed config (if present)
@@ -1288,18 +1288,18 @@ If configured values violate requirements, startup fails with a descriptive erro
 
 See `docs/capacity_controller.md` for formulas, intervention behavior, and telemetry.
 
-## Notes On `codewhale-tui doctor`
+## Notes On `helpofai-tui doctor`
 
-`codewhale-tui doctor` follows the same config resolution rules as the rest of the
-TUI. That means `--config`, `CODEWHALE_CONFIG_PATH`, and the legacy
+`helpofai-tui doctor` follows the same config resolution rules as the rest of the
+TUI. That means `--config`, `HELPOFAI_CONFIG_PATH`, and the legacy
 `DEEPSEEK_CONFIG_PATH` are respected, and MCP/skills
 checks use the resolved `mcp_config_path` / `skills_dir` (including env overrides).
 
-To bootstrap missing MCP/skills paths, run `codewhale-tui setup --all`. You can
-also run `codewhale-tui setup --skills --local` to create a workspace-local
+To bootstrap missing MCP/skills paths, run `helpofai-tui setup --all`. You can
+also run `helpofai-tui setup --skills --local` to create a workspace-local
 `./skills` dir.
 
-`codewhale-tui doctor --json` prints a machine-readable report that skips the
+`helpofai-tui doctor --json` prints a machine-readable report that skips the
 live API connectivity probe. Top-level keys: `version`, `config_path`,
 `config_present`, `workspace`, `api_key.source`, `base_url`,
 `default_text_model`, `mcp`, `skills`, `tools`, `plugins`, `sandbox`,
@@ -1320,27 +1320,27 @@ configure reasoning effort.
 
 ## Setup status, clean, and extension dirs
 
-`codewhale-tui setup` accepts a few flags beyond the existing `--mcp`,
+`helpofai-tui setup` accepts a few flags beyond the existing `--mcp`,
 `--skills`, `--local`, `--all`, and `--force`:
 
 - `--status` — print a compact one-screen status (api key, base URL, model,
   MCP/skills/tools/plugins counts, sandbox, `.env` presence). Read-only and
   network-free; safe to run in CI. If `.env` is missing and `.env.example` is
   present in the workspace, the status output points at `cp .env.example .env`.
-- `--tools` — scaffold `~/.codewhale/tools/` with a `README.md` describing the
+- `--tools` — scaffold `~/.helpofai/tools/` with a `README.md` describing the
   self-describing frontmatter convention (`# name:` / `# description:` /
   `# usage:`) and an `example.sh` that follows it. The directory is
   intentionally not auto-loaded; wire individual scripts into the agent via
   MCP, hooks, or skills.
-- `--plugins` — scaffold `~/.codewhale/plugins/` with a `README.md` and an
+- `--plugins` — scaffold `~/.helpofai/plugins/` with a `README.md` and an
   `example/PLUGIN.md` placeholder using the same frontmatter shape as
   `SKILL.md`. Plugins are not loaded automatically either; reference them
   from a skill, hook, or MCP wrapper when you want them active.
 - `--all` now scaffolds MCP + skills + tools + plugins together.
-- `--clean` — list `~/.codewhale/sessions/checkpoints/latest.json` and
+- `--clean` — list `~/.helpofai/sessions/checkpoints/latest.json` and
   `offline_queue.json` if they exist. Legacy
   `~/.deepseek/sessions/checkpoints/` files are not scanned automatically; set
-  `CODEWHALE_HOME=~/.deepseek` for a one-off legacy cleanup. Pass `--force` to
+  `HELPOFAI_HOME=~/.deepseek` for a one-off legacy cleanup. Pass `--force` to
   actually remove matched files. This never touches real session history or the
   task queue.
 
@@ -1348,10 +1348,10 @@ configure reasoning effort.
 
 ## Why the engine strips XML/`[TOOL_CALL]` text
 
-codewhale sends and receives tool calls only over the API tool channel
+helpofai sends and receives tool calls only over the API tool channel
 (structured `tool_use` / `tool_call` items). The streaming loop in
 `crates/tui/src/core/engine.rs` recognizes a fixed set of fake-wrapper start
-markers — `[TOOL_CALL]`, `<codewhale:tool_call`, `<tool_call`, `<invoke `,
+markers — `[TOOL_CALL]`, `<helpofai:tool_call`, `<tool_call`, `<invoke `,
 `<function_calls>` — and scrubs them from visible assistant text without ever
 turning them into structured tool calls. When a wrapper is stripped, the loop
 emits one compact `status` notice per turn so the user can see why their

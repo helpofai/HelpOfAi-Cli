@@ -2,7 +2,7 @@
 # run-pinchbench.sh — Run PinchBench benchmarks with Xiaomi MiMo v2.5.
 #
 # Defaults to direct Xiaomi API routing (no OpenRouter needed). Reads the
-# API key from ~/.codewhale/config.toml if not set via environment variables.
+# API key from ~/.helpofai/config.toml if not set via environment variables.
 #
 # Usage:
 #   ./scripts/benchmarks/run-pinchbench.sh --help
@@ -13,14 +13,14 @@
 # Prerequisites:
 #   - PinchBench cloned (or use --install)
 #   - Python 3.10+ with uv
-#   - Xiaomi MiMo API key (in env or ~/.codewhale/config.toml)
+#   - Xiaomi MiMo API key (in env or ~/.helpofai/config.toml)
 #   - A running OpenClaw instance
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-CODEWHALE_CONFIG="${HOME}/.codewhale/config.toml"
+HELPOFAI_CONFIG="${HOME}/.helpofai/config.toml"
 
 # Defaults — direct MiMo v2.5 Pro (no OpenRouter)
 MODEL="mimo-v2.5-pro"
@@ -62,7 +62,7 @@ Options:
 
 Environment variables (direct mode):
   XIAOMI_MIMO_API_KEY     Xiaomi MiMo API key (or XIAOMI_API_KEY / MIMO_API_KEY)
-                          Falls back to ~/.codewhale/config.toml if unset
+                          Falls back to ~/.helpofai/config.toml if unset
   XIAOMI_MIMO_BASE_URL    Override MiMo API endpoint
 
 Environment variables (OpenRouter mode):
@@ -101,9 +101,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ── Read MiMo config from ~/.codewhale/config.toml ──────────────────────────
+# ── Read MiMo config from ~/.helpofai/config.toml ──────────────────────────
 # Extracts api_key and base_url from [providers.xiaomi_mimo] section.
-read_codewhale_mimo_config() {
+read_helpofai_mimo_config() {
     local config="$1"
     local key="" url=""
     if [[ -f "$config" ]]; then
@@ -126,15 +126,15 @@ if [[ "$OPENROUTER_MODE" == true ]]; then
 
 # ── Direct MiMo mode (default) ─────────────────────────────────────────────
 elif [[ "$DIRECT_MIMO" == true ]]; then
-    # Resolve API key: env var > codewhale config.toml
+    # Resolve API key: env var > helpofai config.toml
     MIMO_KEY="${XIAOMI_MIMO_API_KEY:-${XIAOMI_API_KEY:-${MIMO_API_KEY:-}}}"
 
     if [[ -z "$MIMO_KEY" ]]; then
-        # Try reading from codewhale config
-        IFS='|' read -r cfg_key cfg_url <<< "$(read_codewhale_mimo_config "$CODEWHALE_CONFIG")"
+        # Try reading from helpofai config
+        IFS='|' read -r cfg_key cfg_url <<< "$(read_helpofai_mimo_config "$HELPOFAI_CONFIG")"
         if [[ -n "$cfg_key" ]]; then
             MIMO_KEY="$cfg_key"
-            echo "Read MiMo API key from $CODEWHALE_CONFIG"
+            echo "Read MiMo API key from $HELPOFAI_CONFIG"
             # Use config base_url if not overridden
             if [[ -z "$MIMO_BASE_URL" && -n "$cfg_url" ]]; then
                 MIMO_BASE_URL="$cfg_url"
@@ -145,7 +145,7 @@ elif [[ "$DIRECT_MIMO" == true ]]; then
     if [[ -z "$MIMO_KEY" ]]; then
         echo "Error: No MiMo API key found." >&2
         echo "  Set XIAOMI_MIMO_API_KEY env var, or configure [providers.xiaomi_mimo] in" >&2
-        echo "  ~/.codewhale/config.toml" >&2
+        echo "  ~/.helpofai/config.toml" >&2
         exit 1
     fi
 
@@ -206,7 +206,7 @@ mkdir -p "$RESULTS_DIR"
 METADATA_FILE="$RESULTS_DIR/run_metadata.json"
 cat > "$METADATA_FILE" <<META
 {
-    "codewhale_version": "$(codewhale --version 2>/dev/null || echo unknown)",
+    "helpofai_version": "$(helpofai --version 2>/dev/null || echo unknown)",
     "git_commit": "$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)",
     "pinchbench_commit": "$(git -C "$PINCHBENCH_DIR" rev-parse HEAD 2>/dev/null || echo unknown)",
     "model": "$MODEL",

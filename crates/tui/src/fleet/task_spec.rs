@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use chrono::{SecondsFormat, Utc};
-use codewhale_protocol::fleet::*;
+use helpofai_protocol::fleet::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -144,7 +144,7 @@ pub fn write_fleet_artifact_ref(
     contents: &[u8],
     mime_type: Option<&str>,
 ) -> Result<FleetArtifactRef> {
-    let rel_path = PathBuf::from(".codewhale")
+    let rel_path = PathBuf::from(".helpofai")
         .join("fleet")
         .join(safe_path_segment(&run_id.0))
         .join(safe_path_segment(task_id))
@@ -185,8 +185,8 @@ pub fn verify_task_result(
             format!("external scorer command configured: {command}"),
             "run the configured scorer command to finalize this receipt",
         ),
-        Some(FleetScorerSpec::CodeWhaleVerifierPrompt { .. }) => partial(
-            "CodeWhale verifier prompt configured",
+        Some(FleetScorerSpec::HelpOfAiVerifierPrompt { .. }) => partial(
+            "HelpOfAi verifier prompt configured",
             "run a verifier prompt pass to finalize this receipt",
         ),
         Some(FleetScorerSpec::Manual) => partial(
@@ -548,7 +548,7 @@ mod tests {
             workspace: Some(FleetWorkspaceRequirements {
                 root: Some(PathBuf::from(".")),
                 required_files: vec![PathBuf::from("Cargo.toml")],
-                writable_paths: vec![PathBuf::from(".codewhale/fleet")],
+                writable_paths: vec![PathBuf::from(".helpofai/fleet")],
                 environment: Some(FleetEnvironmentRequirements {
                     required: vec!["PATH".to_string()],
                     allowlist: vec!["RUST_LOG".to_string()],

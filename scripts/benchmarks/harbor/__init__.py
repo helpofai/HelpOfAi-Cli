@@ -1,14 +1,14 @@
 """
-Harbor adapter for CodeWhale.
+Harbor adapter for HelpOfAi.
 
-Lets Harbor evaluate CodeWhale as an agent on Terminal-Bench and other
+Lets Harbor evaluate HelpOfAi as an agent on Terminal-Bench and other
 Harbor-compatible datasets.
 
 Usage (after pip install harbor):
 
     harbor run \\
       --dataset terminal-bench@2.0 \\
-      --agent scripts.benchmarks.harbor.codewhale_agent:CodeWhaleAgent \\
+      --agent scripts.benchmarks.harbor.helpofai_agent:HelpOfAiAgent \\
       --model deepseek/deepseek-chat
 
 Or register the agent name in Harbor's AgentName enum for shorter invocations.
@@ -29,15 +29,15 @@ from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
 
-class CodeWhaleAgent(BaseInstalledAgent):
+class HelpOfAiAgent(BaseInstalledAgent):
     """
-    CodeWhale agent adapter for Harbor.
+    HelpOfAi agent adapter for Harbor.
 
-    Installs the ``codewhale`` CLI via npm into the task container and runs
+    Installs the ``helpofai`` CLI via npm into the task container and runs
     tasks in non-interactive exec mode with full tool access.
     """
 
-    _OUTPUT_FILENAME = "codewhale.txt"
+    _OUTPUT_FILENAME = "helpofai.txt"
 
     CLI_FLAGS = [
         CliFlag(
@@ -62,28 +62,28 @@ class CodeWhaleAgent(BaseInstalledAgent):
 
     @staticmethod
     def name() -> str:
-        return "codewhale"
+        return "helpofai"
 
     def version(self) -> str | None:
         return getattr(self, "_version", None)
 
     def get_version_command(self) -> str | None:
-        return "codewhale --version 2>/dev/null || codewhale-tui --version 2>/dev/null"
+        return "helpofai --version 2>/dev/null || helpofai-tui --version 2>/dev/null"
 
     def parse_version(self, stdout: str) -> str:
         text = stdout.strip()
         for line in text.splitlines():
             line = line.strip()
             if line:
-                # Strip any prefix like "codewhale " or "codewhale-cli "
-                for prefix in ("codewhale-tui ", "codewhale-cli ", "codewhale "):
+                # Strip any prefix like "helpofai " or "helpofai-cli "
+                for prefix in ("helpofai-tui ", "helpofai-cli ", "helpofai "):
                     if line.lower().startswith(prefix):
                         return line[len(prefix):]
                 return line
         return text
 
     async def install(self, environment: BaseEnvironment) -> None:
-        """Install CodeWhale via npm in the container."""
+        """Install HelpOfAi via npm in the container."""
         # Install system dependencies
         await self.exec_as_root(
             environment,
@@ -111,10 +111,10 @@ class CodeWhaleAgent(BaseInstalledAgent):
             env={"DEBIAN_FRONTEND": "noninteractive"},
         )
 
-        # Install CodeWhale CLI via npm
+        # Install HelpOfAi CLI via npm
         await self.exec_as_agent(
             environment,
-            command="npm install -g codewhale",
+            command="npm install -g helpofai",
         )
 
     @with_prompt_template
@@ -124,7 +124,7 @@ class CodeWhaleAgent(BaseInstalledAgent):
         environment: BaseEnvironment,
         context: AgentContext,
     ) -> None:
-        """Run CodeWhale in non-interactive exec mode on the task."""
+        """Run HelpOfAi in non-interactive exec mode on the task."""
         escaped_instruction = shlex.quote(instruction)
 
         # Build CLI flags from agent config
@@ -152,19 +152,19 @@ class CodeWhaleAgent(BaseInstalledAgent):
         # Build model flag if model_name is provided
         model_flag = ""
         if self.model_name:
-            # Harbor passes model as "provider/model"; CodeWhale uses --model
+            # Harbor passes model as "provider/model"; HelpOfAi uses --model
             model_flag = f"--model {shlex.quote(self.model_name)} "
 
         output_path = f"/logs/agent/{self._OUTPUT_FILENAME}"
 
-        # Run CodeWhale in non-interactive YOLO exec mode
+        # Run HelpOfAi in non-interactive YOLO exec mode
         # --yolo enables full tool access (auto-approved)
         # --auto runs non-interactively and exits when done
         # --stream-json gives us structured output for trajectory parsing
         await self.exec_as_agent(
             environment,
             command=(
-                f"codewhale exec --yolo --auto --stream-json "
+                f"helpofai exec --yolo --auto --stream-json "
                 f"{model_flag}{extra_flags}"
                 f"--workspace /workspace "
                 f"{escaped_instruction} "
@@ -174,8 +174,8 @@ class CodeWhaleAgent(BaseInstalledAgent):
         )
 
     def populate_context_post_run(self, context: AgentContext) -> None:
-        """Parse CodeWhale's output for any post-run metadata."""
-        # CodeWhale writes its results to the working tree as git diffs.
+        """Parse HelpOfAi's output for any post-run metadata."""
+        # HelpOfAi writes its results to the working tree as git diffs.
         # Harbor's eval harness inspects the workspace directly, so no
         # special trajectory parsing is needed for basic eval.
         pass

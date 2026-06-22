@@ -1141,8 +1141,8 @@ pub fn lsp_command(app: &mut App, arg: Option<&str>) -> CommandResult {
 /// Logout - clear all saved API keys and return to onboarding.
 /// This is NOT provider-scoped — it clears keys for every saved provider.
 /// For single-provider key replacement, use
-/// `codewhale auth clear --provider <id>` and
-/// `codewhale auth set --provider <id>`.
+/// `helpofai auth clear --provider <id>` and
+/// `helpofai auth set --provider <id>`.
 pub fn logout(app: &mut App) -> CommandResult {
     let provider_name = app.api_provider.as_str();
     match clear_active_provider_api_key(provider_name) {
@@ -1153,7 +1153,7 @@ pub fn logout(app: &mut App) -> CommandResult {
             app.api_key_cursor = 0;
             CommandResult::message(format!(
                 "Cleared API key for {provider_name}. \
-                 Use `codewhale auth clear --provider <id>` to clear a different provider."
+                 Use `helpofai auth clear --provider <id>` to clear a different provider."
             ))
         }
         Err(e) => CommandResult::error(format!("Failed to clear API key for {provider_name}: {e}")),
@@ -1177,7 +1177,7 @@ mod tests {
     struct EnvGuard {
         home: Option<OsString>,
         userprofile: Option<OsString>,
-        codewhale_config_path: Option<OsString>,
+        helpofai_config_path: Option<OsString>,
         deepseek_config_path: Option<OsString>,
         _lock: std::sync::MutexGuard<'static, ()>,
     }
@@ -1190,21 +1190,21 @@ mod tests {
             let config_str = OsString::from(config_path.as_os_str());
             let home_prev = env::var_os("HOME");
             let userprofile_prev = env::var_os("USERPROFILE");
-            let codewhale_config_prev = env::var_os("CODEWHALE_CONFIG_PATH");
+            let helpofai_config_prev = env::var_os("HELPOFAI_CONFIG_PATH");
             let deepseek_config_prev = env::var_os("DEEPSEEK_CONFIG_PATH");
 
             // Safety: test-only environment mutation guarded by process-wide mutex.
             unsafe {
                 env::set_var("HOME", &home_str);
                 env::set_var("USERPROFILE", &home_str);
-                env::remove_var("CODEWHALE_CONFIG_PATH");
+                env::remove_var("HELPOFAI_CONFIG_PATH");
                 env::set_var("DEEPSEEK_CONFIG_PATH", &config_str);
             }
 
             Self {
                 home: home_prev,
                 userprofile: userprofile_prev,
-                codewhale_config_path: codewhale_config_prev,
+                helpofai_config_path: helpofai_config_prev,
                 deepseek_config_path: deepseek_config_prev,
                 _lock: lock,
             }
@@ -1237,15 +1237,15 @@ mod tests {
                 }
             }
 
-            if let Some(value) = self.codewhale_config_path.take() {
+            if let Some(value) = self.helpofai_config_path.take() {
                 // Safety: test-only environment mutation guarded by a global mutex.
                 unsafe {
-                    env::set_var("CODEWHALE_CONFIG_PATH", value);
+                    env::set_var("HELPOFAI_CONFIG_PATH", value);
                 }
             } else {
                 // Safety: test-only environment mutation guarded by a global mutex.
                 unsafe {
-                    env::remove_var("CODEWHALE_CONFIG_PATH");
+                    env::remove_var("HELPOFAI_CONFIG_PATH");
                 }
             }
 
@@ -1400,7 +1400,7 @@ mod tests {
     #[test]
     fn config_reasoning_effort_uses_codex_provider_labels() {
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-codex-effort-config-test-{}",
+            "helpofai-tui-codex-effort-config-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -1429,7 +1429,7 @@ mod tests {
     #[test]
     fn config_fancy_animations_obeys_ghostty_override() {
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-ghostty-fancy-config-test-{}",
+            "helpofai-tui-ghostty-fancy-config-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -1490,7 +1490,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-default-mode-test-{}-{}",
+            "helpofai-tui-default-mode-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -1515,7 +1515,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-cost-currency-test-{}-{}",
+            "helpofai-tui-cost-currency-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -1617,7 +1617,7 @@ mod tests {
     #[test]
     fn config_command_allow_shell_save_persists_root_boolean() {
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-allow-shell-save-app-path-test-{}",
+            "helpofai-allow-shell-save-app-path-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -1773,7 +1773,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-stream-timeout-test-{}-{}",
+            "helpofai-tui-stream-timeout-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -1855,7 +1855,7 @@ mod tests {
     #[test]
     fn config_command_provider_url_token_plan_persists_provider_base_url() {
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-provider-url-save-app-path-test-{}",
+            "helpofai-provider-url-save-app-path-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -1903,7 +1903,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-theme-command-test-{}-{}",
+            "helpofai-tui-theme-command-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -1926,7 +1926,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-theme-save-test-{}-{}",
+            "helpofai-tui-theme-save-test-{}-{}",
             std::process::id(),
             nanos
         ));
@@ -2030,7 +2030,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let temp_root = env::temp_dir().join(format!(
-            "codewhale-tui-logout-test-{}-{}",
+            "helpofai-tui-logout-test-{}-{}",
             std::process::id(),
             nanos
         ));

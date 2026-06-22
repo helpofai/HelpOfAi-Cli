@@ -1,6 +1,6 @@
 # SWE-bench
 
-CodeWhale's SWE-bench adapter writes the prediction file that the official
+HelpOfAi's SWE-bench adapter writes the prediction file that the official
 SWE-bench evaluation harness expects. It does not replace the harness; it
 generates `model_patch` rows from a local task workspace.
 
@@ -10,26 +10,26 @@ Start from a workspace checked out at the SWE-bench instance base commit, with
 the issue text saved locally:
 
 ```bash
-codewhale swebench run \
+helpofai swebench run \
   --instance-id django__django-12345 \
   --issue-file issue.md \
   --predictions-path all_preds.jsonl
 ```
 
 `run` invokes tool-backed non-interactive mode, equivalent to
-`codewhale exec --auto`, with `stream-json` output by default. When the turn
-finishes, CodeWhale exports `git diff --binary --no-ext-diff` as one JSONL
+`helpofai exec --auto`, with `stream-json` output by default. When the turn
+finishes, HelpOfAi exports `git diff --binary --no-ext-diff` as one JSONL
 prediction row:
 
 ```json
-{"instance_id":"django__django-12345","model_name_or_path":"codewhale/deepseek-v4-pro","model_patch":"diff --git ..."}
+{"instance_id":"django__django-12345","model_name_or_path":"helpofai/deepseek-v4-pro","model_patch":"diff --git ..."}
 ```
 
-If you already ran CodeWhale, or edited the workspace manually, export the
+If you already ran HelpOfAi, or edited the workspace manually, export the
 current diff without another model turn:
 
 ```bash
-codewhale swebench export \
+helpofai swebench export \
   --instance-id django__django-12345 \
   --predictions-path all_preds.jsonl
 ```
@@ -48,7 +48,7 @@ python -m swebench.harness.run_evaluation \
   --dataset_name princeton-nlp/SWE-bench_Lite \
   --predictions_path all_preds.jsonl \
   --max_workers 1 \
-  --run_id codewhale-smoke
+  --run_id helpofai-smoke
 ```
 
 On Apple Silicon, the official SWE-bench docs recommend adding
@@ -57,16 +57,16 @@ On Apple Silicon, the official SWE-bench docs recommend adding
 ## Batch Driver Shape
 
 A simple batch runner should prepare each instance workspace, write the issue
-body to `issue.md`, run `codewhale swebench run`, then call the harness once
+body to `issue.md`, run `helpofai swebench run`, then call the harness once
 on the accumulated `all_preds.jsonl`.
 
 For reproducible runs, pin:
 
-- CodeWhale version and commit: `codewhale --version`
-- Model label: `--model-name-or-path codewhale/deepseek-v4-pro`
+- HelpOfAi version and commit: `helpofai --version`
+- Model label: `--model-name-or-path helpofai/deepseek-v4-pro`
 - Dataset and split used by the harness
 - Docker platform and worker count
-- The `all_preds.jsonl` file and CodeWhale stream logs
+- The `all_preds.jsonl` file and HelpOfAi stream logs
 
 Official references:
 

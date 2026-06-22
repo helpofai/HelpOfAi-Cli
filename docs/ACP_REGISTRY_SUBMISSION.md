@@ -30,7 +30,7 @@ Sources for the external PR author:
 
 ## Local ACP Readiness Audit
 
-CodeWhale already exposes ACP through `codewhale serve --acp`.
+HelpOfAi already exposes ACP through `helpofai serve --acp`.
 
 Implemented locally:
 
@@ -39,8 +39,8 @@ Implemented locally:
 - `crates/tui/src/acp_server.rs` implements JSON-RPC 2.0 over newline-delimited
   stdio.
 - `initialize` advertises:
-  - `agentInfo.name = "codewhale"`
-  - `agentInfo.title = "codewhale"`
+  - `agentInfo.name = "helpofai"`
+  - `agentInfo.title = "helpofai"`
   - `agentInfo.version = env!("CARGO_PKG_VERSION")`
   - `promptCapabilities.embeddedContext = true`
   - `loadSession = false`
@@ -49,7 +49,7 @@ Implemented locally:
   - `authMethods` with terminal auth: `auth set --provider <provider>`
 - `session/new` creates an in-memory session with a cwd.
 - `session/prompt` accepts string prompts plus text/resource/resource_link
-  blocks, routes through the configured CodeWhale client, emits one
+  blocks, routes through the configured HelpOfAi client, emits one
   `session/update` agent message chunk, then returns `stopReason: "end_turn"`.
 - `session/cancel` currently returns `null`.
 
@@ -74,36 +74,36 @@ wrapper handle platform selection, checksums, mirrors, and glibc preflight.
 Create this directory in `agentclientprotocol/registry`:
 
 ```text
-codewhale/
+helpofai/
   agent.json
   icon.svg
 ```
 
-Replace `0.8.61` with the final published CodeWhale version. Do not use
+Replace `0.8.61` with the final published HelpOfAi version. Do not use
 `@latest`.
 
-### `codewhale/agent.json`
+### `helpofai/agent.json`
 
 ```json
 {
-  "id": "codewhale",
-  "name": "CodeWhale",
+  "id": "helpofai",
+  "name": "HelpOfAi",
   "version": "0.8.61",
   "description": "Provider-agnostic terminal coding agent with first-class DeepSeek support.",
-  "repository": "https://github.com/Hmbown/CodeWhale",
-  "website": "https://github.com/Hmbown/CodeWhale/blob/main/docs/RUNTIME_API.md#acp-stdio-adapter-codewhale-serve---acp",
+  "repository": "https://github.com/helpofai/HelpOfAi-Cli",
+  "website": "https://github.com/helpofai/HelpOfAi-Cli/blob/main/docs/RUNTIME_API.md#acp-stdio-adapter-helpofai-serve---acp",
   "authors": ["Hunter Bown"],
   "license": "MIT",
   "distribution": {
     "npx": {
-      "package": "codewhale@0.8.61",
+      "package": "helpofai@0.8.61",
       "args": ["serve", "--acp"]
     }
   }
 }
 ```
 
-### `codewhale/icon.svg`
+### `helpofai/icon.svg`
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -117,20 +117,20 @@ Replace `0.8.61` with the final published CodeWhale version. Do not use
 Title:
 
 ```text
-Add CodeWhale ACP agent
+Add HelpOfAi ACP agent
 ```
 
 Body:
 
 ```text
-Adds CodeWhale to the ACP registry.
+Adds HelpOfAi to the ACP registry.
 
-CodeWhale is a provider-agnostic terminal coding agent with first-class
+HelpOfAi is a provider-agnostic terminal coding agent with first-class
 DeepSeek support. The submitted distribution uses the published npm package and
-runs `codewhale serve --acp`.
+runs `helpofai serve --acp`.
 
-Local readiness checked in Hmbown/CodeWhale:
-- ACP stdio adapter exists at `codewhale serve --acp`.
+Local readiness checked in helpofai/HelpOfAi-Cli:
+- ACP stdio adapter exists at `helpofai serve --acp`.
 - `initialize` returns terminal auth via `auth set --provider <provider>`.
 - `session/new`, `session/prompt`, and `session/cancel` are implemented.
 - The adapter is intentionally baseline: no ACP shell/file tools, no session
@@ -141,11 +141,11 @@ Version: 0.8.61
 
 ## Pre-Submission Checklist
 
-- Confirm `codewhale@0.8.61` is published to npm, or switch the draft to
+- Confirm `helpofai@0.8.61` is published to npm, or switch the draft to
   versioned GitHub Release binary URLs that exist.
 - Run the upstream registry validator:
-  `python3 .github/workflows/verify_agents.py --auth-check --agent codewhale`
-- Verify `npx codewhale@0.8.61 serve --acp` returns `authMethods` from
+  `python3 .github/workflows/verify_agents.py --auth-check --agent helpofai`
+- Verify `npx helpofai@0.8.61 serve --acp` returns `authMethods` from
   `initialize` on a clean machine.
 - Keep the external PR body explicit that ACP support is baseline and does not
   imply the full TUI/runtime API is available inside ACP.

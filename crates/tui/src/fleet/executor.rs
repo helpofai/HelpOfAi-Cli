@@ -1,13 +1,13 @@
-//! Fleet executor — runs a fleet worker as a real `codewhale exec` subprocess.
+//! Fleet executor — runs a fleet worker as a real `helpofai exec` subprocess.
 //!
-//! A fleet worker IS a headless `codewhale exec` run. There is no separate
+//! A fleet worker IS a headless `helpofai exec` run. There is no separate
 //! "fleet worker" execution engine: the sub-agent runtime, full tool surface,
-//! and recursion depth all come from the one `codewhale exec` runtime, so
+//! and recursion depth all come from the one `helpofai exec` runtime, so
 //! fleet and sub-agents are one substrate (not two moving targets).
 //!
 //! This module is the bridge:
 //! - [`build_worker_exec_command`] turns a `FleetTaskSpec` + `FleetExecConfig`
-//!   into the `codewhale exec --output-format stream-json …` argv that a host
+//!   into the `helpofai exec --output-format stream-json …` argv that a host
 //!   adapter ([`super::host`]) launches locally or over SSH.
 //! - [`map_exec_stream_line`] maps one stream-json line emitted by that worker
 //!   into a [`FleetWorkerEventPayload`] for the durable ledger, so the ledger
@@ -20,25 +20,25 @@
 
 #![allow(dead_code)]
 
-use codewhale_config::FleetExecConfig;
-use codewhale_protocol::fleet::{FleetHostSpec, FleetTaskSpec, FleetWorkerEventPayload};
+use helpofai_config::FleetExecConfig;
+use helpofai_protocol::fleet::{FleetHostSpec, FleetTaskSpec, FleetWorkerEventPayload};
 
 use super::host::{FleetHostAdapter, FleetWorkerCommand};
 use super::worker_runtime::fleet_task_prompt;
 
-/// Build the `codewhale exec` argv that runs a fleet task headlessly.
+/// Build the `helpofai exec` argv that runs a fleet task headlessly.
 ///
 /// `--auto` is always passed: a headless worker has no human to approve tool
 /// calls, so it runs with full (policy-gated) tool access. `--output-format
 /// stream-json` makes the worker emit the NDJSON event stream this module
 /// parses. Recursion depth is inherited from the worker's own config
-/// (`[runtime] max_spawn_depth`, default [`codewhale_config::DEFAULT_SPAWN_DEPTH`]).
+/// (`[runtime] max_spawn_depth`, default [`helpofai_config::DEFAULT_SPAWN_DEPTH`]).
 ///
 /// Secrets are NEVER placed on the argv: provider credentials are resolved by
 /// the worker process from its own config/keyring exactly like an interactive
 /// run. The host adapter additionally refuses secret-bearing env keys.
 pub fn build_worker_exec_command(
-    codewhale_binary: &str,
+    helpofai_binary: &str,
     task_spec: &FleetTaskSpec,
     exec_config: &FleetExecConfig,
     model: Option<&str>,
@@ -75,10 +75,10 @@ pub fn build_worker_exec_command(
     // The composed task prompt is the final positional argument.
     args.push(fleet_task_prompt(task_spec));
 
-    FleetWorkerCommand::new(codewhale_binary.to_string(), args)
+    FleetWorkerCommand::new(helpofai_binary.to_string(), args)
 }
 
-/// Map one `codewhale exec` stream-json line into a fleet ledger event.
+/// Map one `helpofai exec` stream-json line into a fleet ledger event.
 ///
 /// Returns `None` for lines that don't correspond to a worker lifecycle
 /// transition (e.g. `session_capture`, `metadata`). The exec event schema is
@@ -144,11 +144,11 @@ pub fn classify_worker_exit(exit_code: Option<i32>, stopped: bool) -> FleetWorke
     }
 }
 
-/// Drives fleet workers as real `codewhale exec` subprocesses on the local
+/// Drives fleet workers as real `helpofai exec` subprocesses on the local
 /// host, incrementally draining each worker's stream-json output into fleet
 /// ledger events.
 ///
-/// The caller (the `codewhale fleet run` loop / `FleetManager`) owns the
+/// The caller (the `helpofai fleet run` loop / `FleetManager`) owns the
 /// ledger; the executor owns the OS process boundary and the incremental log
 /// parse. Because the worker is a separate process, its heavy runtime/tool
 /// construction never touches the orchestrator — the parent only ingests a
@@ -353,7 +353,7 @@ impl FleetExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codewhale_protocol::fleet::{FleetTaskSpec, FleetTaskWorkerProfile};
+    use helpofai_protocol::fleet::{FleetTaskSpec, FleetTaskWorkerProfile};
     use std::collections::BTreeMap;
 
     fn task(instructions: &str) -> FleetTaskSpec {
@@ -384,10 +384,10 @@ mod tests {
     }
 
     #[test]
-    fn worker_command_is_a_headless_codewhale_exec_run() {
+    fn worker_command_is_a_headless_helpofai_exec_run() {
         let exec = FleetExecConfig::default();
-        let cmd = build_worker_exec_command("codewhale", &task("read the file"), &exec, None);
-        assert_eq!(cmd.program, "codewhale");
+        let cmd = build_worker_exec_command("helpofai", &task("read the file"), &exec, None);
+        assert_eq!(cmd.program, "helpofai");
         assert_eq!(cmd.args[0], "exec");
         assert!(cmd.args.contains(&"--auto".to_string()));
         // stream-json so the executor can ingest the worker's event stream.
@@ -406,7 +406,7 @@ mod tests {
             append_system_prompt: "never push to main".to_string(),
             ..FleetExecConfig::default()
         };
-        let cmd = build_worker_exec_command("codewhale", &task("audit"), &exec, Some("glm-5.1"));
+        let cmd = build_worker_exec_command("helpofai", &task("audit"), &exec, Some("glm-5.1"));
         let joined = cmd.args.join(" ");
         assert!(joined.contains("--model glm-5.1"));
         assert!(joined.contains("--allowed-tools read_file,grep_files"));
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn unbounded_max_turns_is_not_passed() {
         let exec = FleetExecConfig::default(); // max_turns == u32::MAX
-        let cmd = build_worker_exec_command("codewhale", &task("x"), &exec, None);
+        let cmd = build_worker_exec_command("helpofai", &task("x"), &exec, None);
         assert!(!cmd.args.join(" ").contains("--max-turns"));
     }
 
@@ -473,8 +473,8 @@ mod tests {
     }
 
     /// End-to-end: run a REAL subprocess that emits stream-json (standing in for
-    /// `codewhale exec`), and prove the executor drains its events and terminal
-    /// exit through the real host adapter — no codewhale binary needed. This is
+    /// `helpofai exec`), and prove the executor drains its events and terminal
+    /// exit through the real host adapter — no helpofai binary needed. This is
     /// the verifiable proof that a fleet worker is an out-of-process exec run.
     #[cfg(unix)]
     #[test]
@@ -520,7 +520,7 @@ mod tests {
     /// Dogfood smoke (#3166): several concurrent exec-style workers with one
     /// injected failure. Proves the executor drives a small fleet to terminal
     /// outcomes and that a failing worker is classified distinctly from the
-    /// passing ones — all without the codewhale binary.
+    /// passing ones — all without the helpofai binary.
     #[cfg(unix)]
     #[test]
     fn executor_drives_concurrent_workers_with_injected_failure() {

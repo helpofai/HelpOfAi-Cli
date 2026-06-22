@@ -1,6 +1,6 @@
-# codewhale-web
+# helpofai-web
 
-Community site for [CodeWhale](https://github.com/Hmbown/CodeWhale) — lives at **codewhale.net**.
+Community site for [HelpOfAi](https://github.com/helpofai/HelpOfAi-Cli) — lives at **helpofai.net**.
 
 Next.js 15 (App Router) + Tailwind, deployed to Cloudflare Workers via [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare). Curated "Today's Dispatch" content is regenerated every 6 hours by a Cloudflare Cron Trigger that calls `deepseek-v4-flash` to summarise recent repo activity, and stored in Workers KV.
 
@@ -19,7 +19,7 @@ Env (mirrors `.env.example`):
 | --------------------------- | ---------------------------------------------------------------- | -------------------- |
 | `DEEPSEEK_API_KEY`          | DeepSeek platform key (`sk-...`)                                 | only for the `/api/cron` tasks (summarization + community agent) |
 | `GITHUB_TOKEN`              | Fine-grained PAT, public-repo read scope                         | optional (raises rate limit 60 → 5000 req/h) |
-| `GITHUB_REPO`               | Defaults to `Hmbown/CodeWhale`                                   | optional             |
+| `GITHUB_REPO`               | Defaults to `helpofai/HelpOfAi-Cli`                                   | optional             |
 | `CRON_SECRET`               | Shared secret for manual `/api/cron` invocation                  | optional (Cloudflare cron triggers don't need it) |
 | `DEEPSEEK_MODEL`            | Defaults to `deepseek-v4-flash`                                  | optional             |
 | `DEEPSEEK_BASE_URL`         | Defaults to `https://api.deepseek.com`                           | optional             |
@@ -31,7 +31,7 @@ The site renders fine without any of them — `Today's Dispatch` falls back to a
 
 ## Deploy to Cloudflare
 
-You already own `codewhale.net` on Cloudflare and have a Workers Paid plan. The deploy is two steps:
+You already own `helpofai.net` on Cloudflare and have a Workers Paid plan. The deploy is two steps:
 
 1. **Provision KV namespaces once:**
 
@@ -53,12 +53,12 @@ You already own `codewhale.net` on Cloudflare and have a Workers Paid plan. The 
    npm run deploy                           # builds with OpenNext + uploads
    ```
 
-3. **Point the domain:** in the Cloudflare dashboard, add a Worker route for `codewhale.net/*` → the deployed Worker, named `codewhale-web` (see `wrangler.jsonc`).
+3. **Point the domain:** in the Cloudflare dashboard, add a Worker route for `helpofai.net/*` → the deployed Worker, named `helpofai-web` (see `wrangler.jsonc`).
 
 The first cron run happens within 6 hours; you can also kick it manually:
 
 ```bash
-curl -H "x-cron-secret: $CRON_SECRET" "https://codewhale.net/api/cron?task=curate"
+curl -H "x-cron-secret: $CRON_SECRET" "https://helpofai.net/api/cron?task=curate"
 ```
 
 ## What's where
@@ -119,7 +119,7 @@ default model, Node engines) are never hand-written into pages:
 
 1. **Build time** — `scripts/derive-facts.mjs` runs as `prebuild` (and before
    `npm run dev`), parses the parent repo (`Cargo.toml`, `crates/tui/src/config.rs`,
-   `crates/tui/src/sandbox/`, `npm/codewhale/package.json`) and writes
+   `crates/tui/src/sandbox/`, `npm/helpofai/package.json`) and writes
    `lib/facts.generated.ts`. Never edit that file by hand.
 2. **Runtime** — the `/api/cron?task=facts-drift` cron (`lib/facts-drift.ts`)
    re-derives the same facts from `raw.githubusercontent.com` on a schedule and

@@ -7,7 +7,7 @@
 //!
 //! ## On-disk format
 //!
-//! `~/.codewhale/composer_stash.jsonl` — one JSON object per line:
+//! `~/.helpofai/composer_stash.jsonl` — one JSON object per line:
 //!
 //! ```jsonl
 //! {"ts":"2026-05-04T01:23:45Z","text":"draft here"}
@@ -53,7 +53,7 @@ pub struct StashedDraft {
 
 fn default_stash_path() -> Option<PathBuf> {
     dirs::home_dir().map(|home| {
-        let primary = home.join(".codewhale").join(STASH_FILE_NAME);
+        let primary = home.join(".helpofai").join(STASH_FILE_NAME);
         let legacy = home.join(".deepseek").join(STASH_FILE_NAME);
         if primary.exists() || !legacy.exists() {
             return primary;

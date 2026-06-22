@@ -129,7 +129,7 @@ cd "${repo_root}"
 # left-hand side of .mailmap (which already folds bots/Claude/Copilot into
 # Hunter), plus any --maintainer overrides. We compare on email when present,
 # otherwise on the lowercased name.
-declare -a maintainer_emails=("hmbown@gmail.com" "hmbown.dev@gmail.com")
+declare -a maintainer_emails=("helpofai@gmail.com" "helpofai.dev@gmail.com")
 declare -a maintainer_names=("hunter bown" "hunter b")
 
 if [[ -f .mailmap ]]; then
@@ -199,7 +199,7 @@ fi
 
 main_sha="$(git rev-parse --short "${main_ref}")"
 
-echo "== CodeWhale branch hygiene =="
+echo "== HelpOfAi branch hygiene =="
 echo "Current checkout : ${current_branch:-<detached>} ($(git rev-parse --short HEAD))"
 echo "Main ref         : ${main_ref} (${main_sha})"
 

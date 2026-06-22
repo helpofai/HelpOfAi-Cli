@@ -15,7 +15,7 @@
   rev ? "dirty",
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
-  pname = "codewhale";
+  pname = "helpofai";
   version = "git-${rev}";
 
   src = ../.;
@@ -46,9 +46,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoBuildFlags = [
     "--package"
-    "codewhale-cli"
+    "helpofai-cli"
     "--package"
-    "codewhale-tui"
+    "helpofai-tui"
   ];
   cargoTestFlags = finalAttrs.cargoBuildFlags ++ [
     "--lib"
@@ -61,8 +61,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   meta = {
     description = "Terminal coding agent for DeepSeek";
-    homepage = "https://github.com/Hmbown/CodeWhale";
+    homepage = "https://github.com/helpofai/HelpOfAi-Cli";
     license = lib.licenses.mit;
-    mainProgram = "codewhale";
+    mainProgram = "helpofai";
   };
 })

@@ -3681,7 +3681,7 @@ mod tests {
             .push(HistoryCell::Tool(ToolCell::Generic(GenericToolCell {
                 name: "read_file".to_string(),
                 status: ToolStatus::Success,
-                input_summary: Some("codewhale-tui/CHANGELOG.md".to_string()),
+                input_summary: Some("helpofai-tui/CHANGELOG.md".to_string()),
                 output: Some("done".to_string()),
                 prompts: None,
                 spillover_path: None,
@@ -3984,7 +3984,7 @@ mod tests {
         app.task_panel.push(TaskPanelEntry {
             id: "shell_live".to_string(),
             status: "running".to_string(),
-            prompt_summary: "shell: cargo test -p codewhale-tui".to_string(),
+            prompt_summary: "shell: cargo test -p helpofai-tui".to_string(),
             duration_ms: Some(0),
             kind: TaskPanelEntryKind::Background,
             stale: false,
@@ -4533,8 +4533,9 @@ mod tests {
         app.sidebar_focus = SidebarFocus::Tasks;
         for _ in 0..3 {
             app.history.push(HistoryCell::Tool(ToolCell::Exec(ExecCell {
-                command: "cd /tmp/repo && sleep 15 && gh pr checks 1616 --repo Hmbown/CodeWhale"
-                    .to_string(),
+                command:
+                    "cd /tmp/repo && sleep 15 && gh pr checks 1616 --repo helpofai/HelpOfAi-Cli"
+                        .to_string(),
                 status: ToolStatus::Failed,
                 output: Some("Lint pending\nTest pending".to_string()),
                 live_output: None,
@@ -4577,7 +4578,7 @@ mod tests {
         let mut app = create_test_app();
         app.sidebar_focus = SidebarFocus::Tasks;
         app.history.push(HistoryCell::Tool(ToolCell::Exec(ExecCell {
-            command: "cargo test -p codewhale-tui".to_string(),
+            command: "cargo test -p helpofai-tui".to_string(),
             status: ToolStatus::Failed,
             output: Some("test failed".to_string()),
             live_output: None,

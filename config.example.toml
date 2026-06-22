@@ -1,5 +1,5 @@
 # ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║                         CodeWhale Configuration                               ║
+# ║                         HelpOfAi Configuration                               ║
 # ║                                                                              ║
 # ║  Terminal coding agent for DeepSeek.                                          ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -88,12 +88,12 @@ cost_currency = "usd" # usd | cny
 # ─────────────────────────────────────────────────────────────────────────────────
 # Startup update check
 # ─────────────────────────────────────────────────────────────────────────────────
-# The TUI checks for newer CodeWhale releases in the background at startup.
+# The TUI checks for newer HelpOfAi releases in the background at startup.
 # Set check_for_updates = false in managed or air-gapped environments.
 # update_uri may point at a GitHub-compatible latest-release JSON endpoint.
 [update]
 check_for_updates = true
-# update_uri = "https://internal.mirror.example/codewhale/releases/latest"
+# update_uri = "https://internal.mirror.example/helpofai/releases/latest"
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # Hotbar slots (#2061 / #2064)
@@ -125,16 +125,16 @@ check_for_updates = true
 # ─────────────────────────────────────────────────────────────────────────────────
 # Paths
 # ─────────────────────────────────────────────────────────────────────────────────
-# New installs write product state under ~/.codewhale/. Existing ~/.deepseek/
-# files are still read as compatibility fallbacks when the .codewhale file is
+# New installs write product state under ~/.helpofai/. Existing ~/.deepseek/
+# files are still read as compatibility fallbacks when the .helpofai file is
 # absent.
-skills_dir = "~/.codewhale/skills"
-mcp_config_path = "~/.codewhale/mcp.json"
-notes_path = "~/.codewhale/notes.txt"
+skills_dir = "~/.helpofai/skills"
+mcp_config_path = "~/.helpofai/mcp.json"
+notes_path = "~/.helpofai/notes.txt"
 
-memory_path = "~/.codewhale/memory.md"
+memory_path = "~/.helpofai/memory.md"
 
-# instructions = ["./AGENTS.md", "~/.codewhale/global.md"]
+# instructions = ["./AGENTS.md", "~/.helpofai/global.md"]
 #
 # Optional list of additional instruction files concatenated into the
 # system prompt in declared order (#454). Useful for layering
@@ -142,7 +142,7 @@ memory_path = "~/.codewhale/memory.md"
 # is expanded so `~` and env vars work; missing files are skipped with
 # a tracing warning. Files are capped at 100 KiB per entry.
 #
-# Project-level config (.codewhale/config.toml in the workspace) replaces
+# Project-level config (.helpofai/config.toml in the workspace) replaces
 # the user-level array wholesale rather than merging — list `~/global.md`
 # inside the project array if you want both. An explicit empty array
 # (`instructions = []`) clears the user list for the current repo.
@@ -185,7 +185,7 @@ sandbox_mode = "workspace-write" # read-only | workspace-write | danger-full-acc
 # allow/deny records, glob expansion, and UI persistence are intentionally out
 # of scope here.
 #
-# Example ~/.codewhale/permissions.toml:
+# Example ~/.helpofai/permissions.toml:
 #
 # [[rules]]
 # tool = "exec_shell"
@@ -382,7 +382,7 @@ max_subagents = 10 # optional (1-20)
 # mode = "token-plan-cn"               # China cluster
 # mode = "token-plan-ams"              # Europe cluster
 # mode = "pay-as-you-go"               # standard API / sk- keys
-# TTS aliases are also accepted by `codewhale speech`: tts, voice-design, voice-clone
+# TTS aliases are also accepted by `helpofai speech`: tts, voice-design, voice-clone
 # TTS model IDs: mimo-v2.5-tts, mimo-v2.5-tts-voicedesign, mimo-v2.5-tts-voiceclone, mimo-v2-tts
 
 # Novita AI-hosted inference (https://novita.ai)
@@ -492,7 +492,7 @@ max_subagents = 10 # optional (1-20)
 # ─────────────────────────────────────────────────────────────────────────────────
 # OpenAI Codex (ChatGPT) Provider — EXPERIMENTAL
 # Reuses your existing ChatGPT/Codex CLI OAuth login. Run `codex login` first;
-# CodeWhale reads and refreshes the access token from ~/.codex/auth.json. No API
+# HelpOfAi reads and refreshes the access token from ~/.codex/auth.json. No API
 # key is stored here. Talks to the OpenAI Responses API at /codex/responses.
 # Env var aliases: OPENAI_CODEX_ACCESS_TOKEN / CODEX_ACCESS_TOKEN (token override),
 #   OPENAI_CODEX_BASE_URL / CODEX_BASE_URL, OPENAI_CODEX_MODEL / CODEX_MODEL,
@@ -542,7 +542,7 @@ max_subagents = 10 # optional (1-20)
 # Env-var overrides:
 #   DEEPSEEK_SEARCH_PROVIDER → search.provider
 #   DEEPSEEK_SEARCH_API_KEY  → search.api_key
-#   CODEWHALE_SEARCH_BASE_URL → search.base_url
+#   HELPOFAI_SEARCH_BASE_URL → search.base_url
 #   DEEPSEEK_SEARCH_BASE_URL  → search.base_url (legacy alias)
 #   METASO_API_KEY           → metaso key fallback
 #   BAIDU_SEARCH_API_KEY     → baidu key fallback
@@ -570,7 +570,7 @@ max_subagents = 10 # optional (1-20)
 # default = "prompt"     # allow | deny | prompt
 # allow = ["api.deepseek.com", "github.com", ".githubusercontent.com"]
 # deny = []
-# audit = true            # one line per call to ~/.codewhale/audit.log
+# audit = true            # one line per call to ~/.helpofai/audit.log
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # Skills (#140)
@@ -588,9 +588,9 @@ max_subagents = 10 # optional (1-20)
 # be asked once and can persist) before running it.
 #
 # [skills]
-# registry_url = "https://raw.githubusercontent.com/Hmbown/deepseek-skills/main/index.json"
+# registry_url = "https://raw.githubusercontent.com/helpofai/deepseek-skills/main/index.json"
 # max_install_size_bytes = 5_242_880
-# scan_codewhale_only = false # true: ignore Claude/OpenCode/Cursor/agentskills.io skill dirs
+# scan_helpofai_only = false # true: ignore Claude/OpenCode/Cursor/agentskills.io skill dirs
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # TUI
@@ -722,9 +722,9 @@ fallback_default_prior = 3.8
 # ─────────────────────────────────────────────────────────────────────────────────
 # Harness Profiles (preview schema; runtime consumption follows later)
 # ─────────────────────────────────────────────────────────────────────────────────
-# Harness profiles let future CodeWhale runtime slices select model-specific
+# Harness profiles let future HelpOfAi runtime slices select model-specific
 # prompt, context, tool, and subagent posture. v0.9 parses, validates, and can
-# resolve profiles for tests/status plumbing, but normal Agent and WhaleFlow
+# resolve profiles for tests/status plumbing, but normal Agent and HelpFlow
 # runs do not silently promote or mutate behavior from these profiles yet.
 #
 # [[harness_profiles]]
@@ -789,7 +789,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # Each turn the TUI takes a `pre-turn:<seq>` and `post-turn:<seq>` snapshot of
 # your workspace into a side-git repo at:
 #
-#     ~/.codewhale/snapshots/<project_hash>/<worktree_hash>/.git
+#     ~/.helpofai/snapshots/<project_hash>/<worktree_hash>/.git
 #
 # Your own `.git` is never touched — `--git-dir` and `--work-tree` are always
 # set together when shelling out to git. Use `/restore N` (slash command) or
@@ -806,7 +806,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # max_workspace_gb = 2  # Snapshots self-disable on first init when the
 #                         # non-excluded workspace exceeds this size in GB
 #                         # (v0.8.32). Default 2 GB protects against running
-#                         # codewhale in directories with hundreds of GB
+#                         # helpofai in directories with hundreds of GB
 #                         # of datasets / model weights / docker dumps where
 #                         # `git add -A` would hang the TUI for hours. Set
 #                         # to 0 to disable the cap (v0.8.31 behaviour);
@@ -864,7 +864,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # Those vars are merged into the spawned process environment (later hooks
 # override earlier ones). Use this for ephemeral credentials, per-skill
 # PATH adjustments, or short-lived tokens. The resolved KEY names (NEVER
-# values) are written to `~/.codewhale/audit.log` so each session can be
+# values) are written to `~/.helpofai/audit.log` so each session can be
 # reconciled later. Hook failure / timeout simply contributes no vars —
 # it does not abort the shell call.
 #
@@ -874,7 +874,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 #
 # [[hooks.hooks]]
 # event = "session_start"
-# command = "echo 'CodeWhale session started'"
+# command = "echo 'HelpOfAi session started'"
 #
 # # Inject ephemeral creds into every shell call. Output one
 # # KEY=VALUE per line on stdout (export prefix optional).
@@ -892,7 +892,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # [[hooks.hooks]]
 # name = "subagent-audit"
 # event = "subagent_complete"
-# command = "~/.codewhale/hooks/subagent-audit.sh"
+# command = "~/.helpofai/hooks/subagent-audit.sh"
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # Runtime API (`deepseek serve --http`) (#561)
@@ -929,8 +929,8 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # JSON `ToolResult` (`{"content": "...", "success": true}`) on **stdout**.
 #
 # [tools]
-# # Custom plugin directory (defaults to `~/.codewhale/tools/`)
-# plugin_dir = "~/.codewhale/tools"
+# # Custom plugin directory (defaults to `~/.helpofai/tools/`)
+# plugin_dir = "~/.helpofai/tools"
 #
 # [tools.overrides]
 # # Disable a tool entirely — removes it from the model-visible catalog.
@@ -946,12 +946,12 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # "fetch_url" = { type = "script", path = "cached-fetch.sh", args = ["--ttl", "300"] }
 
 # ──────────── Enterprise example: audit-logging exec_shell wrapper ──────────────
-# Drop `audit-exec-shell.sh` in `~/.codewhale/tools/` and enable with:
+# Drop `audit-exec-shell.sh` in `~/.helpofai/tools/` and enable with:
 #
 # [tools.overrides]
 # "exec_shell" = { type = "script", path = "audit-exec-shell.sh" }
 #
-# The wrapper logs every request to `~/.codewhale/audit/exec_shell.log`, then
+# The wrapper logs every request to `~/.helpofai/audit/exec_shell.log`, then
 # delegates to your own approved shell executor. Do not pipe the raw JSON
 # request into `sh -s`; parse the command field and enforce your policy first.
 #
@@ -960,7 +960,7 @@ default_text_model = "deepseek-ai/deepseek-v4-pro"
 # # name: exec_shell
 # # description: Audit-logging wrapper for exec_shell
 # # approval: required
-# LOGDIR="${HOME}/.codewhale/audit"
+# LOGDIR="${HOME}/.helpofai/audit"
 # mkdir -p "$LOGDIR"
 # LOGFILE="$LOGDIR/exec_shell.log"
 # input=$(cat)

@@ -10,7 +10,7 @@ for Claude-based agents working in this repository.
   deferring work.
 - Do not tag, publish, create a GitHub Release, or push release artifacts
   without Hunter's explicit approval.
-- Keep CodeWhale branding while preserving first-class DeepSeek model/provider
+- Keep HelpOfAi branding while preserving first-class DeepSeek model/provider
   support and legacy migration care.
 - Preserve contributor credit for harvested work with authorship,
   `Co-authored-by`, `Harvested from PR #N by @handle`, and changelog/release
@@ -41,7 +41,7 @@ for Claude-based agents working in this repository.
   local checkout you have and confirm with `git branch --show-current` before
   editing. 0.8.61 has shipped; do all new work here, never on `main`.
 - Base release triage on the GitHub `v0.8.62` milestone
-  (`gh issue list --repo Hmbown/CodeWhale --milestone "v0.8.62" --state open`)
+  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.62" --state open`)
   unless Hunter gives a newer branch/milestone.
 - Work the queue in this order: release blockers, recently approved PRs, clean
   PRs with small scope, blocked PRs with obvious fixes, dirty PRs that can be

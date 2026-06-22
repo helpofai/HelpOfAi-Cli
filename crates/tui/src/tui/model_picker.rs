@@ -1183,7 +1183,7 @@ mod tests {
         assert!(!view.show_custom_model_row);
 
         // Each cross-provider row carries its own provider so applying it
-        // switches CodeWhale to that provider (verified via build_event below).
+        // switches HelpOfAi to that provider (verified via build_event below).
         let deepseek_row = view
             .visible_model_rows()
             .iter()

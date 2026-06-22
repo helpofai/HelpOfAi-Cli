@@ -376,7 +376,7 @@ pub fn agent(_app: &mut App, arg: Option<&str>) -> CommandResult {
 }
 
 /// Gate the old prompt-only swarm fanout until it can route through durable
-/// WhaleFlow/Fleet workers (#3218).
+/// HelpFlow/Fleet workers (#3218).
 pub fn swarm(_app: &mut App, arg: Option<&str>) -> CommandResult {
     let (_max_depth, task) = match parse_depth_prefixed_arg(arg, 1) {
         Ok(parsed) => parsed,

@@ -2,7 +2,7 @@
 
 ## Where to work right now (read this first)
 
-- **Repo:** `Hmbown/CodeWhale`. This repo lives on multiple devices, so do
+- **Repo:** `helpofai/HelpOfAi-Cli`. This repo lives on multiple devices, so do
   **not** hard-code a device-specific checkout path here — work in whichever
   local checkout you have and always **confirm with
   `git branch --show-current` before editing.**
@@ -14,17 +14,17 @@
   end against live Z.ai + OpenRouter (see CHANGELOG `## [Unreleased]`). Do not
   bump it opportunistically.
 - **Milestone guidepost:** GitHub milestone `v0.8.62` (id 47). Check live state
-  with `gh issue list --repo Hmbown/CodeWhale --milestone "v0.8.62" --state open`.
+  with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.62" --state open`.
 - **Default branch is `main`.** Never commit directly to `main`; always work on
   `hunter/0.8.62-glm-subagents` (or a fresh branch off it for an isolated
   change). Open a PR into `main` only when a unit of work is reviewable.
 - **Always run before pushing a change:** `cargo fmt`, then the targeted tests
-  for the area (`cargo test -p codewhale-tui --bins <filter>`,
-  `cargo test -p codewhale-config`, `cargo test -p codewhale-protocol`, …). Full
+  for the area (`cargo test -p helpofai-tui --bins <filter>`,
+  `cargo test -p helpofai-config`, `cargo test -p helpofai-protocol`, …). Full
   gate: `cargo test --workspace`. Release build:
-  `cargo build --release -p codewhale-cli -p codewhale-tui`.
+  `cargo build --release -p helpofai-cli -p helpofai-tui`.
 - **Known suite papercuts (pre-existing, not regressions):**
-  `config_command_allow_shell_*` fail on machines whose `~/.codewhale/settings.toml`
+  `config_command_allow_shell_*` fail on machines whose `~/.helpofai/settings.toml`
   sets `default_mode = "yolo"` (the tests aren't hermetic); `run_verifiers_background_*`
   is flaky under full-suite parallelism but passes in isolation. Don't treat
   these as caused by your change.
@@ -49,7 +49,7 @@
   (`git rev-parse` ~10ms, 18-core machine). Do not commit a speculative
   `spawn_blocking` fix for the freeze.
 
-## CodeWhale Stewardship
+## HelpOfAi Stewardship
 
 - Treat community contributors as partners. Good-faith PRs, issue reports,
   repros, logs, reviews, and verification comments are maintainer evidence,
@@ -61,7 +61,7 @@
   noreply `Co-authored-by` trailers from `.github/AUTHOR_MAP`.
 - Do not tag, publish, create a GitHub Release, or push release artifacts
   without Hunter approval.
-- Use CodeWhale branding while keeping DeepSeek support first-class. Retiring
+- Use HelpOfAi branding while keeping DeepSeek support first-class. Retiring
   legacy `deepseek-tui` names must never read as deprecating DeepSeek models or
   provider support.
 - Review PRs from code, tests, linked issues, comments, and check results.
@@ -97,6 +97,6 @@
   relevant branch. If the release branch already contains equivalent behavior,
   leave a clear note linking the commit and describing any remaining delta.
 - For the active release queue, start from the GitHub `v0.8.62` milestone
-  (`gh issue list --repo Hmbown/CodeWhale --milestone "v0.8.62"`) and refresh
+  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.62"`) and refresh
   state before acting. Older per-version triage docs under `docs/` are
   historical reference only.

@@ -38,7 +38,7 @@ export function Nav({ locale = "en" }: { locale?: Locale }) {
             <span className="hidden sm:inline">· {isZh ? new Date().toLocaleDateString("zh-CN", { weekday: "long", month: "long", day: "numeric" }) : new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="hidden md:inline">codewhale.net</span>
+            <span className="hidden md:inline">helpofai.net</span>
             <span className="tabular">{FACTS.version ? `v${FACTS.version}` : "v0.8.x"}</span>
           </div>
         </div>
@@ -50,7 +50,7 @@ export function Nav({ locale = "en" }: { locale?: Locale }) {
           <Seal char="深" size="md" />
           <div className="leading-tight min-w-0">
             <div className="font-display text-[1.2rem] sm:text-[1.35rem] font-semibold tracking-crisp flex items-center gap-2 truncate">
-              CodeWhale
+              HelpOfAi
               <Whale size={20} className="text-indigo hidden sm:inline-block" />
             </div>
             <div className="font-cjk text-[0.65rem] sm:text-[0.7rem] text-ink-mute tracking-widest truncate">
@@ -73,7 +73,7 @@ export function Nav({ locale = "en" }: { locale?: Locale }) {
         <div className="flex items-center gap-2 sm:gap-3">
           <LocaleSwitcher current={locale} />
           <Link
-            href="https://github.com/Hmbown/CodeWhale"
+            href="https://github.com/helpofai/HelpOfAi-Cli"
             className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 hairline-t hairline-b hairline-l hairline-r font-mono text-[0.7rem] uppercase tracking-wider hover:bg-paper-deep transition-colors"
           >
             <span>★ GitHub</span>

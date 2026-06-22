@@ -56,9 +56,9 @@ jobs:
       - name: Workspace tests
         run: cargo test --workspace --all-features --locked
       - name: Protocol schema parity
-        run: cargo test -p codewhale-protocol --test parity_protocol --locked
+        run: cargo test -p helpofai-protocol --test parity_protocol --locked
       - name: State persistence parity
-        run: cargo test -p codewhale-state --test parity_state --locked
+        run: cargo test -p helpofai-state --test parity_state --locked
       - name: Lockfile drift guard
         run: git diff --exit-code -- Cargo.lock
 
@@ -114,56 +114,56 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # --- codewhale (cli dispatcher, canonical) ---
+          # --- helpofai (cli dispatcher, canonical) ---
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            binary: codewhale
-            artifact_name: codewhale-linux-x64
+            binary: helpofai
+            artifact_name: helpofai-linux-x64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            binary: codewhale
-            artifact_name: codewhale-linux-arm64
+            binary: helpofai
+            artifact_name: helpofai-linux-arm64
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-            binary: codewhale
-            artifact_name: codewhale-linux-riscv64
+            binary: helpofai
+            artifact_name: helpofai-linux-riscv64
           - os: macos-latest
             target: x86_64-apple-darwin
-            binary: codewhale
-            artifact_name: codewhale-macos-x64
+            binary: helpofai
+            artifact_name: helpofai-macos-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            binary: codewhale
-            artifact_name: codewhale-macos-arm64
+            binary: helpofai
+            artifact_name: helpofai-macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary: codewhale.exe
-            artifact_name: codewhale-windows-x64.exe
-          # --- codewhale-tui (TUI runtime, canonical) ---
+            binary: helpofai.exe
+            artifact_name: helpofai-windows-x64.exe
+          # --- helpofai-tui (TUI runtime, canonical) ---
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            binary: codewhale-tui
-            artifact_name: codewhale-tui-linux-x64
+            binary: helpofai-tui
+            artifact_name: helpofai-tui-linux-x64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            binary: codewhale-tui
-            artifact_name: codewhale-tui-linux-arm64
+            binary: helpofai-tui
+            artifact_name: helpofai-tui-linux-arm64
           - os: ubuntu-latest
             target: riscv64gc-unknown-linux-gnu
-            binary: codewhale-tui
-            artifact_name: codewhale-tui-linux-riscv64
+            binary: helpofai-tui
+            artifact_name: helpofai-tui-linux-riscv64
           - os: macos-latest
             target: x86_64-apple-darwin
-            binary: codewhale-tui
-            artifact_name: codewhale-tui-macos-x64
+            binary: helpofai-tui
+            artifact_name: helpofai-tui-macos-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            binary: codewhale-tui
-            artifact_name: codewhale-tui-macos-arm64
+            binary: helpofai-tui
+            artifact_name: helpofai-tui-macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary: codewhale-tui.exe
-            artifact_name: codewhale-tui-windows-x64.exe
+            binary: helpofai-tui.exe
+            artifact_name: helpofai-tui-windows-x64.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -267,32 +267,32 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
-          pattern: 'codewhale*'
+          pattern: 'helpofai*'
       - name: Create platform archives
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p bundles/checksums
-          MANIFEST="bundles/checksums/codewhale-bundles-sha256.txt"
+          MANIFEST="bundles/checksums/helpofai-bundles-sha256.txt"
           : > "$MANIFEST"
 
           bundle() {
             local platform="$1"   # linux-x64, linux-arm64, macos-x64, macos-arm64, windows-x64
-            local cli_src="$2"    # artifact name for codewhale binary
-            local tui_src="$3"    # artifact name for codewhale-tui binary
+            local cli_src="$2"    # artifact name for helpofai binary
+            local tui_src="$3"    # artifact name for helpofai-tui binary
             local ext="$4"        # tar.gz or zip
             local variant="$5"    # '' (standard) or 'portable' (Windows only, no install script)
             shift 5
 
-            local dir="bundles/codewhale-${platform}${variant:+-}${variant}"
+            local dir="bundles/helpofai-${platform}${variant:+-}${variant}"
             mkdir -p "$dir"
 
             # Copy binaries, stripping platform suffixes
-            local cli_dst="codewhale"
-            local tui_dst="codewhale-tui"
+            local cli_dst="helpofai"
+            local tui_dst="helpofai-tui"
             if [[ "$platform" == windows-* ]]; then
-              cli_dst="codewhale.exe"
-              tui_dst="codewhale-tui.exe"
+              cli_dst="helpofai.exe"
+              tui_dst="helpofai-tui.exe"
             fi
             cp "artifacts/${cli_src}/${cli_src}" "$dir/${cli_dst}"
             cp "artifacts/${tui_src}/${tui_src}" "$dir/${tui_dst}"
@@ -310,41 +310,41 @@ jobs:
             fi
 
             if [[ "$ext" == "zip" ]]; then
-              (cd bundles && zip -r "codewhale-${platform}${variant:+-}${variant}.zip" "codewhale-${platform}${variant:+-}${variant}/")
+              (cd bundles && zip -r "helpofai-${platform}${variant:+-}${variant}.zip" "helpofai-${platform}${variant:+-}${variant}/")
             else
-              tar -czf "bundles/codewhale-${platform}${variant:+-}${variant}.tar.gz" -C bundles "codewhale-${platform}${variant:+-}${variant}/"
+              tar -czf "bundles/helpofai-${platform}${variant:+-}${variant}.tar.gz" -C bundles "helpofai-${platform}${variant:+-}${variant}/"
             fi
 
-            local archive="codewhale-${platform}${variant:+-}${variant}.${ext}"
+            local archive="helpofai-${platform}${variant:+-}${variant}.${ext}"
             sha256sum "bundles/${archive}" | awk '{printf "%s  %s\n", $1, $2}' >> "$MANIFEST"
             echo "  Created bundles/${archive}"
           }
 
           # Platform: linux-x64
           bundle linux-x64 \
-            codewhale-linux-x64 codewhale-tui-linux-x64 tar.gz ""
+            helpofai-linux-x64 helpofai-tui-linux-x64 tar.gz ""
 
           # Platform: linux-arm64
           bundle linux-arm64 \
-            codewhale-linux-arm64 codewhale-tui-linux-arm64 tar.gz ""
+            helpofai-linux-arm64 helpofai-tui-linux-arm64 tar.gz ""
 
           # Platform: linux-riscv64
           bundle linux-riscv64 \
-            codewhale-linux-riscv64 codewhale-tui-linux-riscv64 tar.gz ""
+            helpofai-linux-riscv64 helpofai-tui-linux-riscv64 tar.gz ""
 
           # Platform: macos-x64
           bundle macos-x64 \
-            codewhale-macos-x64 codewhale-tui-macos-x64 tar.gz ""
+            helpofai-macos-x64 helpofai-tui-macos-x64 tar.gz ""
 
           # Platform: macos-arm64
           bundle macos-arm64 \
-            codewhale-macos-arm64 codewhale-tui-macos-arm64 tar.gz ""
+            helpofai-macos-arm64 helpofai-tui-macos-arm64 tar.gz ""
 
           # Platform: windows-x64 (standard + portable)
           bundle windows-x64 \
-            codewhale-windows-x64.exe codewhale-tui-windows-x64.exe zip ""
+            helpofai-windows-x64.exe helpofai-tui-windows-x64.exe zip ""
           bundle windows-x64 \
-            codewhale-windows-x64.exe codewhale-tui-windows-x64.exe zip "portable"
+            helpofai-windows-x64.exe helpofai-tui-windows-x64.exe zip "portable"
 
           echo ""
           echo "=== Archive checksums ==="
@@ -353,7 +353,7 @@ jobs:
       - name: Upload bundle artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: codewhale-bundles
+          name: helpofai-bundles
           path: bundles/*
           if-no-files-found: error
 
@@ -368,7 +368,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
-          pattern: 'codewhale*-windows-x64.exe'
+          pattern: 'helpofai*-windows-x64.exe'
       - name: Install NSIS
         shell: pwsh
         run: choco install nsis -y --no-progress
@@ -377,8 +377,8 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $version = "${{ needs.resolve.outputs.tag }}".TrimStart("v")
-          Copy-Item "artifacts\codewhale-windows-x64.exe\codewhale-windows-x64.exe" "scripts\installer\codewhale.exe"
-          Copy-Item "artifacts\codewhale-tui-windows-x64.exe\codewhale-tui-windows-x64.exe" "scripts\installer\codewhale-tui.exe"
+          Copy-Item "artifacts\helpofai-windows-x64.exe\helpofai-windows-x64.exe" "scripts\installer\helpofai.exe"
+          Copy-Item "artifacts\helpofai-tui-windows-x64.exe\helpofai-tui-windows-x64.exe" "scripts\installer\helpofai-tui.exe"
           $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
           if (!(Test-Path $makensis)) {
             $makensis = "${env:ProgramFiles}\NSIS\makensis.exe"
@@ -387,16 +387,16 @@ jobs:
             throw "makensis.exe not found after NSIS install"
           }
           Push-Location scripts\installer
-          & $makensis "/DVERSION=$version" "codewhale.nsi"
+          & $makensis "/DVERSION=$version" "helpofai.nsi"
           Pop-Location
-          if (!(Test-Path "scripts\installer\CodeWhaleSetup.exe")) {
-            throw "CodeWhaleSetup.exe was not produced"
+          if (!(Test-Path "scripts\installer\HelpOfAiSetup.exe")) {
+            throw "HelpOfAiSetup.exe was not produced"
           }
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodeWhaleSetup.exe
-          path: scripts/installer/CodeWhaleSetup.exe
+          name: HelpOfAiSetup.exe
+          path: scripts/installer/HelpOfAiSetup.exe
           if-no-files-found: error
 
   docker:
@@ -488,26 +488,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts/codewhale-windows-launcher
+          mkdir -p artifacts/helpofai-windows-launcher
           {
             printf '@echo off\r\n'
             printf 'where wt >nul 2>nul\r\n'
             printf 'set NO_ANIMATIONS=1\r\n'
             printf 'if "%%ERRORLEVEL%%"=="0" (\r\n'
-            printf '    wt --title CodeWhale cmd /k "%%~dp0codewhale-windows-x64.exe"\r\n'
+            printf '    wt --title HelpOfAi cmd /k "%%~dp0helpofai-windows-x64.exe"\r\n'
             printf ') else (\r\n'
-            printf '    "%%~dp0codewhale-windows-x64.exe"\r\n'
+            printf '    "%%~dp0helpofai-windows-x64.exe"\r\n'
             printf ')\r\n'
             printf '\r\n'
-          } > artifacts/codewhale-windows-launcher/codewhale.bat
+          } > artifacts/helpofai-windows-launcher/helpofai.bat
       - name: List artifacts
         run: find artifacts -type f
       - name: Generate checksum manifest
         shell: bash
         run: |
           mkdir -p artifacts/checksums
-          # Canonical manifest used by codewhale's `codewhale update` flow.
-          manifest="artifacts/checksums/codewhale-artifacts-sha256.txt"
+          # Canonical manifest used by helpofai's `helpofai update` flow.
+          manifest="artifacts/checksums/helpofai-artifacts-sha256.txt"
           : > "${manifest}"
           while IFS= read -r -d '' file; do
             hash="$(sha256sum "${file}" | awk '{print $1}')"
@@ -558,14 +558,14 @@ jobs:
         run: |
           gh release download ${{ needs.resolve.outputs.tag }} \
             --repo ${{ github.repository }} \
-            --pattern 'codewhale-artifacts-sha256.txt' \
+            --pattern 'helpofai-artifacts-sha256.txt' \
             --dir /tmp
       - name: Update Homebrew tap
         if: steps.homebrew-token.outputs.available == 'true'
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
-          MANIFEST: /tmp/codewhale-artifacts-sha256.txt
-          TAP_REPO: Hmbown/homebrew-deepseek-tui
+          MANIFEST: /tmp/helpofai-artifacts-sha256.txt
+          TAP_REPO: helpofai/homebrew-deepseek-tui
           TOKEN: ${{ secrets.HOMEBREW_TAP_PAT || secrets.RELEASE_TAG_PAT }}
         run: bash .github/scripts/update-homebrew-tap.sh
 

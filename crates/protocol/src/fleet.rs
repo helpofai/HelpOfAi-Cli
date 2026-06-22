@@ -6,8 +6,8 @@
 //! fields and are unaffected by fleet extensions.
 //!
 //! See:
-//! - <https://github.com/Hmbown/CodeWhale/issues/3154> (Agent Fleet control plane)
-//! - <https://github.com/Hmbown/CodeWhale/issues/3096> (Runtime API sub-agent direction)
+//! - <https://github.com/helpofai/HelpOfAi-Cli/issues/3154> (Agent Fleet control plane)
+//! - <https://github.com/helpofai/HelpOfAi-Cli/issues/3096> (Runtime API sub-agent direction)
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -249,7 +249,7 @@ pub enum FleetScorerSpec {
         #[serde(default)]
         args: Vec<String>,
     },
-    CodeWhaleVerifierPrompt {
+    HelpOfAiVerifierPrompt {
         prompt: String,
     },
     Manual,
@@ -299,7 +299,7 @@ pub enum FleetHostSpec {
         #[serde(skip_serializing_if = "Vec::is_empty")]
         env_allowlist: Vec<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        codewhale_binary: Option<String>,
+        helpofai_binary: Option<String>,
     },
     #[serde(alias = "container")]
     #[serde(alias = "Container")]
@@ -320,7 +320,7 @@ pub enum FleetHostSpec {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum FleetTrustLevel {
-    /// Fully isolated: no network, no secrets, no writes outside `.codewhale/fleet/`.
+    /// Fully isolated: no network, no secrets, no writes outside `.helpofai/fleet/`.
     /// Suitable for untrusted code review, community PR checks, or third-party tool runs.
     #[default]
     Sandbox = 0,
@@ -345,7 +345,7 @@ impl FleetTrustLevel {
         matches!(self, Self::Operator | Self::RemoteVerified | Self::Local)
     }
 
-    /// Whether this trust level is allowed to write outside `.codewhale/fleet/`.
+    /// Whether this trust level is allowed to write outside `.helpofai/fleet/`.
     #[must_use]
     pub fn may_write_workspace(&self) -> bool {
         matches!(self, Self::Operator | Self::Local)
@@ -420,12 +420,12 @@ impl Default for FleetSecurityPolicy {
 /// the worker starts.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct FleetSecretRef {
-    /// The secret key name (e.g. `"CODEWHALE_API_KEY"`, `"GH_TOKEN"`).
+    /// The secret key name (e.g. `"HELPOFAI_API_KEY"`, `"GH_TOKEN"`).
     pub key: String,
     /// Optional source hint for resolution order.
     /// - `"env"` — resolve from environment variable
     /// - `"keyring"` — resolve from OS keyring
-    /// - `"file"` — resolve from `~/.codewhale/secrets/`
+    /// - `"file"` — resolve from `~/.helpofai/secrets/`
     /// - absent / null — try all sources in default order
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1026,7 +1026,7 @@ mod tests {
                 host_key_fingerprint,
                 working_directory,
                 env_allowlist,
-                codewhale_binary,
+                helpofai_binary,
             } => {
                 assert_eq!(host, "builder.example.test");
                 assert_eq!(port, None);
@@ -1036,7 +1036,7 @@ mod tests {
                 assert_eq!(host_key_fingerprint, None);
                 assert_eq!(working_directory, None);
                 assert!(env_allowlist.is_empty());
-                assert_eq!(codewhale_binary, None);
+                assert_eq!(helpofai_binary, None);
             }
             other => panic!("expected ssh host spec, got {other:?}"),
         }
@@ -1146,13 +1146,13 @@ mod tests {
         let spec = FleetHostSpec::Ssh {
             host: "builder.trusted.example.com".to_string(),
             port: Some(22),
-            user: Some("codewhale".to_string()),
-            identity: Some(PathBuf::from("~/.ssh/codewhale_fleet")),
+            user: Some("helpofai".to_string()),
+            identity: Some(PathBuf::from("~/.ssh/helpofai_fleet")),
             known_hosts: Some(PathBuf::from("~/.ssh/known_hosts")),
             host_key_fingerprint: Some("SHA256:aLGqZo1M6c...".to_string()),
-            working_directory: Some(PathBuf::from("/srv/codewhale/work")),
-            env_allowlist: vec!["CODEWHALE_PROFILE".to_string()],
-            codewhale_binary: Some("/usr/local/bin/codewhale".to_string()),
+            working_directory: Some(PathBuf::from("/srv/helpofai/work")),
+            env_allowlist: vec!["HELPOFAI_PROFILE".to_string()],
+            helpofai_binary: Some("/usr/local/bin/helpofai".to_string()),
         };
         let json = serde_json::to_string_pretty(&spec).unwrap();
         assert!(json.contains("\"known_hosts\""));
@@ -1206,8 +1206,8 @@ mod tests {
 
     #[test]
     fn secret_ref_accepts_legacy_string_wire_shape() {
-        let ref_: FleetSecretRef = serde_json::from_str(r#""CODEWHALE_FLEET_TOKEN""#).unwrap();
-        assert_eq!(ref_, FleetSecretRef::new("CODEWHALE_FLEET_TOKEN"));
+        let ref_: FleetSecretRef = serde_json::from_str(r#""HELPOFAI_FLEET_TOKEN""#).unwrap();
+        assert_eq!(ref_, FleetSecretRef::new("HELPOFAI_FLEET_TOKEN"));
 
         let ref_: FleetSecretRef =
             serde_json::from_str(r#"{"key":"GH_TOKEN","source":"env"}"#).unwrap();

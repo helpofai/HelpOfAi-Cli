@@ -2,7 +2,7 @@
 //!
 //! The report is intentionally approximate for v0.8.59. It uses the same
 //! conservative token heuristic as compaction and describes the runtime sources
-//! CodeWhale already tracks, without claiming provider-tokenizer parity.
+//! HelpOfAi already tracks, without claiming provider-tokenizer parity.
 
 use std::fmt::Write as _;
 use std::path::Path;

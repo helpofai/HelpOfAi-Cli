@@ -1,7 +1,7 @@
 use super::CommandResult;
 use crate::tui::app::{App, AppAction};
 
-const SECURITY_POLICY_URL: &str = "https://github.com/Hmbown/CodeWhale/security/policy";
+const SECURITY_POLICY_URL: &str = "https://github.com/helpofai/HelpOfAi-Cli/security/policy";
 
 pub fn feedback(_app: &mut App, arg: Option<&str>) -> CommandResult {
     let raw = arg.map(str::trim).unwrap_or("");
@@ -82,9 +82,11 @@ impl FeedbackKind {
 
     fn issue_url_base(self) -> &'static str {
         match self {
-            Self::Bug => "https://github.com/Hmbown/CodeWhale/issues/new?template=bug_report.md",
+            Self::Bug => {
+                "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=bug_report.md"
+            }
             Self::Feature => {
-                "https://github.com/Hmbown/CodeWhale/issues/new?template=feature_request.md"
+                "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=feature_request.md"
             }
             Self::Security => SECURITY_POLICY_URL,
         }
@@ -122,7 +124,7 @@ fn feedback_help() -> String {
 fn bug_report_diagnostics_hint() -> &'static str {
     "Before filing, first check whether this looks like a model issue or an environment/tool issue: \
      command exit, network/service, sandbox/approval, missing dependency/path, timeout, or an unclosed turn. \
-     Include the CodeWhale version, OS/terminal, the tool name, and redacted timestamps or log handles when available. \
+     Include the HelpOfAi version, OS/terminal, the tool name, and redacted timestamps or log handles when available. \
      Do not paste prompts, secrets, raw command output, full local paths, or conversation transcripts."
 }
 
@@ -261,11 +263,11 @@ mod tests {
 
         assert_eq!(
             bug,
-            "https://github.com/Hmbown/CodeWhale/issues/new?template=bug_report.md"
+            "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=bug_report.md"
         );
         assert_eq!(
             feature,
-            "https://github.com/Hmbown/CodeWhale/issues/new?template=feature_request.md"
+            "https://github.com/helpofai/HelpOfAi-Cli/issues/new?template=feature_request.md"
         );
     }
 

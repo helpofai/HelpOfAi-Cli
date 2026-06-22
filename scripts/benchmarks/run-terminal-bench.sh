@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-terminal-bench.sh — Run CodeWhale on Terminal-Bench via Harbor.
+# run-terminal-bench.sh — Run HelpOfAi on Terminal-Bench via Harbor.
 #
 # Usage:
 #   ./scripts/benchmarks/run-terminal-bench.sh --help
@@ -19,7 +19,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DATASET="terminal-bench@2.0"
 MODEL="deepseek/deepseek-chat"
 N_CONCURRENT=4
-AGENT_PATH="$SCRIPT_DIR/harbor/__init__.py:CodeWhaleAgent"
+AGENT_PATH="$SCRIPT_DIR/harbor/__init__.py:HelpOfAiAgent"
 RESULTS_DIR="./results/terminal-bench"
 EXTRA_ARGS=()
 
@@ -27,12 +27,12 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Run CodeWhale on Terminal-Bench tasks via the Harbor framework.
+Run HelpOfAi on Terminal-Bench tasks via the Harbor framework.
 
 Options:
   --dataset DATASET       Harbor dataset (default: terminal-bench@2.0)
   --model MODEL           Model in provider/name format (default: deepseek/deepseek-chat)
-  --agent PATH            Harbor agent import path (default: local CodeWhale adapter)
+  --agent PATH            Harbor agent import path (default: local HelpOfAi adapter)
   --n-concurrent N        Parallel task workers (default: 4)
   --results-dir DIR       Results output directory (default: ./results/terminal-bench)
   -- [EXTRA_ARGS...]      Additional arguments passed to 'harbor run'
@@ -80,12 +80,12 @@ mkdir -p "$RESULTS_DIR"
 METADATA_FILE="$RESULTS_DIR/run_metadata.json"
 cat > "$METADATA_FILE" <<META
 {
-    "codewhale_version": "$(codewhale --version 2>/dev/null || echo unknown)",
+    "helpofai_version": "$(helpofai --version 2>/dev/null || echo unknown)",
     "git_commit": "$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)",
     "harbor_version": "$(harbor --version 2>/dev/null || echo unknown)",
     "model": "$MODEL",
     "dataset": "$DATASET",
-    "agent": "codewhale",
+    "agent": "helpofai",
     "n_concurrent": $N_CONCURRENT,
     "timestamp_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
     "platform": "$(uname -s)/$(uname -m)"

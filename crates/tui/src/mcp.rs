@@ -1489,7 +1489,7 @@ impl McpConnection {
             "params": {
                 "protocolVersion": "2024-11-05",
                 "clientInfo": {
-                    "name": "codewhale-tui",
+                    "name": "helpofai-tui",
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {
@@ -1973,7 +1973,7 @@ impl McpPool {
     }
 
     /// Create a pool from global MCP config plus workspace-local
-    /// `.codewhale/mcp.json`. Project servers override same-name global
+    /// `.helpofai/mcp.json`. Project servers override same-name global
     /// servers and default stdio `cwd` to the workspace root.
     pub fn from_config_path_with_workspace(
         path: &std::path::Path,
@@ -2666,7 +2666,7 @@ pub fn load_config(path: &Path) -> Result<McpConfig> {
 
 pub fn workspace_mcp_config_path(workspace: &Path) -> PathBuf {
     normalize_workspace_path(workspace)
-        .join(".codewhale")
+        .join(".helpofai")
         .join("mcp.json")
 }
 
@@ -3148,7 +3148,7 @@ mod tests {
 
     struct WorkspaceTrustConfigGuard {
         config_path: PathBuf,
-        _codewhale_config_path: crate::test_support::EnvVarGuard,
+        _helpofai_config_path: crate::test_support::EnvVarGuard,
         _deepseek_config_path: crate::test_support::EnvVarGuard,
         _env_lock: std::sync::MutexGuard<'static, ()>,
     }
@@ -3163,13 +3163,13 @@ mod tests {
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent).unwrap();
         }
-        let codewhale_config_path =
-            crate::test_support::EnvVarGuard::set("CODEWHALE_CONFIG_PATH", config_path.as_os_str());
+        let helpofai_config_path =
+            crate::test_support::EnvVarGuard::set("HELPOFAI_CONFIG_PATH", config_path.as_os_str());
         let deepseek_config_path = crate::test_support::EnvVarGuard::remove("DEEPSEEK_CONFIG_PATH");
 
         WorkspaceTrustConfigGuard {
             config_path,
-            _codewhale_config_path: codewhale_config_path,
+            _helpofai_config_path: helpofai_config_path,
             _deepseek_config_path: deepseek_config_path,
             _env_lock: env_lock,
         }
@@ -3428,7 +3428,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(
@@ -3469,7 +3469,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(
@@ -3512,7 +3512,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         fs::write(
             &global_path,
@@ -3536,7 +3536,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         fs::create_dir_all(workspace.join(".deepseek")).unwrap();
         fs::write(workspace.join(".deepseek").join("trusted"), "").unwrap();
@@ -3562,7 +3562,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         fs::write(&global_path, r#"{"servers": {}}"#).unwrap();
         fs::write(project_dir.join("mcp.json"), "{ not json").unwrap();
@@ -3577,7 +3577,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(&global_path, r#"{"servers": {}}"#).unwrap();
@@ -3601,7 +3601,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(&global_path, r#"{"servers": {}}"#).unwrap();
@@ -3626,7 +3626,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(&global_path, r#"{"servers": {}}"#).unwrap();
@@ -3651,7 +3651,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&workspace).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(
@@ -3681,7 +3681,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let trust_env = workspace_trust_config_guard(&workspace);
         fs::write(
@@ -3711,7 +3711,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let trust = mark_workspace_trusted(&workspace);
         fs::write(
@@ -3741,7 +3741,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let global_path = dir.path().join("global-mcp.json");
         let workspace = dir.path().join("workspace");
-        let project_dir = workspace.join(".codewhale");
+        let project_dir = workspace.join(".helpofai");
         fs::create_dir_all(&project_dir).unwrap();
         let _trust = mark_workspace_trusted(&workspace);
         fs::write(
@@ -4537,7 +4537,7 @@ mod tests {
             r#"{
                 "mcpServers": {
                     "broken": {
-                        "command": "codewhale-tui-test-this-binary-does-not-exist-9f8e7d6c5b4a",
+                        "command": "helpofai-tui-test-this-binary-does-not-exist-9f8e7d6c5b4a",
                         "args": []
                     }
                 }

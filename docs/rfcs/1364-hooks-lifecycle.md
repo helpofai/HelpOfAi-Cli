@@ -6,7 +6,7 @@
 
 ## 1. Problem
 
-CodeWhale already has lifecycle hooks and MCP support, but the current hook
+HelpOfAi already has lifecycle hooks and MCP support, but the current hook
 surface is mostly observer-only. This blocks portable extensions that need to
 participate in the agent data flow:
 

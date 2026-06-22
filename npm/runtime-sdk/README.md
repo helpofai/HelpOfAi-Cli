@@ -1,15 +1,15 @@
-# @codewhale/runtime-sdk
+# @helpofai/runtime-sdk
 
-Small JavaScript helpers and TypeScript declarations for CodeWhale's local
+Small JavaScript helpers and TypeScript declarations for HelpOfAi's local
 Runtime API. The package is intentionally transport-only: it never bypasses the
 Rust runtime, sandbox, approvals, provider configuration, or fleet ledger.
 
 ```js
-import { createRuntimeClient } from "@codewhale/runtime-sdk";
+import { createRuntimeClient } from "@helpofai/runtime-sdk";
 
 const client = createRuntimeClient({
   baseUrl: "http://127.0.0.1:7878",
-  token: process.env.CODEWHALE_RUNTIME_TOKEN,
+  token: process.env.HELPOFAI_RUNTIME_TOKEN,
 });
 
 const { runs } = await client.listFleetRuns();

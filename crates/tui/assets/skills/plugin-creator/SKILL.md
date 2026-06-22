@@ -1,6 +1,6 @@
 ---
 name: plugin-creator
-description: Scaffold codewhale local plugin directories and activation notes. Use when the user asks to create, package, or sketch a plugin for codewhale.
+description: Scaffold helpofai local plugin directories and activation notes. Use when the user asks to create, package, or sketch a plugin for helpofai.
 ---
 
 # Plugin Creator

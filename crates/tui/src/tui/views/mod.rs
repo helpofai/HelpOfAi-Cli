@@ -271,7 +271,7 @@ impl ViewStack {
     pub fn push<V: ModalView + 'static>(&mut self, view: V) {
         let kind = view.kind();
         self.views.push(Box::new(view));
-        tracing::debug!(target: "codewhale_tui::view_stack", action = "push", kind = ?kind, depth = self.views.len(), "view pushed");
+        tracing::debug!(target: "helpofai_tui::view_stack", action = "push", kind = ?kind, depth = self.views.len(), "view pushed");
     }
 
     /// Push an already-boxed view back onto the stack. Used by call sites
@@ -280,13 +280,13 @@ impl ViewStack {
     pub fn push_boxed(&mut self, view: Box<dyn ModalView>) {
         let kind = view.kind();
         self.views.push(view);
-        tracing::debug!(target: "codewhale_tui::view_stack", action = "push_boxed", kind = ?kind, depth = self.views.len(), "view pushed");
+        tracing::debug!(target: "helpofai_tui::view_stack", action = "push_boxed", kind = ?kind, depth = self.views.len(), "view pushed");
     }
 
     pub fn pop(&mut self) -> Option<Box<dyn ModalView>> {
         let popped = self.views.pop();
         if let Some(view) = popped.as_ref() {
-            tracing::debug!(target: "codewhale_tui::view_stack", action = "pop", kind = ?view.kind(), depth = self.views.len(), "view popped");
+            tracing::debug!(target: "helpofai_tui::view_stack", action = "pop", kind = ?view.kind(), depth = self.views.len(), "view popped");
         }
         popped
     }
@@ -344,7 +344,7 @@ impl ViewStack {
             ViewAction::None => {}
             ViewAction::Close => {
                 if let Some(view) = self.views.pop() {
-                    tracing::debug!(target: "codewhale_tui::view_stack", action = "close", kind = ?view.kind(), depth = self.views.len(), "view closed via action");
+                    tracing::debug!(target: "helpofai_tui::view_stack", action = "close", kind = ?view.kind(), depth = self.views.len(), "view closed via action");
                 }
             }
             ViewAction::Emit(event) => {
@@ -353,7 +353,7 @@ impl ViewStack {
             ViewAction::EmitAndClose(event) => {
                 events.push(event);
                 if let Some(view) = self.views.pop() {
-                    tracing::debug!(target: "codewhale_tui::view_stack", action = "emit_and_close", kind = ?view.kind(), depth = self.views.len(), "view closed via action");
+                    tracing::debug!(target: "helpofai_tui::view_stack", action = "emit_and_close", kind = ?view.kind(), depth = self.views.len(), "view closed via action");
                 }
             }
         }
@@ -775,7 +775,7 @@ impl ConfigView {
                     .fleet
                     .as_ref()
                     .map(|fleet| fleet.exec.max_spawn_depth)
-                    .unwrap_or_else(|| codewhale_config::FleetExecConfig::default().max_spawn_depth)
+                    .unwrap_or_else(|| helpofai_config::FleetExecConfig::default().max_spawn_depth)
                     .to_string(),
                 editable: false,
                 scope: ConfigScope::Saved,
@@ -1200,7 +1200,7 @@ fn experimental_config_rows(config: &Config) -> Vec<ConfigRow> {
     });
     rows.push(ConfigRow {
         section: ConfigSection::Experimental,
-        key: "whaleflow".to_string(),
+        key: "helpflow".to_string(),
         value: "preview overlay for workflow/fleet runs (not stable; see #3154/#3178)".to_string(),
         editable: false,
         scope: ConfigScope::Saved,
@@ -2469,7 +2469,7 @@ mod tests {
         assert!(keys.contains(&"features.exec_policy"));
         assert!(keys.contains(&"features.vision_model"));
         assert!(keys.contains(&"goal_command"));
-        assert!(keys.contains(&"whaleflow"));
+        assert!(keys.contains(&"helpflow"));
         assert!(
             view.rows
                 .iter()
@@ -2497,7 +2497,7 @@ mod tests {
     #[test]
     fn config_view_experimental_features_show_effective_state_and_overrides() {
         let temp_root = std::env::temp_dir().join(format!(
-            "codewhale-experimental-config-view-test-{}",
+            "helpofai-experimental-config-view-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -2543,7 +2543,7 @@ vision_model = true
     #[test]
     fn config_view_shows_fleet_max_spawn_depth_from_config() {
         let temp_root = std::env::temp_dir().join(format!(
-            "codewhale-fleet-config-view-test-{}",
+            "helpofai-fleet-config-view-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();
@@ -2589,9 +2589,9 @@ max_spawn_depth = 2
         assert_eq!(visible_row_keys(&view), vec!["goal_command"]);
 
         view.clear_filter();
-        type_filter(&mut view, "whaleflow");
+        type_filter(&mut view, "helpflow");
         assert_eq!(visible_section_labels(&view), vec!["Experimental"]);
-        assert_eq!(visible_row_keys(&view), vec!["whaleflow"]);
+        assert_eq!(visible_row_keys(&view), vec!["helpflow"]);
     }
 
     #[test]
@@ -2623,7 +2623,7 @@ max_spawn_depth = 2
     #[test]
     fn config_view_uses_provider_url_for_non_deepseek_provider() {
         let temp_root = std::env::temp_dir().join(format!(
-            "codewhale-provider-url-view-test-{}",
+            "helpofai-provider-url-view-test-{}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_root).unwrap();

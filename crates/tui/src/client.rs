@@ -650,15 +650,15 @@ impl DeepSeekClient {
         // that path so the request is handled like the official client.
         let user_agent: &str = if api_provider == ApiProvider::OpenaiCodex {
             concat!(
-                "codex_cli_rs/0.137.0 (CodeWhale ",
+                "codex_cli_rs/0.137.0 (HelpOfAi ",
                 env!("CARGO_PKG_VERSION"),
                 ")"
             )
         } else {
             concat!(
-                "Mozilla/5.0 (compatible; codewhale/",
+                "Mozilla/5.0 (compatible; helpofai/",
                 env!("CARGO_PKG_VERSION"),
-                "; +https://github.com/Hmbown/CodeWhale)"
+                "; +https://github.com/helpofai/HelpOfAi-Cli)"
             )
         };
         let mut builder = crate::tls::reqwest_client_builder()

@@ -1,6 +1,6 @@
 //! Settings system - Persistent user preferences
 //!
-//! Settings are stored at ~/.codewhale/settings.toml, with legacy fallbacks.
+//! Settings are stored at ~/.helpofai/settings.toml, with legacy fallbacks.
 //!
 //! TUI-specific preferences (theme, keybinds, font_size) that survive project
 //! switches are stored separately in tui.toml. See [`TuiPrefs`].
@@ -18,19 +18,19 @@ const SETTINGS_FILE_NAME: &str = "settings.toml";
 const TUI_PREFS_FILE_NAME: &str = "tui.toml";
 
 // ============================================================================
-// TuiPrefs — ~/.codewhale/tui.toml
+// TuiPrefs — ~/.helpofai/tui.toml
 // ============================================================================
 
 /// TUI-specific preferences that are decoupled from agent/project config so
 /// they survive project switches (issue #437).
 ///
-/// Stored at `~/.codewhale/tui.toml` on new installs, with
+/// Stored at `~/.helpofai/tui.toml` on new installs, with
 /// `~/.deepseek/tui.toml` retained as a legacy read fallback. When the file is
 /// absent the values fall back to the `[tui]` section of the normal
 /// `config.toml` (via [`TuiPrefs::load`]), and then to the struct's own
 /// defaults.
 ///
-/// # Example `~/.codewhale/tui.toml`
+/// # Example `~/.helpofai/tui.toml`
 ///
 /// ```toml
 /// theme    = "dark"        # "system" | "dark" | "light" | "grayscale" | "catppuccin-mocha" | ...
@@ -94,7 +94,7 @@ pub struct KeybindPrefs {
 #[allow(dead_code)] // see TuiPrefs note above; deferred to a later settings pass (#657).
 impl TuiPrefs {
     /// Return the canonical path of the TUI preferences file:
-    /// `~/.codewhale/tui.toml`, or legacy `~/.deepseek/tui.toml` when present.
+    /// `~/.helpofai/tui.toml`, or legacy `~/.deepseek/tui.toml` when present.
     ///
     /// Tests may override the home directory through the
     /// `DEEPSEEK_CONFIG_PATH` environment variable (the parent directory of
@@ -112,17 +112,17 @@ impl TuiPrefs {
             }
         }
 
-        let primary = codewhale_config::codewhale_home()
+        let primary = helpofai_config::helpofai_home()
             .ok()
             .map(|home| home.join(TUI_PREFS_FILE_NAME));
-        let legacy_home = codewhale_config::legacy_deepseek_home()
+        let legacy_home = helpofai_config::legacy_deepseek_home()
             .ok()
             .map(|home| home.join(TUI_PREFS_FILE_NAME));
 
         resolve_tui_prefs_path_from_candidates(primary, legacy_home)
     }
 
-    /// Load TUI preferences from `~/.codewhale/tui.toml` or a legacy fallback.
+    /// Load TUI preferences from `~/.helpofai/tui.toml` or a legacy fallback.
     ///
     /// If the file does not exist the struct defaults are returned — no error
     /// is produced. Parse errors surface as `Err` so the caller can warn the
@@ -144,7 +144,7 @@ impl TuiPrefs {
         Ok(prefs)
     }
 
-    /// Save TUI preferences to `~/.codewhale/tui.toml` (or a legacy file when
+    /// Save TUI preferences to `~/.helpofai/tui.toml` (or a legacy file when
     /// it already exists), creating the target directory if needed.
     pub fn save(&self) -> Result<()> {
         let path = Self::path()?;
@@ -157,7 +157,7 @@ impl TuiPrefs {
         let body = if path.exists() {
             let raw = std::fs::read_to_string(&path)
                 .with_context(|| format!("Failed to read tui.toml at {}", path.display()))?;
-            codewhale_config::merge_and_preserve_comments(&serialized, &raw).unwrap_or_else(|e| {
+            helpofai_config::merge_and_preserve_comments(&serialized, &raw).unwrap_or_else(|e| {
                 tracing::warn!("failed to merge tui.toml comments, saving without them: {e:#}");
                 serialized
             })
@@ -398,7 +398,7 @@ impl Default for Settings {
 impl Settings {
     /// Get the canonical settings file path.
     ///
-    /// New writes should target `~/.codewhale/settings.toml`. Legacy
+    /// New writes should target `~/.helpofai/settings.toml`. Legacy
     /// DeepSeek-branded paths remain readable as fallbacks during load, but we
     /// no longer surface them as the primary path in `/config`.
     pub fn path() -> Result<PathBuf> {
@@ -589,7 +589,7 @@ impl Settings {
         let body = if path.exists() {
             let raw = std::fs::read_to_string(&path)
                 .with_context(|| format!("Failed to read settings at {}", path.display()))?;
-            codewhale_config::merge_and_preserve_comments(&serialized, &raw).unwrap_or_else(|e| {
+            helpofai_config::merge_and_preserve_comments(&serialized, &raw).unwrap_or_else(|e| {
                 tracing::warn!("failed to merge settings comments, saving without them: {e:#}");
                 serialized
             })
@@ -1137,10 +1137,10 @@ fn settings_path_candidates() -> (Option<PathBuf>, Option<PathBuf>, Option<PathB
         }
     }
 
-    let primary = codewhale_config::codewhale_home()
+    let primary = helpofai_config::helpofai_home()
         .ok()
         .map(|home| home.join(SETTINGS_FILE_NAME));
-    let legacy_home = codewhale_config::legacy_deepseek_home()
+    let legacy_home = helpofai_config::legacy_deepseek_home()
         .ok()
         .map(|home| home.join(SETTINGS_FILE_NAME));
     let legacy_config_dir =
@@ -2557,20 +2557,20 @@ mod tests {
     }
 
     #[test]
-    fn settings_path_defaults_to_codewhale_home_for_new_writes() {
+    fn settings_path_defaults_to_helpofai_home_for_new_writes() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
 
         let got = Settings::path().expect("settings path");
 
-        assert_eq!(got, tmp.path().join(".codewhale").join("settings.toml"));
+        assert_eq!(got, tmp.path().join(".helpofai").join("settings.toml"));
     }
 
     #[test]
-    fn settings_path_prefers_codewhale_home_even_when_legacy_exists() {
+    fn settings_path_prefers_helpofai_home_even_when_legacy_exists() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
         let legacy_dir = tmp.path().join(".deepseek");
@@ -2578,25 +2578,25 @@ mod tests {
         std::fs::write(legacy_dir.join("settings.toml"), "low_motion = true\n")
             .expect("legacy settings");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
 
         let got = Settings::path().expect("settings path");
 
-        assert_eq!(got, tmp.path().join(".codewhale").join("settings.toml"));
+        assert_eq!(got, tmp.path().join(".helpofai").join("settings.toml"));
     }
 
     #[test]
-    fn settings_load_migrates_legacy_deepseek_home_into_codewhale_home() {
+    fn settings_load_migrates_legacy_deepseek_home_into_helpofai_home() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
-        let primary = tmp.path().join(".codewhale").join("settings.toml");
+        let primary = tmp.path().join(".helpofai").join("settings.toml");
         let legacy_dir = tmp.path().join(".deepseek");
         let legacy_home = legacy_dir.join("settings.toml");
         std::fs::create_dir_all(&legacy_dir).expect("legacy dir");
         std::fs::write(&legacy_home, "low_motion = true\n").expect("legacy settings");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
 
         let loaded = Settings::load().expect("load settings");
@@ -2609,17 +2609,17 @@ mod tests {
         let display = loaded.display(crate::localization::Locale::En);
         assert!(
             display.contains(&format!("Config file: {}", primary.display())),
-            "settings display should surface the canonical codewhale path:\n{display}"
+            "settings display should surface the canonical helpofai path:\n{display}"
         );
     }
 
     #[test]
-    fn settings_load_migrates_platform_legacy_fallback_into_codewhale_home() {
+    fn settings_load_migrates_platform_legacy_fallback_into_helpofai_home() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
-        let primary = tmp.path().join(".codewhale").join("settings.toml");
+        let primary = tmp.path().join(".helpofai").join("settings.toml");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
         let _xdg = EnvVarRestore::set("XDG_CONFIG_HOME", tmp.path().join("platform-config"));
         #[cfg(windows)]
@@ -2642,28 +2642,28 @@ mod tests {
         let display = loaded.display(crate::localization::Locale::En);
         assert!(
             display.contains(&format!("Config file: {}", primary.display())),
-            "settings display should surface the canonical codewhale path:\n{display}"
+            "settings display should surface the canonical helpofai path:\n{display}"
         );
     }
 
     #[test]
-    fn tui_prefs_path_defaults_to_codewhale_home_for_new_writes() {
+    fn tui_prefs_path_defaults_to_helpofai_home_for_new_writes() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
 
         let got = TuiPrefs::path().expect("tui prefs path");
 
-        assert_eq!(got, tmp.path().join(".codewhale").join("tui.toml"));
+        assert_eq!(got, tmp.path().join(".helpofai").join("tui.toml"));
     }
 
     #[test]
     fn tui_prefs_path_reads_legacy_deepseek_home_when_present() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
-        let primary = tmp.path().join(".codewhale").join("tui.toml");
+        let primary = tmp.path().join(".helpofai").join("tui.toml");
         let legacy_dir = tmp.path().join(".deepseek");
         std::fs::create_dir_all(&legacy_dir).expect("legacy dir");
         let legacy_home = legacy_dir.join("tui.toml");
@@ -2888,15 +2888,15 @@ mod tests {
     }
 
     #[test]
-    fn tui_prefs_path_uses_home_codewhale_subdir_by_default() {
+    fn tui_prefs_path_uses_home_helpofai_subdir_by_default() {
         let _g = config_path_test_guard();
         let tmp = tempfile::tempdir().expect("tempdir");
         let _config_override = EnvVarRestore::remove("DEEPSEEK_CONFIG_PATH");
-        let _codewhale_home = EnvVarRestore::set("CODEWHALE_HOME", tmp.path().join(".codewhale"));
+        let _helpofai_home = EnvVarRestore::set("HELPOFAI_HOME", tmp.path().join(".helpofai"));
         let _home = EnvVarRestore::set("HOME", tmp.path());
 
         let got = TuiPrefs::path().expect("path should resolve");
 
-        assert_eq!(got, tmp.path().join(".codewhale").join("tui.toml"));
+        assert_eq!(got, tmp.path().join(".helpofai").join("tui.toml"));
     }
 }

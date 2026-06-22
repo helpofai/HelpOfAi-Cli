@@ -165,7 +165,7 @@ fn build_escape(method: Method, in_tmux: bool, msg: &str) -> Vec<u8> {
         }
         Method::Ghostty => {
             // Ghostty notification: OSC 777 ; notify ; title ; message BEL
-            let seq = format!("\x1b]777;notify;codewhale;{msg}\x07");
+            let seq = format!("\x1b]777;notify;helpofai;{msg}\x07");
             wrap_for_multiplexer(&seq, in_tmux).into_bytes()
         }
         // Auto and Off and MacOS should not reach build_escape.
@@ -338,7 +338,7 @@ pub fn stop_title_animation() {
     // terminal-level visual indicator (flash/icon).
     let mode = COMPLETION_SOUND_MODE.load(Ordering::SeqCst);
     if mode == 1 {
-        set_terminal_title("✅ CodeWhale");
+        set_terminal_title("✅ HelpOfAi");
     }
     play_completion_sound();
 }
@@ -350,7 +350,7 @@ pub fn stop_title_animation() {
 pub fn stop_title_animation_quietly() {
     TITLE_ANIMATION_RUNNING.store(false, Ordering::SeqCst);
     COMPLETION_MARKER_SHOWN.store(false, Ordering::SeqCst);
-    set_terminal_title("CodeWhale");
+    set_terminal_title("HelpOfAi");
 }
 
 /// Clear the ✅ completion marker from the title when the user interacts.
@@ -359,7 +359,7 @@ pub fn stop_title_animation_quietly() {
 /// marker doesn't persist once the user is back at the terminal.
 pub fn reset_title_on_interaction() {
     if COMPLETION_MARKER_SHOWN.swap(false, Ordering::SeqCst) {
-        set_terminal_title("CodeWhale");
+        set_terminal_title("HelpOfAi");
     }
 }
 
@@ -480,7 +480,7 @@ fn completion_sound_state_for_tests() -> (crate::config::CompletionSound, Option
 /// Runs on a dedicated background thread so the caller is not blocked.
 ///
 /// The notification includes:
-/// - **Title**: "CodeWhale"
+/// - **Title**: "HelpOfAi"
 /// - **Subtitle**: First line of `msg` (when the message contains a newline,
 ///   e.g. the localized completion status from a completed turn)
 /// - **Body**: Remaining lines of `msg`, if any
@@ -526,7 +526,7 @@ fn macos_display_notification(msg: &str) {
                 "-e".to_string(),
                 "set theSubtitle to item 2 of argv".to_string(),
                 "-e".to_string(),
-                "display notification theBody with title \"CodeWhale\" subtitle theSubtitle sound name \"default\"".to_string(),
+                "display notification theBody with title \"HelpOfAi\" subtitle theSubtitle sound name \"default\"".to_string(),
                 "-e".to_string(),
                 "end run".to_string(),
                 "--".to_string(),
@@ -563,7 +563,7 @@ fn macos_notification_parts(msg: &str) -> (String, String) {
         .collect();
 
     if lines.is_empty() {
-        return ("CodeWhale".to_string(), String::new());
+        return ("HelpOfAi".to_string(), String::new());
     }
 
     let subtitle = truncate_notification_text(lines[0], SUBTITLE_MAX_CHARS);
@@ -738,7 +738,7 @@ pub fn subagent_completion_message(
     let result_line = result
         .lines()
         .map(str::trim)
-        .find(|line| !line.is_empty() && !line.starts_with("<codewhale:subagent.done>"));
+        .find(|line| !line.is_empty() && !line.starts_with("<helpofai:subagent.done>"));
     let mut msg = completion_status(
         notification_subagent_complete(locale),
         include_summary,
@@ -890,8 +890,8 @@ mod tests {
 
     #[test]
     fn osc9_body_format() {
-        let out = capture(Method::Osc9, false, "codewhale: done", 0, 1);
-        assert_eq!(out, b"\x1b]9;codewhale: done\x07");
+        let out = capture(Method::Osc9, false, "helpofai: done", 0, 1);
+        assert_eq!(out, b"\x1b]9;helpofai: done\x07");
     }
 
     #[test]
@@ -920,7 +920,7 @@ mod tests {
         let out = capture(Method::Ghostty, false, "done", 0, 1);
         let s = String::from_utf8(out).unwrap();
         assert!(
-            s.contains("777;notify;codewhale;done"),
+            s.contains("777;notify;helpofai;done"),
             "should have ghostty seq"
         );
     }

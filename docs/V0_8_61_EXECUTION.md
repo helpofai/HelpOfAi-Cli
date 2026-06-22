@@ -28,18 +28,18 @@ What "work on every issue" actually delivers:
   design, then (subsequent passes) an implemented, verified branch per the cluster sequencing below.
 - **13 defer** → documented rationale; revisit post-0.8.61 unless promoted.
 
-## 1. The architectural spine: WhaleFlow = ultracode, for CodeWhale's many models
+## 1. The architectural spine: HelpFlow = ultracode, for HelpOfAi's many models
 
 A large share of the design issues are facets of **one** architecture. The orchestration pattern
 this very triage used — an **orchestrator that fans out specialized workers, hands off via
 structured contracts, verifies adversarially, and merges methodically** ("ultracode") — is exactly
-what **WhaleFlow** should be *inside* CodeWhale. The CodeWhale-specific twist, and the reason it is
-not just a Claude-Code clone: **CodeWhale's workers are heterogeneous model types.** A flash model
+what **HelpFlow** should be *inside* HelpOfAi. The HelpOfAi-specific twist, and the reason it is
+not just a Claude-Code clone: **HelpOfAi's workers are heterogeneous model types.** A flash model
 scouts/triages cheaply; a pro model synthesizes/implements; per-role model routes are first-class,
 not an afterthought.
 
 ```
-        WhaleFlow (in-product) ≈ ultracode (this session)
+        HelpFlow (in-product) ≈ ultracode (this session)
    ┌────────────────────────────────────────────────────────────┐
    │  Goal loop (orchestrator)            #3215 #891 #1976 #2058  │  persistent objective
    │     │  fans out / steers / verifies                          │
@@ -48,7 +48,7 @@ not an afterthought.
    │     │  one headless runtime, three launchers                 │
    │     ▼                                                        │
    │  Fleet control plane                 #3154 #3166 #3167       │  ledger, lease, SSH
-   │     │  each worker = codewhale exec                           │
+   │     │  each worker = helpofai exec                           │
    │     ▼                                                        │
    │  Per-role profiles + MODEL ROUTES    #3217 #2027 #1768 #3205 │  heterogeneous models
    │     │  permissions intersect parent  #414 #426 #1186 #3211   │  + capability gates
@@ -65,8 +65,8 @@ the through-line that turns ~25 scattered issues into one coherent epic.
 ## 2. Workstreams (clusters) — the unit of agent work
 
 Each cluster is a coherent branch a single worker-agent owns end-to-end (worktree-isolated), sized
-to compile + test independently. Model-tier column reflects the WhaleFlow framing (which model a
-WhaleFlow worker would use for that role).
+to compile + test independently. Model-tier column reflects the HelpFlow framing (which model a
+HelpFlow worker would use for that role).
 
 | # | Cluster | Issues | Worker role / model tier | Depends on |
 |---|---|---|---|---|
@@ -96,7 +96,7 @@ For each pass:
 3. **Adversarial verify**: a reviewer pass per branch (compiles? tests green? scope creep? release-branch
    conflict?). Only branches that pass advance.
 4. **Methodical merge**: cherry-pick/merge green branches into `codex/v0.8.61` one at a time,
-   re-running the gate (`cargo test -p codewhale-tui --bins`, fmt, `git diff --check`) after each.
+   re-running the gate (`cargo test -p helpofai-tui --bins`, fmt, `git diff --check`) after each.
    A red merge is reverted, not patched-over.
 5. **Re-triage** the milestone, repeat.
 

@@ -9,17 +9,17 @@ use std::process::Command;
 use anyhow::{Context, Result, anyhow, bail};
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{Shell, generate};
-use codewhale_agent::ModelRegistry;
-use codewhale_app_server::{
+use helpofai_agent::ModelRegistry;
+use helpofai_app_server::{
     AppServerOptions, run as run_app_server, run_stdio as run_app_server_stdio,
 };
-use codewhale_config::{
+use helpofai_config::{
     CliRuntimeOverrides, ConfigStore, ProviderKind, ResolvedRuntimeOptions, RuntimeApiKeySource,
 };
-use codewhale_execpolicy::{AskForApproval, ExecPolicyContext, ExecPolicyEngine};
-use codewhale_mcp::{McpServerDefinition, run_stdio_server};
-use codewhale_secrets::Secrets;
-use codewhale_state::{StateStore, ThreadListFilters};
+use helpofai_execpolicy::{AskForApproval, ExecPolicyContext, ExecPolicyEngine};
+use helpofai_mcp::{McpServerDefinition, run_stdio_server};
+use helpofai_secrets::Secrets;
+use helpofai_state::{StateStore, ThreadListFilters};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 enum ProviderArg {
@@ -93,10 +93,10 @@ impl From<ProviderArg> for ProviderKind {
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "codewhale",
+    name = "helpofai",
     version = env!("DEEPSEEK_BUILD_VERSION"),
-    bin_name = "codewhale",
-    override_usage = "codewhale [OPTIONS] [PROMPT]\n       codewhale [OPTIONS] <COMMAND> [ARGS]"
+    bin_name = "helpofai",
+    override_usage = "helpofai [OPTIONS] [PROMPT]\n       helpofai [OPTIONS] <COMMAND> [ARGS]"
 )]
 struct Cli {
     #[arg(long)]
@@ -164,7 +164,7 @@ struct Cli {
 enum Commands {
     /// Run interactive/non-interactive flows via the TUI binary.
     Run(RunArgs),
-    /// Run CodeWhale diagnostics.
+    /// Run HelpOfAi diagnostics.
     Doctor(TuiPassthroughArgs),
     /// List live provider API models via the TUI binary.
     Models(TuiPassthroughArgs),
@@ -181,14 +181,14 @@ enum Commands {
     Init(TuiPassthroughArgs),
     /// Bootstrap MCP config and/or skills directories.
     Setup(TuiPassthroughArgs),
-    /// Generate a remote CodeWhale agent deploy bundle (cloud + chat bridge).
+    /// Generate a remote HelpOfAi agent deploy bundle (cloud + chat bridge).
     RemoteSetup(RemoteSetupArgs),
     /// Run a non-interactive prompt through the TUI runtime.
     #[command(after_help = "\
 Examples:
-  codewhale exec \"explain this function\"
-  codewhale exec --auto \"list crates/ with ls\"
-  codewhale exec --auto --output-format stream-json \"fix the failing test\"
+  helpofai exec \"explain this function\"
+  helpofai exec --auto \"list crates/ with ls\"
+  helpofai exec --auto --output-format stream-json \"fix the failing test\"
 
 Common forwarded flags:
   --auto                           Enable tool-backed agent mode with auto-approvals
@@ -198,16 +198,16 @@ Common forwarded flags:
   --continue                       Continue the most recent session for this workspace
   --output-format <FORMAT>         Output format: text or stream-json
 
-Plain `codewhale exec` is a one-shot model response. Use `--auto` for
+Plain `helpofai exec` is a one-shot model response. Use `--auto` for
 non-interactive filesystem/shell tool use, matching the supported automation
 path used by stream-json wrappers.
 ")]
     Exec(TuiPassthroughArgs),
-    /// Generate SWE-bench prediction rows from CodeWhale runs.
+    /// Generate SWE-bench prediction rows from HelpOfAi runs.
     #[command(after_help = "\
 Examples:
-  codewhale swebench run --instance-id django__django-12345 --issue-file issue.md
-  codewhale swebench export --instance-id django__django-12345 --predictions-path all_preds.jsonl
+  helpofai swebench run --instance-id django__django-12345 --issue-file issue.md
+  helpofai swebench export --instance-id django__django-12345 --predictions-path all_preds.jsonl
 
 This command forwards to the TUI runtime. `run` invokes tool-backed agent mode
 and writes a SWE-bench-compatible JSONL prediction row from the resulting
@@ -216,7 +216,7 @@ working-tree diff. `export` only writes the current diff.
     Swebench(TuiPassthroughArgs),
     /// Manage durable Agent Fleet runs via the TUI runtime.
     Fleet(TuiPassthroughArgs),
-    /// Run a CodeWhale-powered code review over a git diff.
+    /// Run a HelpOfAi-powered code review over a git diff.
     Review(TuiPassthroughArgs),
     /// Apply a patch file or stdin to the working tree.
     Apply(TuiPassthroughArgs),
@@ -241,9 +241,9 @@ Forwarded serve options:
       --auth-token <TOKEN>  Require this bearer token for /v1/* runtime API routes
       --insecure            Disable runtime API auth when no token is configured
 
-`codewhale serve --http` and `codewhale serve --mobile` remain compatibility
-aliases for `codewhale app-server --http` and `codewhale app-server --mobile`.
-New integrations should prefer `codewhale app-server`.")]
+`helpofai serve --http` and `helpofai serve --mobile` remain compatibility
+aliases for `helpofai app-server --http` and `helpofai app-server --mobile`.
+New integrations should prefer `helpofai app-server`.")]
     Serve(TuiPassthroughArgs),
     /// Generate shell completions for the TUI binary.
     Completions(TuiPassthroughArgs),
@@ -266,40 +266,40 @@ New integrations should prefer `codewhale app-server`.")]
     /// Run the canonical runtime API / control plane (HTTP/SSE, mobile, stdio).
     #[command(after_help = "\
 Transports:
-  codewhale app-server --http              Full HTTP/SSE runtime API (/v1/*) on 127.0.0.1:7878
-  codewhale app-server --mobile            Runtime API + phone control page (binds 0.0.0.0)
-  codewhale app-server --stdio             JSON-RPC control transport over stdio (no listener)
-  codewhale app-server                     Legacy in-process app-server HTTP on 127.0.0.1:8787
+  helpofai app-server --http              Full HTTP/SSE runtime API (/v1/*) on 127.0.0.1:7878
+  helpofai app-server --mobile            Runtime API + phone control page (binds 0.0.0.0)
+  helpofai app-server --stdio             JSON-RPC control transport over stdio (no listener)
+  helpofai app-server                     Legacy in-process app-server HTTP on 127.0.0.1:8787
 
-`--http` and `--mobile` serve the same mature runtime API as `codewhale serve
+`--http` and `--mobile` serve the same mature runtime API as `helpofai serve
 --http`/`--mobile`, which remain as compatibility aliases. The runtime API token
-is read from --auth-token, CODEWHALE_RUNTIME_TOKEN, or DEEPSEEK_RUNTIME_TOKEN.
+is read from --auth-token, HELPOFAI_RUNTIME_TOKEN, or DEEPSEEK_RUNTIME_TOKEN.
 
 See docs/RUNTIME_API.md and scripts/release/app-server-smoke.sh.")]
     AppServer(AppServerArgs),
     /// Generate shell completions.
     #[command(after_help = r#"Examples:
   Bash (current shell only):
-    source <(codewhale completion bash)
+    source <(helpofai completion bash)
 
   Bash (persistent, Linux/bash-completion):
     mkdir -p ~/.local/share/bash-completion/completions
-    codewhale completion bash > ~/.local/share/bash-completion/completions/codewhale
+    helpofai completion bash > ~/.local/share/bash-completion/completions/helpofai
     # Requires bash-completion to be installed and loaded by your shell.
 
   Zsh:
     mkdir -p ~/.zfunc
-    codewhale completion zsh > ~/.zfunc/_codewhale
+    helpofai completion zsh > ~/.zfunc/_helpofai
     # Add to ~/.zshrc if needed:
     #   fpath=(~/.zfunc $fpath)
     #   autoload -Uz compinit && compinit
 
   Fish:
     mkdir -p ~/.config/fish/completions
-    codewhale completion fish > ~/.config/fish/completions/codewhale.fish
+    helpofai completion fish > ~/.config/fish/completions/helpofai.fish
 
   PowerShell (current shell only):
-    codewhale completion powershell | Out-String | Invoke-Expression
+    helpofai completion powershell | Out-String | Invoke-Expression
 
 The command prints the completion script to stdout; redirect it to a path your shell loads automatically."#)]
     Completion {
@@ -308,7 +308,7 @@ The command prints the completion script to stdout; redirect it to a path your s
     },
     /// Print a usage rollup from the audit log and session store.
     Metrics(MetricsArgs),
-    /// Check for and apply updates to the `codewhale` binary.
+    /// Check for and apply updates to the `helpofai` binary.
     Update(UpdateArgs),
 }
 
@@ -347,7 +347,7 @@ struct TuiPassthroughArgs {
     args: Vec<String>,
 }
 
-/// Flags for `codewhale remote-setup`. Forwarded to the TUI binary, which owns
+/// Flags for `helpofai remote-setup`. Forwarded to the TUI binary, which owns
 /// the interactive wizard and bundle generation.
 #[derive(Debug, Args, Clone, Default)]
 struct RemoteSetupArgs {
@@ -360,7 +360,7 @@ struct RemoteSetupArgs {
     /// Provider slug; validated against the provider registry. Skips the prompt.
     #[arg(long)]
     provider: Option<String>,
-    /// Bundle output directory (default `./codewhale-deploy/<cloud>-<bridge>`).
+    /// Bundle output directory (default `./helpofai-deploy/<cloud>-<bridge>`).
     #[arg(long, value_name = "DIR")]
     out: Option<PathBuf>,
     /// Emit the bundle, do not provision (default).
@@ -585,11 +585,11 @@ impl From<ApprovalModeArg> for AskForApproval {
 struct AppServerArgs {
     /// Serve the full HTTP/SSE runtime API (`/v1/*`: sessions, threads, turns,
     /// approvals, events, usage, fleet, tasks). This is the canonical runtime
-    /// API surface; it delegates to the same server as `codewhale serve --http`.
+    /// API surface; it delegates to the same server as `helpofai serve --http`.
     #[arg(long, conflicts_with_all = ["stdio", "mobile"])]
     http: bool,
     /// Serve the runtime API plus the phone-friendly mobile control page.
-    /// Equivalent to the legacy `codewhale serve --mobile`.
+    /// Equivalent to the legacy `helpofai serve --mobile`.
     #[arg(long, conflicts_with = "stdio")]
     mobile: bool,
     /// Run the app-server JSON-RPC control transport over stdio (no listener).
@@ -771,7 +771,7 @@ fn run() -> Result<()> {
         }
         Some(Commands::Completion { shell }) => {
             let mut cmd = Cli::command();
-            generate(shell, &mut cmd, "codewhale", &mut io::stdout());
+            generate(shell, &mut cmd, "helpofai", &mut io::stdout());
             Ok(())
         }
         Some(Commands::Metrics(args)) => run_metrics_command(args),
@@ -804,7 +804,7 @@ fn root_tui_passthrough(cli: &Cli) -> Result<Vec<String>> {
     if !prompt.is_empty() {
         if cli.continue_session {
             bail!(
-                "`codewhale --continue` resumes the interactive TUI. Use `codewhale exec --continue <PROMPT>` to continue a session non-interactively."
+                "`helpofai --continue` resumes the interactive TUI. Use `helpofai exec --continue <PROMPT>` to continue a session non-interactively."
             );
         }
         forwarded.push("--prompt".to_string());
@@ -927,7 +927,7 @@ fn provider_slot(provider: ProviderKind) -> &'static str {
 #[cfg(test)]
 fn no_keyring_secrets() -> Secrets {
     Secrets::new(std::sync::Arc::new(
-        codewhale_secrets::InMemoryKeyringStore::new(),
+        helpofai_secrets::InMemoryKeyringStore::new(),
     ))
 }
 
@@ -1045,7 +1045,7 @@ fn auth_status_all_providers(store: &ConfigStore, secrets: &Secrets) -> Vec<Stri
     let active_provider = store.config.provider;
     let mut lines = Vec::new();
     lines.push(format!(
-        "active provider: {} (set via config or CODEWHALE_PROVIDER)",
+        "active provider: {} (set via config or HELPOFAI_PROVIDER)",
         active_provider.as_str()
     ));
     lines.push(String::new());
@@ -1106,8 +1106,8 @@ fn auth_status_all_providers(store: &ConfigStore, secrets: &Secrets) -> Vec<Stri
     }
 
     lines.push(String::new());
-    lines.push("* = active provider (from config or CODEWHALE_PROVIDER)".to_string());
-    lines.push("Run `codewhale auth status --provider <id>` for detailed info.".to_string());
+    lines.push("* = active provider (from config or HELPOFAI_PROVIDER)".to_string());
+    lines.push("Run `helpofai auth status --provider <id>` for detailed info.".to_string());
     lines
 }
 
@@ -1647,12 +1647,12 @@ fn run_app_server_command(
 }
 
 /// Build the `serve` argv forwarded to the TUI binary for
-/// `codewhale app-server --http`/`--mobile`. Maps app-server flags onto the
+/// `helpofai app-server --http`/`--mobile`. Maps app-server flags onto the
 /// matching `serve` flags (note `--insecure-no-auth` → `--insecure`). The
 /// subcommand-level `--config` is bridged through the global `--config` in the
 /// dispatcher, so it is intentionally not part of this passthrough. An auth
 /// token from the environment is deliberately *not* forwarded into child argv;
-/// the runtime API reads CODEWHALE_RUNTIME_TOKEN/DEEPSEEK_RUNTIME_TOKEN itself.
+/// the runtime API reads HELPOFAI_RUNTIME_TOKEN/DEEPSEEK_RUNTIME_TOKEN itself.
 fn app_server_serve_passthrough(args: &AppServerArgs) -> Vec<String> {
     let mut forwarded = vec!["serve".to_string()];
     forwarded.push(if args.mobile { "--mobile" } else { "--http" }.to_string());
@@ -1686,7 +1686,7 @@ fn app_server_serve_passthrough(args: &AppServerArgs) -> Vec<String> {
 }
 
 fn app_server_token_from_env() -> Option<String> {
-    std::env::var("CODEWHALE_APP_SERVER_TOKEN")
+    std::env::var("HELPOFAI_APP_SERVER_TOKEN")
         .ok()
         .or_else(|| std::env::var("DEEPSEEK_APP_SERVER_TOKEN").ok())
 }
@@ -1777,7 +1777,7 @@ fn run_dispatcher_resume_picker(
 
     println!();
     println!("Windows note: enter a session id or prefix from the list above.");
-    println!("You can also run `codewhale resume --last` to skip this prompt.");
+    println!("You can also run `helpofai resume --last` to skip this prompt.");
     print!("Session id/prefix (Enter to cancel): ");
     io::stdout().flush()?;
 
@@ -1872,7 +1872,7 @@ fn build_tui_command(
         cmd.env("DEEPSEEK_OUTPUT_MODE", output_mode);
     }
     if let Some(v) = verbosity.as_ref() {
-        cmd.env("CODEWHALE_VERBOSITY", v);
+        cmd.env("HELPOFAI_VERBOSITY", v);
         cmd.env("DEEPSEEK_VERBOSITY", v);
     }
     if let Some(log_level) = cli.log_level.as_ref() {
@@ -1909,7 +1909,7 @@ fn build_tui_command(
 fn exit_with_tui_status(status: std::process::ExitStatus) -> Result<()> {
     match status.code() {
         Some(code) => std::process::exit(code),
-        None => bail!("codewhale-tui terminated by signal"),
+        None => bail!("helpofai-tui terminated by signal"),
     }
 }
 
@@ -1921,7 +1921,7 @@ fn delegate_simple_tui(args: Vec<String>) -> Result<()> {
         .map_err(|err| anyhow!("{}", tui_spawn_error(&tui, &err)))?;
     match status.code() {
         Some(code) => std::process::exit(code),
-        None => bail!("codewhale-tui terminated by signal"),
+        None => bail!("helpofai-tui terminated by signal"),
     }
 }
 
@@ -1929,23 +1929,23 @@ fn tui_spawn_error(tui: &Path, err: &io::Error) -> String {
     format!(
         "failed to spawn companion TUI binary at {}: {err}\n\
 \n\
-The `codewhale` dispatcher found a `codewhale-tui` file, but the OS refused \
+The `helpofai` dispatcher found a `helpofai-tui` file, but the OS refused \
 to execute it. Common fixes:\n\
-  - Reinstall with `npm install -g codewhale`, or run `codewhale update`.\n\
-  - On Windows, run `where codewhale` and `where codewhale-tui`; both should \
+  - Reinstall with `npm install -g helpofai`, or run `helpofai update`.\n\
+  - On Windows, run `where helpofai` and `where helpofai-tui`; both should \
 come from the same install directory.\n\
-  - If you downloaded release assets manually, keep both `codewhale` and \
-`codewhale-tui` binaries together and make sure the TUI binary is executable.\n\
-  - Set DEEPSEEK_TUI_BIN to the absolute path of a working `codewhale-tui` \
+  - If you downloaded release assets manually, keep both `helpofai` and \
+`helpofai-tui` binaries together and make sure the TUI binary is executable.\n\
+  - Set DEEPSEEK_TUI_BIN to the absolute path of a working `helpofai-tui` \
 binary.",
         tui.display()
     )
 }
 
-/// Resolve the sibling `codewhale-tui` executable next to the running
+/// Resolve the sibling `helpofai-tui` executable next to the running
 /// dispatcher. Honours platform executable suffix (`.exe` on Windows) so
 /// the npm-distributed Windows package — which ships
-/// `bin/downloads/codewhale-tui.exe` — is found by `Path::exists` (#247).
+/// `bin/downloads/helpofai-tui.exe` — is found by `Path::exists` (#247).
 ///
 /// `DEEPSEEK_TUI_BIN` is consulted first as an explicit override for
 /// custom installs and CI test layouts. On Windows we additionally try
@@ -1969,39 +1969,39 @@ fn locate_sibling_tui_binary() -> Result<PathBuf> {
     }
 
     // Build a stable error path so the user sees the platform-correct
-    // expected name, not "codewhale-tui" on Windows.
-    let expected = current.with_file_name(format!("codewhale-tui{}", std::env::consts::EXE_SUFFIX));
+    // expected name, not "helpofai-tui" on Windows.
+    let expected = current.with_file_name(format!("helpofai-tui{}", std::env::consts::EXE_SUFFIX));
     bail!(
-        "Companion `codewhale-tui` binary not found at {}.\n\
+        "Companion `helpofai-tui` binary not found at {}.\n\
 \n\
-The `codewhale` dispatcher delegates interactive sessions to a sibling \
-`codewhale-tui` binary. To fix this, install one of:\n\
-  • npm:    npm install -g codewhale                (downloads both binaries)\n\
-  • cargo:  cargo install codewhale-cli codewhale-tui --locked\n\
-  • GitHub Releases: download BOTH `codewhale-<platform>` AND \
-`codewhale-tui-<platform>` from https://github.com/Hmbown/CodeWhale/releases/latest \
+The `helpofai` dispatcher delegates interactive sessions to a sibling \
+`helpofai-tui` binary. To fix this, install one of:\n\
+  • npm:    npm install -g helpofai                (downloads both binaries)\n\
+  • cargo:  cargo install helpofai-cli helpofai-tui --locked\n\
+  • GitHub Releases: download BOTH `helpofai-<platform>` AND \
+`helpofai-tui-<platform>` from https://github.com/helpofai/HelpOfAi-Cli/releases/latest \
 and place them in the same directory.\n\
 \n\
-Or set DEEPSEEK_TUI_BIN to the absolute path of an existing `codewhale-tui` binary.",
+Or set DEEPSEEK_TUI_BIN to the absolute path of an existing `helpofai-tui` binary.",
         expected.display()
     );
 }
 
 /// Return the first existing sibling-binary path under any of the names
-/// `codewhale-tui` might use on this platform. Pure function to keep
+/// `helpofai-tui` might use on this platform. Pure function to keep
 /// `locate_sibling_tui_binary` testable.
 fn sibling_tui_candidate(dispatcher: &Path) -> Option<PathBuf> {
     // Primary: platform-correct name. EXE_SUFFIX is "" on Unix and ".exe"
     // on Windows.
     let primary =
-        dispatcher.with_file_name(format!("codewhale-tui{}", std::env::consts::EXE_SUFFIX));
+        dispatcher.with_file_name(format!("helpofai-tui{}", std::env::consts::EXE_SUFFIX));
     if primary.is_file() {
         return Some(primary);
     }
     // Windows fallback: a user who manually renamed `.exe` away (per the
     // workaround in #247) still launches successfully under the new code.
     if cfg!(windows) {
-        let suffixless = dispatcher.with_file_name("codewhale-tui");
+        let suffixless = dispatcher.with_file_name("helpofai-tui");
         if suffixless.is_file() {
             return Some(suffixless);
         }
@@ -2038,7 +2038,7 @@ fn read_api_key_from_stdin() -> Result<String> {
 mod tests {
     use super::*;
     use clap::error::ErrorKind;
-    use codewhale_config::ProviderSource;
+    use helpofai_config::ProviderSource;
     use std::ffi::OsString;
     use std::sync::{Mutex, OnceLock};
 
@@ -2205,7 +2205,7 @@ mod tests {
 
     #[test]
     fn parses_update_beta_flag() {
-        let cli = parse_ok(&["codewhale", "update"]);
+        let cli = parse_ok(&["helpofai", "update"]);
         assert!(matches!(
             cli.command,
             Some(Commands::Update(UpdateArgs {
@@ -2215,7 +2215,7 @@ mod tests {
             }))
         ));
 
-        let cli = parse_ok(&["codewhale", "update", "--beta"]);
+        let cli = parse_ok(&["helpofai", "update", "--beta"]);
         assert!(matches!(
             cli.command,
             Some(Commands::Update(UpdateArgs {
@@ -2225,7 +2225,7 @@ mod tests {
             }))
         ));
 
-        let cli = parse_ok(&["codewhale", "update", "--check"]);
+        let cli = parse_ok(&["helpofai", "update", "--check"]);
         assert!(matches!(
             cli.command,
             Some(Commands::Update(UpdateArgs {
@@ -2235,7 +2235,7 @@ mod tests {
             }))
         ));
 
-        let cli = parse_ok(&["codewhale", "update", "--proxy", "socks5://127.0.0.1:1080"]);
+        let cli = parse_ok(&["helpofai", "update", "--proxy", "socks5://127.0.0.1:1080"]);
         let Some(Commands::Update(args)) = cli.command else {
             panic!("expected update command");
         };
@@ -2306,7 +2306,7 @@ mod tests {
         );
         assert_eq!(model_command_provider_hint(None, None), None);
 
-        let cli = parse_ok(&["codewhale", "--provider", "zai", "model", "list"]);
+        let cli = parse_ok(&["helpofai", "--provider", "zai", "model", "list"]);
         assert_eq!(cli.provider, Some(ProviderArg::Zai));
         assert!(matches!(
             cli.command,
@@ -2550,7 +2550,7 @@ mod tests {
 
     #[test]
     fn serve_help_documents_forwarded_runtime_modes() {
-        let help = help_for(&["codewhale", "serve", "--help"]);
+        let help = help_for(&["helpofai", "serve", "--help"]);
         for flag in ["--http", "--mobile", "--mcp", "--acp"] {
             assert!(
                 help.contains(flag),
@@ -2587,7 +2587,7 @@ mod tests {
                 if args == &["--skills", "--local"]
         ));
 
-        let cli = parse_ok(&["codewhale", "fleet", "init"]);
+        let cli = parse_ok(&["helpofai", "fleet", "init"]);
         assert!(cli.prompt.is_empty());
         assert!(matches!(
             cli.command,
@@ -2595,7 +2595,7 @@ mod tests {
         ));
 
         let cli = parse_ok(&[
-            "codewhale",
+            "helpofai",
             "fleet",
             "run",
             "tasks.json",
@@ -2879,7 +2879,7 @@ mod tests {
 
     #[test]
     fn auth_set_writes_to_shared_config_file() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -2989,7 +2989,7 @@ mod tests {
 
     #[test]
     fn auth_clear_removes_from_config() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3024,7 +3024,7 @@ mod tests {
 
     #[test]
     fn auth_status_scoped_probe_and_list_all_provider_keyrings() {
-        use codewhale_secrets::{KeyringStore, SecretsError};
+        use helpofai_secrets::{KeyringStore, SecretsError};
         use std::sync::{Arc, Mutex};
 
         #[derive(Default)]
@@ -3091,7 +3091,7 @@ mod tests {
 
     #[test]
     fn auth_status_reports_all_active_provider_sources_with_last4() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let _lock = env_lock();
@@ -3130,7 +3130,7 @@ mod tests {
 
     #[test]
     fn auth_status_all_providers_lists_every_known_provider() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3170,7 +3170,7 @@ mod tests {
 
     #[test]
     fn auth_status_openai_codex_reports_codex_oauth_file() {
-        use codewhale_secrets::InMemoryKeyringStore;
+        use helpofai_secrets::InMemoryKeyringStore;
         use std::sync::Arc;
 
         let _lock = env_lock();
@@ -3205,7 +3205,7 @@ mod tests {
 
     #[test]
     fn auth_status_scoped_provider_shows_detailed_info() {
-        use codewhale_secrets::InMemoryKeyringStore;
+        use helpofai_secrets::InMemoryKeyringStore;
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3233,7 +3233,7 @@ mod tests {
 
     #[test]
     fn dispatch_keyring_recovery_self_heals_into_config_file() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3306,7 +3306,7 @@ mod tests {
 
     #[test]
     fn auth_migrate_moves_plaintext_keys_into_keyring_and_strips_file() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3351,7 +3351,7 @@ mod tests {
 
     #[test]
     fn auth_migrate_dry_run_does_not_modify_anything() {
-        use codewhale_secrets::{InMemoryKeyringStore, KeyringStore};
+        use helpofai_secrets::{InMemoryKeyringStore, KeyringStore};
         use std::sync::Arc;
 
         let nanos = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
@@ -3440,7 +3440,7 @@ mod tests {
 
     #[test]
     fn cli_provider_helpers_follow_config_metadata() {
-        let registry_kinds: Vec<ProviderKind> = codewhale_config::provider::all_providers()
+        let registry_kinds: Vec<ProviderKind> = helpofai_config::provider::all_providers()
             .iter()
             .map(|provider| provider.kind())
             .collect();
@@ -3475,7 +3475,7 @@ mod tests {
             "--provider",
             "openai",
             "--workspace",
-            "/tmp/codewhale-workspace",
+            "/tmp/helpofai-workspace",
         ]);
         let resolved = ResolvedRuntimeOptions {
             provider: ProviderKind::Openai,
@@ -3520,7 +3520,7 @@ mod tests {
             .collect();
         assert!(
             args.windows(2)
-                .any(|pair| pair == ["--workspace", "/tmp/codewhale-workspace"]),
+                .any(|pair| pair == ["--workspace", "/tmp/helpofai-workspace"]),
             "expected workspace forwarding in args: {args:?}"
         );
     }
@@ -3536,7 +3536,7 @@ mod tests {
         let custom_str = custom.to_string_lossy().into_owned();
         let _bin = ScopedEnvVar::set("DEEPSEEK_TUI_BIN", &custom_str);
 
-        let cli = parse_ok(&["codewhale", "doctor"]);
+        let cli = parse_ok(&["helpofai", "doctor"]);
         let resolved = ResolvedRuntimeOptions {
             provider: ProviderKind::OpenaiCodex,
             provider_source: ProviderSource::Config,
@@ -3577,7 +3577,7 @@ mod tests {
         let custom_str = custom.to_string_lossy().into_owned();
         let _bin = ScopedEnvVar::set("DEEPSEEK_TUI_BIN", &custom_str);
 
-        let cli = parse_ok(&["codewhale", "--provider", "openai-codex", "doctor"]);
+        let cli = parse_ok(&["helpofai", "--provider", "openai-codex", "doctor"]);
         let resolved = ResolvedRuntimeOptions {
             provider: ProviderKind::OpenaiCodex,
             provider_source: ProviderSource::Cli,
@@ -3610,7 +3610,7 @@ mod tests {
         let _lock = env_lock();
         let (_dir, _bin) = install_fake_tui_binary();
 
-        let cli = parse_ok(&["codewhale", "--provider", "anthropic", "doctor"]);
+        let cli = parse_ok(&["helpofai", "--provider", "anthropic", "doctor"]);
         let resolved = resolved_runtime_for_test(ProviderKind::Anthropic, ProviderSource::Cli);
 
         let cmd = build_tui_command(&cli, &resolved, vec!["doctor".to_string()])
@@ -3626,7 +3626,7 @@ mod tests {
         let _lock = env_lock();
         let (_dir, _bin) = install_fake_tui_binary();
 
-        let cli = parse_ok(&["codewhale", "doctor"]);
+        let cli = parse_ok(&["helpofai", "doctor"]);
         let resolved = resolved_runtime_for_test(
             ProviderKind::Anthropic,
             ProviderSource::Env("DEEPSEEK_PROVIDER"),
@@ -3641,7 +3641,7 @@ mod tests {
         let _lock = env_lock();
         let (_dir, _bin) = install_fake_tui_binary();
 
-        let cli = parse_ok(&["codewhale", "doctor"]);
+        let cli = parse_ok(&["helpofai", "doctor"]);
         let mut resolved =
             resolved_runtime_for_test(ProviderKind::Anthropic, ProviderSource::Config);
         resolved.api_key = Some("anthropic-keyring-secret".to_string());
@@ -3722,7 +3722,7 @@ mod tests {
         let _lock = env_lock();
         let (_dir, _bin) = install_fake_tui_binary();
 
-        let cli = parse_ok(&["codewhale"]);
+        let cli = parse_ok(&["helpofai"]);
         let resolved = resolved_runtime_for_test(ProviderKind::Deepseek, ProviderSource::Config);
 
         let cmd = build_tui_command(
@@ -3733,7 +3733,7 @@ mod tests {
         .expect("command");
 
         assert_eq!(
-            command_env(&cmd, "CODEWHALE_VERBOSITY").as_deref(),
+            command_env(&cmd, "HELPOFAI_VERBOSITY").as_deref(),
             Some("concise")
         );
         assert_eq!(
@@ -3747,7 +3747,7 @@ mod tests {
         let _lock = env_lock();
         let (_dir, _bin) = install_fake_tui_binary();
 
-        let cli = parse_ok(&["codewhale"]);
+        let cli = parse_ok(&["helpofai"]);
         let mut resolved =
             resolved_runtime_for_test(ProviderKind::Deepseek, ProviderSource::Config);
         resolved.verbosity = Some("normal".to_string());
@@ -3755,7 +3755,7 @@ mod tests {
         let cmd = build_tui_command(&cli, &resolved, vec!["exec".to_string()]).expect("command");
 
         assert_eq!(
-            command_env(&cmd, "CODEWHALE_VERBOSITY").as_deref(),
+            command_env(&cmd, "HELPOFAI_VERBOSITY").as_deref(),
             Some("normal")
         );
         assert_eq!(
@@ -3776,13 +3776,13 @@ mod tests {
         let _bin = ScopedEnvVar::set("DEEPSEEK_TUI_BIN", &custom_str);
 
         let cli = parse_ok(&[
-            "codewhale",
+            "helpofai",
             "--provider",
             "moonshot",
             "--model",
             "kimi-k2.7-code",
             "--workspace",
-            "/tmp/codewhale-workspace",
+            "/tmp/helpofai-workspace",
         ]);
         let resolved = ResolvedRuntimeOptions {
             provider: ProviderKind::Moonshot,
@@ -3843,13 +3843,13 @@ mod tests {
         let _bin = ScopedEnvVar::set("DEEPSEEK_TUI_BIN", &custom_str);
 
         let cli = parse_ok(&[
-            "codewhale",
+            "helpofai",
             "--provider",
             "volcengine",
             "--model",
             "DeepSeek-V4-Pro",
             "--workspace",
-            "/tmp/codewhale-workspace",
+            "/tmp/helpofai-workspace",
         ]);
         let resolved = ResolvedRuntimeOptions {
             provider: ProviderKind::Volcengine,
@@ -3966,7 +3966,7 @@ mod tests {
         let _bin = ScopedEnvVar::set("DEEPSEEK_TUI_BIN", &custom_str);
 
         for provider in ProviderKind::ALL {
-            let cli = parse_ok(&["codewhale", "--workspace", "/tmp/codewhale-workspace"]);
+            let cli = parse_ok(&["helpofai", "--workspace", "/tmp/helpofai-workspace"]);
             let resolved = ResolvedRuntimeOptions {
                 provider,
                 provider_source: ProviderSource::Config,
@@ -4035,7 +4035,7 @@ mod tests {
 
     #[test]
     fn parses_top_level_continue_for_interactive_resume() {
-        let cli = parse_ok(&["codewhale", "--continue"]);
+        let cli = parse_ok(&["helpofai", "--continue"]);
 
         assert!(cli.continue_session);
         assert!(cli.prompt_flag.is_none());
@@ -4045,12 +4045,12 @@ mod tests {
 
     #[test]
     fn top_level_continue_rejects_startup_prompt() {
-        let cli = parse_ok(&["codewhale", "--continue", "-p", "follow up"]);
+        let cli = parse_ok(&["helpofai", "--continue", "-p", "follow up"]);
 
         let err = root_tui_passthrough(&cli).expect_err("prompted continue should be rejected");
         assert!(
             err.to_string()
-                .contains("codewhale exec --continue <PROMPT>")
+                .contains("helpofai exec --continue <PROMPT>")
         );
     }
 
@@ -4172,11 +4172,11 @@ mod tests {
                 vec![
                     "<SHELL>",
                     "bash",
-                    "source <(codewhale completion bash)",
-                    "~/.local/share/bash-completion/completions/codewhale",
+                    "source <(helpofai completion bash)",
+                    "~/.local/share/bash-completion/completions/helpofai",
                     "fpath=(~/.zfunc $fpath)",
-                    "codewhale completion fish > ~/.config/fish/completions/codewhale.fish",
-                    "codewhale completion powershell | Out-String | Invoke-Expression",
+                    "helpofai completion fish > ~/.config/fish/completions/helpofai.fish",
+                    "helpofai completion powershell | Out-String | Invoke-Expression",
                 ],
             ),
             ("metrics", vec!["--json", "--since"]),
@@ -4195,8 +4195,8 @@ mod tests {
     }
 
     /// Regression for issue #247: on Windows the dispatcher must find the
-    /// sibling `codewhale-tui.exe`, not bail out looking for an
-    /// extension-less `codewhale-tui`. The candidate resolver also accepts
+    /// sibling `helpofai-tui.exe`, not bail out looking for an
+    /// extension-less `helpofai-tui`. The candidate resolver also accepts
     /// the suffix-less name on Windows so users who manually renamed the
     /// file as a workaround keep working after the upgrade.
     #[test]
@@ -4204,7 +4204,7 @@ mod tests {
         let dir = tempfile::TempDir::new().expect("tempdir");
         let dispatcher = dir
             .path()
-            .join("codewhale")
+            .join("helpofai")
             .with_extension(std::env::consts::EXE_EXTENSION);
         // Touch the dispatcher so its parent dir is the lookup root.
         std::fs::write(&dispatcher, b"").unwrap();
@@ -4213,7 +4213,7 @@ mod tests {
         assert!(sibling_tui_candidate(&dispatcher).is_none());
 
         let target =
-            dispatcher.with_file_name(format!("codewhale-tui{}", std::env::consts::EXE_SUFFIX));
+            dispatcher.with_file_name(format!("helpofai-tui{}", std::env::consts::EXE_SUFFIX));
         std::fs::write(&target, b"").unwrap();
 
         let found = sibling_tui_candidate(&dispatcher).expect("must locate sibling");
@@ -4223,11 +4223,11 @@ mod tests {
     #[test]
     fn dispatcher_spawn_error_names_path_and_recovery_checks() {
         let err = io::Error::new(io::ErrorKind::PermissionDenied, "access is denied");
-        let message = tui_spawn_error(Path::new("C:/tools/codewhale-tui.exe"), &err);
+        let message = tui_spawn_error(Path::new("C:/tools/helpofai-tui.exe"), &err);
 
-        assert!(message.contains("C:/tools/codewhale-tui.exe"));
+        assert!(message.contains("C:/tools/helpofai-tui.exe"));
         assert!(message.contains("access is denied"));
-        assert!(message.contains("where codewhale"));
+        assert!(message.contains("where helpofai"));
         assert!(message.contains("DEEPSEEK_TUI_BIN"));
     }
 
@@ -4239,15 +4239,15 @@ mod tests {
     #[test]
     fn sibling_tui_candidate_windows_falls_back_to_suffixless() {
         let dir = tempfile::TempDir::new().expect("tempdir");
-        let dispatcher = dir.path().join("codewhale.exe");
+        let dispatcher = dir.path().join("helpofai.exe");
         std::fs::write(&dispatcher, b"").unwrap();
 
         // Only the suffixless name exists — emulates the manual rename.
-        let suffixless = dispatcher.with_file_name("codewhale-tui");
+        let suffixless = dispatcher.with_file_name("helpofai-tui");
         std::fs::write(&suffixless, b"").unwrap();
 
         let found = sibling_tui_candidate(&dispatcher)
-            .expect("Windows fallback must locate suffixless codewhale-tui");
+            .expect("Windows fallback must locate suffixless helpofai-tui");
         assert_eq!(found, suffixless);
     }
 

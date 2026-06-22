@@ -98,7 +98,7 @@ impl HarnessBuilder {
         }
         if let Some(home) = self.seal_home.as_deref() {
             std::fs::create_dir_all(home).context("create sealed HOME")?;
-            let codewhale_config = home.join(".codewhale").join("config.toml");
+            let helpofai_config = home.join(".helpofai").join("config.toml");
             let deepseek_config = home.join(".deepseek").join("config.toml");
             builder = builder
                 .env("HOME", home.to_string_lossy())
@@ -106,7 +106,7 @@ impl HarnessBuilder {
                 .env("XDG_DATA_HOME", home.join(".local/share").to_string_lossy())
                 .env("XDG_CACHE_HOME", home.join(".cache").to_string_lossy())
                 .env("USERPROFILE", home.to_string_lossy())
-                .env("CODEWHALE_CONFIG_PATH", codewhale_config.to_string_lossy())
+                .env("HELPOFAI_CONFIG_PATH", helpofai_config.to_string_lossy())
                 .env("DEEPSEEK_CONFIG_PATH", deepseek_config.to_string_lossy());
         }
         for (k, v) in &self.env {
@@ -225,8 +225,8 @@ impl Harness {
         if let Some(path) = std::env::var_os(&key) {
             return PathBuf::from(path);
         }
-        if name == "codewhale-tui"
-            && let Some(path) = option_env!("CARGO_BIN_EXE_codewhale-tui")
+        if name == "helpofai-tui"
+            && let Some(path) = option_env!("CARGO_BIN_EXE_helpofai-tui")
         {
             return PathBuf::from(path);
         }
@@ -256,7 +256,7 @@ pub fn make_sealed_workspace() -> Result<SealedWorkspace> {
     let workspace = tmp.path().join("workspace");
     let home = tmp.path().join("home");
     std::fs::create_dir_all(&workspace).context("mkdir workspace")?;
-    std::fs::create_dir_all(home.join(".codewhale")).context("mkdir home/.codewhale")?;
+    std::fs::create_dir_all(home.join(".helpofai")).context("mkdir home/.helpofai")?;
     std::fs::create_dir_all(home.join(".deepseek")).context("mkdir home/.deepseek")?;
     Ok(SealedWorkspace {
         _tmp: tmp,

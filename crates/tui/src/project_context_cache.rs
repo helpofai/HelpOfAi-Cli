@@ -202,11 +202,8 @@ mod tests {
         let workspace = tempdir().expect("workspace");
         let home = tempdir().expect("home");
         fs::create_dir(workspace.path().join(".git")).expect("mkdir git");
-        fs::create_dir(workspace.path().join(".codewhale")).expect("mkdir codewhale");
-        let constitution = workspace
-            .path()
-            .join(".codewhale")
-            .join("constitution.json");
+        fs::create_dir(workspace.path().join(".helpofai")).expect("mkdir helpofai");
+        let constitution = workspace.path().join(".helpofai").join("constitution.json");
         fs::write(&constitution, r#"{"schema_version":1,"authority":["a"]}"#)
             .expect("write constitution a");
         let before = compute_cache_key(workspace.path(), Some(home.path()));

@@ -121,7 +121,7 @@ const SUBAGENT_MODEL_WAIT_REASON: &str = "waiting for model response";
 const SUBAGENT_PERSIST_DEBOUNCE: Duration = Duration::from_millis(1500);
 
 /// #freeze: lightweight perf counters for the sub-agent persist hot path,
-/// gated behind `CODEWHALE_SUBAGENT_PERF_TRACE=1`. The atomic increments are
+/// gated behind `HELPOFAI_SUBAGENT_PERF_TRACE=1`. The atomic increments are
 /// always cheap; only the structured `subagent_perf` log line is gated.
 static SUBAGENT_PERSIST_WRITES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 static SUBAGENT_PERSIST_SKIPPED: std::sync::atomic::AtomicU64 =
@@ -130,7 +130,7 @@ static SUBAGENT_PERSIST_SKIPPED: std::sync::atomic::AtomicU64 =
 fn subagent_perf_enabled() -> bool {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ENABLED.get_or_init(|| {
-        std::env::var("CODEWHALE_SUBAGENT_PERF_TRACE")
+        std::env::var("HELPOFAI_SUBAGENT_PERF_TRACE")
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false)
     })
@@ -1326,17 +1326,17 @@ impl Default for PersistedSubAgentState {
 /// Default cap on sub-agent recursion depth. Override via
 /// `[runtime] max_spawn_depth = N` in config.
 ///
-/// Sourced from [`codewhale_config::DEFAULT_SPAWN_DEPTH`] so standalone
+/// Sourced from [`helpofai_config::DEFAULT_SPAWN_DEPTH`] so standalone
 /// sub-agents and fleet workers share ONE recursion axis (no "two moving
 /// targets"). Configured/requested depths clamp to
-/// [`codewhale_config::MAX_SPAWN_DEPTH_CEILING`].
-pub const DEFAULT_MAX_SPAWN_DEPTH: u32 = codewhale_config::DEFAULT_SPAWN_DEPTH;
+/// [`helpofai_config::MAX_SPAWN_DEPTH_CEILING`].
+pub const DEFAULT_MAX_SPAWN_DEPTH: u32 = helpofai_config::DEFAULT_SPAWN_DEPTH;
 
 /// Terminal-state notification emitted to the immediate parent's completion
 /// inbox when one of its children finishes (issue #756). For root-spawned
 /// agents that inbox is the engine turn loop; for nested agents it is a
 /// parent-local receiver inside `run_subagent`. Carries the already-rendered
-/// `<codewhale:subagent.done>` sentinel that the model expects in the
+/// `<helpofai:subagent.done>` sentinel that the model expects in the
 /// transcript per `prompts/constitution.md`.
 #[derive(Debug, Clone)]
 pub struct SubAgentCompletion {
@@ -2931,8 +2931,8 @@ async fn subagent_session_projection(
 }
 
 fn default_state_path(workspace: &Path) -> PathBuf {
-    // Prefer .codewhale, fall back to .deepseek for project-local state
-    let primary = workspace.join(".codewhale").join("state");
+    // Prefer .helpofai, fall back to .deepseek for project-local state
+    let primary = workspace.join(".helpofai").join("state");
     if primary.exists() {
         return primary.join(SUBAGENT_STATE_FILE);
     }
@@ -3048,7 +3048,7 @@ impl ToolSpec for AgentTool {
                 "model_strength": {
                     "type": "string",
                     "enum": ["same", "faster"],
-                    "description": "Optional child model strength. Use same when the child should be as capable as the current model. Use faster for type=explore, read-only lookup/search, status, or other low-risk tasks that can run on a smaller/faster same-family sibling; CodeWhale maps known families such as DeepSeek V4 Pro to Flash and GLM-5.2 to GLM-5-Turbo. type=explore defaults to faster unless you pass model_strength or model explicitly. No hidden auto-downgrade happens."
+                    "description": "Optional child model strength. Use same when the child should be as capable as the current model. Use faster for type=explore, read-only lookup/search, status, or other low-risk tasks that can run on a smaller/faster same-family sibling; HelpOfAi maps known families such as DeepSeek V4 Pro to Flash and GLM-5.2 to GLM-5-Turbo. type=explore defaults to faster unless you pass model_strength or model explicitly. No hidden auto-downgrade happens."
                 },
                 "model": {
                     "type": "string",
@@ -3316,12 +3316,12 @@ fn build_initial_subagent_messages(
             .filter(|state| !state.is_empty())
         {
             messages.push(system_text_message(format!(
-                "<codewhale:fork_state>\n{state}\n</codewhale:fork_state>"
+                "<helpofai:fork_state>\n{state}\n</helpofai:fork_state>"
             )));
         }
 
         messages.push(system_text_message(format!(
-            "<codewhale:subagent_context>\n{}\n</codewhale:subagent_context>",
+            "<helpofai:subagent_context>\n{}\n</helpofai:subagent_context>",
             build_subagent_system_prompt(agent_type, assignment)
         )));
     }
@@ -3409,7 +3409,7 @@ async fn run_subagent_task(task: SubAgentTask) {
     // sidebar / cell) AND a structured sentinel the model can recognize
     // on its next turn. Format: human summary on the first line,
     // sentinel on the second. The sentinel uses an opaque tag
-    // (`codewhale:subagent.done`) to avoid collision with normal user
+    // (`helpofai:subagent.done`) to avoid collision with normal user
     // text.
     let model_id = task.runtime.model.clone();
     let (summary, sentinel) = match &result {
@@ -3545,7 +3545,7 @@ pub(crate) fn emit_parent_completion(
     true
 }
 
-/// Build a `<codewhale:subagent.done>` JSON sentinel for a successful child.
+/// Build a `<helpofai:subagent.done>` JSON sentinel for a successful child.
 /// Intended to surface in the parent's transcript so the model recognizes
 /// child completion.
 ///
@@ -3574,10 +3574,10 @@ fn subagent_done_sentinel(agent_id: &str, res: &SubAgentResult, truncated: bool)
     if let Some(needs_input) = res.needs_input.clone() {
         payload["needs_input"] = json!(needs_input);
     }
-    format!("<codewhale:subagent.done>{payload}</codewhale:subagent.done>")
+    format!("<helpofai:subagent.done>{payload}</helpofai:subagent.done>")
 }
 
-/// Build a `<codewhale:subagent.done>` sentinel for a failed child.
+/// Build a `<helpofai:subagent.done>` sentinel for a failed child.
 ///
 /// Kept lean: the (annotated) error is on the previous line (`error_location`)
 /// so the sentinel only signals completion state rather than re-embedding the
@@ -3588,7 +3588,7 @@ fn subagent_failed_sentinel(agent_id: &str, _err: &str) -> String {
         "status": "failed",
         "error_location": "previous_line",
     });
-    format!("<codewhale:subagent.done>{payload}</codewhale:subagent.done>")
+    format!("<helpofai:subagent.done>{payload}</helpofai:subagent.done>")
 }
 
 fn response_was_truncated(response: &MessageResponse) -> bool {
@@ -3758,7 +3758,7 @@ fn drain_child_completion_events(
 
 fn child_completion_runtime_message(completions: &[SubAgentCompletion]) -> Message {
     let mut text = String::from(
-        "<codewhale:runtime_event kind=\"child_subagent_completion\" visibility=\"internal\">\n\
+        "<helpofai:runtime_event kind=\"child_subagent_completion\" visibility=\"internal\">\n\
 This is an internal runtime event, not user input. One or more child sub-agents \
 you spawned have finished. Treat each child summary as an unverified self-report: \
 if you rely on it, cite the child agent_id and the EVIDENCE lines it provided, \
@@ -3772,7 +3772,7 @@ and distinguish that from evidence you personally verified.\n",
         text.push_str(&completion.payload);
         text.push('\n');
     }
-    text.push_str("</codewhale:runtime_event>");
+    text.push_str("</helpofai:runtime_event>");
 
     Message {
         role: "user".to_string(),
@@ -4589,7 +4589,7 @@ fn parse_spawn_request(input: &Value) -> Result<SpawnRequest, ToolError> {
         .or_else(|| input.get("max_spawn_depth"))
         .and_then(Value::as_u64)
         .map(|depth| {
-            let ceiling = codewhale_config::MAX_SPAWN_DEPTH_CEILING;
+            let ceiling = helpofai_config::MAX_SPAWN_DEPTH_CEILING;
             u32::try_from(depth)
                 .map_err(|_| {
                     ToolError::invalid_input(format!("max_depth must be between 0 and {ceiling}"))

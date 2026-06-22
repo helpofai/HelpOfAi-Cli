@@ -25,7 +25,7 @@ async function checkAuth(req: Request, env: CommunityAgentEnv): Promise<{ ok: bo
 }
 
 const ALLOWED_ACTIONS = new Set(["post", "discard"]);
-const ALLOWED_ORIGINS = new Set(["https://codewhale.net", "https://www.codewhale.net"]);
+const ALLOWED_ORIGINS = new Set(["https://helpofai.net", "https://www.helpofai.net"]);
 const MAX_BODY_BYTES = 65_536;
 
 export async function POST(req: Request) {
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "no target number" }, { status: 400 });
     }
 
-    const repo = env.GITHUB_REPO ?? "Hmbown/CodeWhale";
+    const repo = env.GITHUB_REPO ?? "helpofai/HelpOfAi-Cli";
     const commentUrl = `https://api.github.com/repos/${repo}/issues/${draft.targetNumber}/comments`;
 
     const ghRes = await fetch(commentUrl, {

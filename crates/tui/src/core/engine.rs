@@ -15,10 +15,10 @@ use std::sync::{Arc, Mutex as StdMutex};
 use std::time::{Duration, Instant, SystemTime};
 
 use anyhow::Result;
-use codewhale_execpolicy::{AskForApproval, ExecPolicyContext};
-use codewhale_protocol::runtime::DynamicToolSpec;
 use futures_util::StreamExt;
 use futures_util::stream::FuturesUnordered;
+use helpofai_execpolicy::{AskForApproval, ExecPolicyContext};
+use helpofai_protocol::runtime::DynamicToolSpec;
 use serde_json::{Value, json};
 use tokio::sync::{Mutex as AsyncMutex, RwLock, mpsc};
 use tokio_util::sync::CancellationToken;
@@ -252,9 +252,9 @@ pub struct EngineConfig {
     pub mcp_config_path: PathBuf,
     /// Directory containing discoverable skills.
     pub skills_dir: PathBuf,
-    /// Restrict skill discovery to CodeWhale-owned roots plus explicit
+    /// Restrict skill discovery to HelpOfAi-owned roots plus explicit
     /// `skills_dir` configuration.
-    pub skills_scan_codewhale_only: bool,
+    pub skills_scan_helpofai_only: bool,
     /// Sources injected as `<instructions source="…">` blocks in the system
     /// prompt (#454). Each entry is either a disk path (read at render time)
     /// or an inline string. Loaded in declared order from the user's
@@ -382,7 +382,7 @@ pub struct EngineConfig {
     /// `workspace_follow_symlinks` setting.
     pub workspace_follow_symlinks: bool,
     /// Ask-only permission rules loaded from sibling `permissions.toml`.
-    pub exec_policy_engine: codewhale_execpolicy::ExecPolicyEngine,
+    pub exec_policy_engine: helpofai_execpolicy::ExecPolicyEngine,
 }
 
 impl Default for EngineConfig {
@@ -395,7 +395,7 @@ impl Default for EngineConfig {
             notes_path: PathBuf::from("notes.txt"),
             mcp_config_path: PathBuf::from("mcp.json"),
             skills_dir: crate::skills::default_skills_dir(),
-            skills_scan_codewhale_only: false,
+            skills_scan_helpofai_only: false,
             instructions: Vec::new(),
             project_context_pack_enabled: true,
             translation_enabled: false,
@@ -446,7 +446,7 @@ impl Default for EngineConfig {
             verbosity: None,
             tools: None,
             workspace_follow_symlinks: false,
-            exec_policy_engine: codewhale_execpolicy::ExecPolicyEngine::new(Vec::new(), Vec::new()),
+            exec_policy_engine: helpofai_execpolicy::ExecPolicyEngine::new(Vec::new(), Vec::new()),
         }
     }
 }
@@ -538,7 +538,7 @@ pub struct Engine {
     /// can fan completion events back into the engine.
     tx_subagent_completion: mpsc::UnboundedSender<SubAgentCompletion>,
     /// Receiver paired with `tx_subagent_completion`. Drained at the
-    /// turn-loop's empty-tool_uses branch to surface `<codewhale:subagent.done>`
+    /// turn-loop's empty-tool_uses branch to surface `<helpofai:subagent.done>`
     /// sentinels into the parent's transcript before deciding to end the turn.
     pub(super) rx_subagent_completion: mpsc::UnboundedReceiver<SubAgentCompletion>,
     cancel_token: CancellationToken,
@@ -671,8 +671,8 @@ impl Engine {
 
         Some(format!(
             "The rejected key came from {env_var}; no saved config key is present.\n\
-             Run `codewhale auth status` to inspect credential sources, then \
-             `codewhale auth set --provider {provider}` to save a valid key in ~/.codewhale/config.toml, \
+             Run `helpofai auth status` to inspect credential sources, then \
+             `helpofai auth set --provider {provider}` to save a valid key in ~/.helpofai/config.toml, \
              or remove the stale export and open a fresh shell.",
             provider = provider.as_str()
         ))
@@ -801,7 +801,7 @@ impl Engine {
                     ),
                     show_thinking: config.show_thinking,
                     verbosity: config.verbosity.as_deref(),
-                    skills_scan_codewhale_only: config.skills_scan_codewhale_only,
+                    skills_scan_helpofai_only: config.skills_scan_helpofai_only,
                 },
             );
         let stable_prompt = Some(system_prompt);
@@ -2224,7 +2224,7 @@ impl Engine {
                     Some(format!(
                         "The engine hit an internal error and stopped this turn: {detail}. \
                          Your session is intact — send your message again to retry. \
-                         A crash report was saved to ~/.codewhale/crashes/."
+                         A crash report was saved to ~/.helpofai/crashes/."
                     )),
                 )
             }
@@ -2645,7 +2645,7 @@ impl Engine {
         .with_runtime_services(self.config.runtime_services.clone())
         .with_skills_config(
             self.config.skills_dir.clone(),
-            self.config.skills_scan_codewhale_only,
+            self.config.skills_scan_helpofai_only,
         )
         .with_session_objects(crate::rlm::session::SessionObjectSnapshot::new(
             self.session.id.clone(),
@@ -2878,7 +2878,7 @@ impl Engine {
                 ),
                 show_thinking: self.config.show_thinking,
                 verbosity: self.config.verbosity.as_deref(),
-                skills_scan_codewhale_only: self.config.skills_scan_codewhale_only,
+                skills_scan_helpofai_only: self.config.skills_scan_helpofai_only,
             },
         );
         let mut stable_prompt =
@@ -2952,9 +2952,9 @@ impl Engine {
 }
 
 fn default_plugin_tools_dir() -> PathBuf {
-    codewhale_config::codewhale_home()
+    helpofai_config::helpofai_home()
         .unwrap_or_else(|_| {
-            dirs::home_dir().map_or_else(|| PathBuf::from(".codewhale"), |h| h.join(".codewhale"))
+            dirs::home_dir().map_or_else(|| PathBuf::from(".helpofai"), |h| h.join(".helpofai"))
         })
         .join("tools")
 }

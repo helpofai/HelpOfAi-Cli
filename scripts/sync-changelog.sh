@@ -26,7 +26,7 @@ awk -v keep="$KEEP" '
 printf '%s\n' \
   '---' \
   '' \
-  'Older releases: [CHANGELOG.md](https://github.com/Hmbown/CodeWhale/blob/main/CHANGELOG.md) and [docs/CHANGELOG_ARCHIVE.md](https://github.com/Hmbown/CodeWhale/blob/main/docs/CHANGELOG_ARCHIVE.md).' \
+  'Older releases: [CHANGELOG.md](https://github.com/helpofai/HelpOfAi-Cli/blob/main/CHANGELOG.md) and [docs/CHANGELOG_ARCHIVE.md](https://github.com/helpofai/HelpOfAi-Cli/blob/main/docs/CHANGELOG_ARCHIVE.md).' \
   >> "$tmp"
 if [ "$CHECK" = 1 ]; then
   if cmp -s "$tmp" "$root/crates/tui/CHANGELOG.md"; then

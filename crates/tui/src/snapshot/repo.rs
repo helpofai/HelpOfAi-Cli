@@ -117,7 +117,7 @@ const SIZE_WALK_SKIP_DIRS: &[&str] = &[
 ];
 
 const BUILTIN_EXCLUDES: &str = "\
-# CodeWhale built-in snapshot exclusions
+# HelpOfAi built-in snapshot exclusions
 node_modules/
 target/
 dist/
@@ -275,7 +275,7 @@ impl SnapshotRepo {
             let _ = run_git(
                 &git_dir,
                 &work_tree,
-                &["config", "user.email", "snapshots@codewhale.local"],
+                &["config", "user.email", "snapshots@helpofai.local"],
             );
             // Don't auto-gc on every commit; we manage pruning ourselves.
             let _ = run_git(&git_dir, &work_tree, &["config", "gc.auto", "0"]);

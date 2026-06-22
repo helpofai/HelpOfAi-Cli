@@ -8,7 +8,7 @@ For deeper context on the underlying tools (preflight scripts, npm smoke,
 publish-crates), see [`RELEASE_RUNBOOK.md`](RELEASE_RUNBOOK.md).
 For v0.9.0, also complete the dedicated
 [`V0_9_0_RELEASE_ACCEPTANCE.md`](V0_9_0_RELEASE_ACCEPTANCE.md) matrix before
-tagging; it covers provider routes, WhaleFlow feature gates, GUI/runtime smoke,
+tagging; it covers provider routes, HelpFlow feature gates, GUI/runtime smoke,
 remote workbench decisions, and credit hygiene that the generic checklist does
 not enumerate.
 
@@ -40,7 +40,7 @@ not enumerate.
 
 - [ ] Run `./scripts/release/prepare-release.sh X.Y.Z` — it bumps the
       workspace version, every per-crate dependency pin,
-      `npm/codewhale/package.json` (`version` + `codewhaleBinaryVersion`),
+      `npm/helpofai/package.json` (`version` + `helpofaiBinaryVersion`),
       the README install-tag examples, refreshes `Cargo.lock`, regenerates
       `crates/tui/CHANGELOG.md` and `web/lib/facts.generated.ts`, and ends
       by running `check-versions.sh`. Write the CHANGELOG entry **before**
@@ -69,7 +69,7 @@ Run, in order, from the repo root:
 
 ## 4. npm wrapper smoke
 
-- [ ] `cargo build --release --locked -p codewhale-cli -p codewhale-tui`
+- [ ] `cargo build --release --locked -p helpofai-cli -p helpofai-tui`
 - [ ] `node scripts/release/npm-wrapper-smoke.js`
       (Set `DEEPSEEK_TUI_KEEP_SMOKE_DIR=1` if you need to inspect the temp
       install afterwards.)
@@ -143,16 +143,16 @@ release anxiety: contributors cannot tell whether their work merged.
 - [ ] The live GitHub Release body has its own `## Contributors` or
       `## Credits` section; do not rely on "see CHANGELOG" alone. Verify with:
       ```
-      gh release view vX.Y.Z --repo Hmbown/CodeWhale --json body \
+      gh release view vX.Y.Z --repo helpofai/HelpOfAi-Cli --json body \
         --jq '.body | test("## (Contributors|Credits)")'
       ```
-- [ ] `npm view codewhale@X.Y.Z version codewhaleBinaryVersion --json`
+- [ ] `npm view helpofai@X.Y.Z version helpofaiBinaryVersion --json`
       reports the new version on the npm registry.
 - [ ] `npm view deepseek-tui deprecated` is non-empty. The legacy npm package
       is deprecated and must not receive an `X.Y.Z` publish.
 - [ ] `crates.io` has the new version (or the `publish-crates.sh` job has
       pushed it).
-- [ ] `ghcr.io/hmbown/codewhale:vX.Y.Z` and `:latest` are updated.
+- [ ] `ghcr.io/helpofai/helpofai:vX.Y.Z` and `:latest` are updated.
 
 ## 8. Post-tag
 

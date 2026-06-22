@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-cli-compare.py - Run Terminal-Bench tasks through CodeWhale and Codex CLIs,
+cli-compare.py - Run Terminal-Bench tasks through HelpOfAi and Codex CLIs,
 emit normalized token/performance comparison rows.
 
 Usage:
@@ -20,18 +20,18 @@ Output (per run date):
         summary.json         - one row per agent, all fields normalized
         summary.md           - Markdown table suitable for release notes
         metadata.json        - versions, model, timestamp, platform
-        codewhale/<task>/    - raw Harbor output
+        helpofai/<task>/    - raw Harbor output
         codex/<task>/        - raw Harbor output
 
 Prerequisites:
     pip install harbor
     Docker running
-    DEEPSEEK_API_KEY set (for CodeWhale)
+    DEEPSEEK_API_KEY set (for HelpOfAi)
     CODEX_API_KEY or equivalent set (for Codex)
 
 Field semantics (summary.json rows):
     task              str    - Terminal-Bench task name
-    agent             str    - "codewhale" or "codex"
+    agent             str    - "helpofai" or "codex"
     run_idx           int    - 0-based run index
     reward            float  - pass/fail score (1.0 = pass)
     runtime_s         float  - wall-clock seconds (null if not available)
@@ -73,7 +73,7 @@ DEFAULT_MODEL = "deepseek/deepseek-chat"
 DEFAULT_TIMEOUT_PER_RUN = 900  # seconds (Harbor handles its own timeout internally)
 DEFAULT_RUNS = 1
 HARBOR_DATASET = "terminal-bench@2.0"
-CODEWHALE_AGENT = "scripts.benchmarks.harbor:CodeWhaleAgent"
+HELPOFAI_AGENT = "scripts.benchmarks.harbor:HelpOfAiAgent"
 CODEX_AGENT = "scripts.benchmarks.harbor.codex_agent:CodexAgent"
 
 # ---------------------------------------------------------------------------
@@ -180,9 +180,9 @@ def _stable_path(path: Path) -> str:
 
 
 def parse_token_jsonl(lines: list[str]) -> dict[str, Optional[int]]:
-    """Extract token usage from CodeWhale/Codex stream JSONL lines.
+    """Extract token usage from HelpOfAi/Codex stream JSONL lines.
 
-    CodeWhale emits ``{"type":"result","usage":{...}}`` at end-of-stream.
+    HelpOfAi emits ``{"type":"result","usage":{...}}`` at end-of-stream.
     Codex may emit usage in closing messages or transcript footers.
     """
     result: dict[str, Optional[int]] = {
@@ -429,10 +429,10 @@ def capture_metadata(model: str) -> dict[str, Any]:
         "model": model,
         "dataset": HARBOR_DATASET,
     }
-    # CodeWhale version
-    r = subprocess.run(["codewhale", "--version"], capture_output=True, text=True)
+    # HelpOfAi version
+    r = subprocess.run(["helpofai", "--version"], capture_output=True, text=True)
     if r.returncode == 0:
-        meta["codewhale_version"] = r.stdout.strip()
+        meta["helpofai_version"] = r.stdout.strip()
     # Codex version
     r = subprocess.run(["codex", "--version"], capture_output=True, text=True)
     if r.returncode == 0:
@@ -458,7 +458,7 @@ def capture_metadata(model: str) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="CodeWhale vs Codex CLI token comparison harness",
+        description="HelpOfAi vs Codex CLI token comparison harness",
     )
     parser.add_argument(
         "--task", nargs="+", default=DEFAULT_TASKS,
@@ -481,8 +481,8 @@ def main() -> None:
         help="Regenerate summary from existing raw results directory",
     )
     parser.add_argument(
-        "--codewhale-agent", default=CODEWHALE_AGENT,
-        help="Harbor agent import path for CodeWhale",
+        "--helpofai-agent", default=HELPOFAI_AGENT,
+        help="Harbor agent import path for HelpOfAi",
     )
     parser.add_argument(
         "--codex-agent", default=CODEX_AGENT,
@@ -522,7 +522,7 @@ def main() -> None:
     meta["runs_per_task"] = args.runs
     (run_dir / "metadata.json").write_text(json.dumps(meta, indent=2))
 
-    cw_dir = run_dir / "codewhale"
+    cw_dir = run_dir / "helpofai"
     cx_dir = run_dir / "codex"
     cw_dir.mkdir(parents=True, exist_ok=True)
     cx_dir.mkdir(parents=True, exist_ok=True)
@@ -536,14 +536,14 @@ def main() -> None:
             print(header)
             print("=" * 60)
 
-            print("\n--- CodeWhale ---")
+            print("\n--- HelpOfAi ---")
             cw_run_dir = cw_dir / task / f"run_{run_idx}"
             cw_result = run_harbor_single_task(
                 task=task, model=args.model,
-                agent_path=args.codewhale_agent,
+                agent_path=args.helpofai_agent,
                 results_dir=cw_run_dir, timeout=args.timeout,
             )
-            cw_row = parse_harbor_run(cw_run_dir, "codewhale")
+            cw_row = parse_harbor_run(cw_run_dir, "helpofai")
             cw_row["task"] = task
             cw_row["run_idx"] = run_idx
             if cw_row["runtime_s"] is None:

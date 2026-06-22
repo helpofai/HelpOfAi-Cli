@@ -284,7 +284,7 @@ pub(crate) fn auto_router_system_prompt(
     let cheap = candidates.cheap_or_big();
     let big = &candidates.big;
     let mut prompt = format!(
-        "You are the codewhale auto-routing classifier. Return only compact JSON: \
+        "You are the helpofai auto-routing classifier. Return only compact JSON: \
 {{\"model\":\"{cheap}|{big}\",\"thinking\":\"off|high|max\"}}. \
 Use {cheap} for trivial, conversational, status, or single-step work. \
 Use {big} for coding, debugging, release work, multi-step tasks, high-risk decisions, \
@@ -654,7 +654,7 @@ async fn auto_route_inventory_recommendation(
 
 fn inventory_auto_router_system_prompt(inventory: &ModelInventory) -> String {
     format!(
-        "You are the codewhale model-routing classifier. Return only compact JSON: \
+        "You are the helpofai model-routing classifier. Return only compact JSON: \
 {{\"provider\":\"<provider>\",\"model\":\"<model>\",\"thinking\":\"off|high|max\"}}.\n\
 Choose only provider/model pairs present in the inventory JSON. Use off only for trivial no-tool answers, \
 high for ordinary reasoning, and max for agentic, coding, multi-file, release, architecture, debugging, \

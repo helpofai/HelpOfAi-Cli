@@ -68,10 +68,10 @@ project_overhaul_prompt.md
 .wrangler/
 
 # Local runtime state
-# Ignore everything under any .codewhale/ (snapshots, auto-generated
+# Ignore everything under any .helpofai/ (snapshots, auto-generated
 # instructions.md, etc.) at any depth EXCEPT the committed repo authority policy.
-**/.codewhale/*
-!**/.codewhale/constitution.json
+**/.helpofai/*
+!**/.helpofai/constitution.json
 .deepseek/
 **/session_*.json
 *.db
@@ -137,7 +137,7 @@ scripts/**/__pycache__/
 .uv-bin/
 .uv-cache/
 .uv-tools/
-codewhale__*.json
+helpofai__*.json
 issues/
 logs/
 notes/

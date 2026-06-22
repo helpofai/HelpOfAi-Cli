@@ -1,16 +1,16 @@
 # syntax=docker/dockerfile:1
-# CodeWhale multi-arch Docker image (#501)
+# HelpOfAi multi-arch Docker image (#501)
 #
-# Build:  docker buildx build --platform linux/amd64,linux/arm64 -t codewhale:latest .
-# Run:    docker run --rm -it -e DEEPSEEK_API_KEY -v codewhale-home:/home/codewhale/.codewhale codewhale
+# Build:  docker buildx build --platform linux/amd64,linux/arm64 -t helpofai:latest .
+# Run:    docker run --rm -it -e DEEPSEEK_API_KEY -v helpofai-home:/home/helpofai/.helpofai helpofai
 #
-# The image ships the canonical binaries (`codewhale`, `codewhale-tui`) plus
+# The image ships the canonical binaries (`helpofai`, `helpofai-tui`) plus
 # the legacy `deepseek` / `deepseek-tui` shims in a minimal runtime layer.
 #
 # API keys MUST be passed at runtime (never baked into the image):
-#   docker run --rm -it -e DEEPSEEK_API_KEY codewhale
+#   docker run --rm -it -e DEEPSEEK_API_KEY helpofai
 # Or mount an env file:
-#   docker run --rm -it --env-file .env codewhale
+#   docker run --rm -it --env-file .env helpofai
 
 ARG RUST_VERSION=1.88
 
@@ -55,15 +55,15 @@ COPY . .
 
 # Build both binaries for the target platform.  --locked ensures
 # reproducible builds from the committed lockfile.
-RUN --mount=type=cache,id=codewhale-target-${TARGETARCH},target=/build/target,sharing=locked \
-    --mount=type=cache,id=codewhale-cargo-registry-${TARGETARCH},target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,id=codewhale-cargo-git-${TARGETARCH},target=/usr/local/cargo/git,sharing=locked \
+RUN --mount=type=cache,id=helpofai-target-${TARGETARCH},target=/build/target,sharing=locked \
+    --mount=type=cache,id=helpofai-cargo-registry-${TARGETARCH},target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,id=helpofai-cargo-git-${TARGETARCH},target=/usr/local/cargo/git,sharing=locked \
     rustup target add "$(cat /rust-target)" \
     && cargo build --release --locked --target "$(cat /rust-target)" \
-      -p codewhale-cli -p codewhale-tui \
+      -p helpofai-cli -p helpofai-tui \
     && mkdir -p /out \
-    && cp target/$(cat /rust-target)/release/codewhale /out/ \
-    && cp target/$(cat /rust-target)/release/codewhale-tui /out/
+    && cp target/$(cat /rust-target)/release/helpofai /out/ \
+    && cp target/$(cat /rust-target)/release/helpofai-tui /out/
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────
 FROM debian:bookworm-slim
@@ -74,22 +74,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user with explicit UID/GID for filesystem ownership clarity.
-RUN groupadd --gid 1000 codewhale \
-    && useradd --create-home --shell /bin/bash --uid 1000 --gid 1000 codewhale \
-    && install -d -m 0700 -o codewhale -g codewhale /home/codewhale/.codewhale \
-    && install -d -m 0700 -o codewhale -g codewhale /home/codewhale/.deepseek \
+RUN groupadd --gid 1000 helpofai \
+    && useradd --create-home --shell /bin/bash --uid 1000 --gid 1000 helpofai \
+    && install -d -m 0700 -o helpofai -g helpofai /home/helpofai/.helpofai \
+    && install -d -m 0700 -o helpofai -g helpofai /home/helpofai/.deepseek \
     # Legacy entrypoints from the deepseek-tui era; the real binaries are
     # copied in below (symlinks may dangle until then).
-    && ln -s /usr/local/bin/codewhale /usr/local/bin/deepseek \
-    && ln -s /usr/local/bin/codewhale-tui /usr/local/bin/deepseek-tui
-USER codewhale
-WORKDIR /home/codewhale
+    && ln -s /usr/local/bin/helpofai /usr/local/bin/deepseek \
+    && ln -s /usr/local/bin/helpofai-tui /usr/local/bin/deepseek-tui
+USER helpofai
+WORKDIR /home/helpofai
 
-COPY --from=builder --chown=codewhale:codewhale /out/codewhale /usr/local/bin/codewhale
-COPY --from=builder --chown=codewhale:codewhale /out/codewhale-tui /usr/local/bin/codewhale-tui
+COPY --from=builder --chown=helpofai:helpofai /out/helpofai /usr/local/bin/helpofai
+COPY --from=builder --chown=helpofai:helpofai /out/helpofai-tui /usr/local/bin/helpofai-tui
 
 # The dispatcher expects to find its companion binary next to it.
 # Both are in /usr/local/bin — no further path setup needed.
 
-ENTRYPOINT ["codewhale"]
+ENTRYPOINT ["helpofai"]
 CMD []

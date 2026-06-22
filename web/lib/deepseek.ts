@@ -48,7 +48,7 @@ export async function chat(
   return data.choices[0]?.message?.content ?? "";
 }
 
-const SYSTEM_PROMPT = `You are the editor of "今日要闻 / Today's Dispatch", a daily-ish digest for the CodeWhale open source project.
+const SYSTEM_PROMPT = `You are the editor of "今日要闻 / Today's Dispatch", a daily-ish digest for the HelpOfAi open source project.
 
 You receive: repo stats and a list of recently updated issues, PRs, and releases.
 Output a single JSON object — no prose around it — matching this exact shape:
@@ -100,7 +100,7 @@ export async function curate(
   }));
 
   const userPayload = {
-    repo: "Hmbown/CodeWhale",
+    repo: "helpofai/HelpOfAi-Cli",
     stats: {
       stars: stats.stars,
       forks: stats.forks,
@@ -125,8 +125,8 @@ export async function curate(
   return { ...sanitizeDispatch(parsed), generatedAt: new Date().toISOString() };
 }
 
-const SAFE_HREF_RE = /^https:\/\/(?:github\.com|api\.github\.com|codewhale\.net|crates\.io|www\.npmjs\.com|docs\.rs)\//;
-const FALLBACK_HREF = "https://github.com/Hmbown/CodeWhale";
+const SAFE_HREF_RE = /^https:\/\/(?:github\.com|api\.github\.com|helpofai\.net|crates\.io|www\.npmjs\.com|docs\.rs)\//;
+const FALLBACK_HREF = "https://github.com/helpofai/HelpOfAi-Cli";
 
 function safeHref(u: unknown): string {
   return typeof u === "string" && SAFE_HREF_RE.test(u) ? u : FALLBACK_HREF;

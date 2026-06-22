@@ -105,7 +105,7 @@ jobs:
         run: git diff --exit-code -- Cargo.lock
       - name: Run Offline Eval Harness
         if: runner.os != 'Linux'
-        run: cargo run -p codewhale-tui --all-features -- eval
+        run: cargo run -p helpofai-tui --all-features -- eval
       - name: Linux test location
         if: runner.os == 'Linux'
         run: echo "Linux workspace tests run on CNB for mirrored first-party branches."
@@ -132,7 +132,7 @@ jobs:
           cache-bin: false
       - name: Build wrapper binaries
         if: runner.os != 'Linux'
-        run: cargo build --release --locked -p codewhale-cli -p codewhale-tui
+        run: cargo build --release --locked -p helpofai-cli -p helpofai-tui
       - name: Smoke wrapper install and delegated entrypoints
         if: runner.os != 'Linux'
         run: node scripts/release/npm-wrapper-smoke.js
