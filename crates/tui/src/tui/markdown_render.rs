@@ -1238,6 +1238,32 @@ fn push_word_breaking_chars(
     }
 }
 
+/// Extract all contiguous code blocks from markdown content.
+#[must_use]
+pub fn extract_code_blocks(content: &str) -> Vec<String> {
+    let parsed = parse(content);
+    let mut code_blocks = Vec::new();
+    let mut current_block: Vec<String> = Vec::new();
+
+    for block in parsed.blocks {
+        match block {
+            Block::Code { line } => {
+                current_block.push(line);
+            }
+            _ => {
+                if !current_block.is_empty() {
+                    code_blocks.push(current_block.join("\n"));
+                    current_block.clear();
+                }
+            }
+        }
+    }
+    if !current_block.is_empty() {
+        code_blocks.push(current_block.join("\n"));
+    }
+    code_blocks
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1924,5 +1950,14 @@ mod tests {
         let rendered = render_paragraph_for_test("hello world", 0);
         // Any output is acceptable (the path is degenerate); assert no panic.
         let _ = rendered;
+    }
+
+    #[test]
+    fn test_extract_code_blocks() {
+        let content = "Here is a command:\n```bash\nnpm run build\n```\nAnd another:\n```rust\ncargo test\n```";
+        let blocks = extract_code_blocks(content);
+        assert_eq!(blocks.len(), 2);
+        assert_eq!(blocks[0], "npm run build");
+        assert_eq!(blocks[1], "cargo test");
     }
 }
