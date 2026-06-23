@@ -6,8 +6,8 @@
   **not** hard-code a device-specific checkout path here — work in whichever
   local checkout you have and always **confirm with
   `git branch --show-current` before editing.**
-- **Active branch:** `hunter/0.8.64-glm-subagents` (also at
-`origin/hunter/0.8.64-glm-subagents`). 0.8.64/0. has shipped; all new work lands
+- **Active branch:** `hunter/0.8.65-glm-subagents` (also at
+`origin/hunter/0.8.65-glm-subagents`). 0.8.64/0. has shipped; all new work lands
 here.
 <!-- - **Workspace version is intentionally still `0.8.64`** in `Cargo.toml` — the
   bump to `0.8.64` is deferred until the GLM-5.2 routing is smoke-tested end to
@@ -16,7 +16,7 @@ here.
 - **Milestone guidepost:** GitHub milestone `v0.8.64` (id 47). Check live state
   with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.64" --state open`.
 - **Default branch is `main`.** Never commit directly to `main`; always work on
-  `hunter/0.8.64-glm-subagents` (or a fresh branch off it for an isolated
+  `hunter/0.8.65-glm-subagents` (or a fresh branch off it for an isolated
   change). Open a PR into `main` only when a unit of work is reviewable.
 - **Always run before pushing a change:** `cargo fmt`, then the targeted tests
   for the area (`cargo test -p helpofai-tui --bins <filter>`,

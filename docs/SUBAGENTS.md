@@ -106,7 +106,7 @@ Good delegation prompt examples:
 ```text
 QUESTION: Does PR #3124 introduce release-risk behavior around provider routing?
 SCOPE: PR #3124 diff, linked issue, provider routing tests, docs/PROVIDERS.md.
-ALREADY_KNOWN: Branch is hunter/0.8.62-glm-subagents; workspace version stays 0.8.61.
+ALREADY_KNOWN: Branch is hunter/0.8.65-glm-subagents; workspace version stays 0.8.61.
 EFFORT: medium
 STOP_CONDITION: Return once you have either one BLOCKER/MAJOR issue or enough evidence for no MAJOR+ issues.
 OUTPUT: VERDICT, EVIDENCE with file:line refs or PR refs, GAPS, NEXT.
