@@ -36,7 +36,7 @@ for Claude-based agents working in this repository.
 
 ## v0.8.62 Release Work
 
-- The active branch is `hunter/0.8.62-glm-subagents`. This repo lives on
+- The active branch is `hunter/0.8.65-glm-subagents`. This repo lives on
   multiple devices, so do not hard-code a checkout path — work in whichever
   local checkout you have and confirm with `git branch --show-current` before
   editing. 0.8.61 has shipped; do all new work here, never on `main`.
