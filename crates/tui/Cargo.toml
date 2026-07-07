@@ -89,6 +89,9 @@ arboard = "3.4"
 [target.'cfg(not(target_env = "ohos"))'.dependencies]
 portable-pty = "0.9"
 starlark = "0.13.0"
+# Pin allocative to =0.3.4: starlark_map 0.13.0 uses hashbrown 0.14.x types
+# (HashTable, RawTable) that are not Allocative in allocative >= 0.3.5.
+allocative = "=0.3.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.3"
