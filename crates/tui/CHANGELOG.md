@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.67] - 2026-07-07
+
+### Added
+
+- **Memory Settings Modal**: Added interactive sub-TUI popup to enable/disable user memory, configure max size, and set custom file paths via `/memory config`.
+
+## [0.8.66] - 2026-06-23
+
+### Fixed
+
+- **Context Freeze**: Persist generated context instructions to `.helpofai/instructions.md` to prevent repeated filesystem scans on startup.
+- **Starlark Compatibility**: Pinned `starlark` to `0.13.0` across workspace (including `helpflow` and `tui`) to fix trait bound compilation errors (`allocative`) on Rust 1.88.
+
 ## [0.8.64] - 2026-06-22
 
 ## [0.8.62] - 2026-06-17
