@@ -7240,6 +7240,12 @@ async fn apply_command_result(
                         .push(crate::tui::feedback_picker::FeedbackPickerView::new());
                 }
             }
+            AppAction::OpenMemorySettings => {
+                if app.view_stack.top_kind() != Some(ModalKind::MemorySettings) {
+                    app.view_stack
+                        .push(crate::tui::memory_settings::MemorySettingsView::new(app));
+                }
+            }
             AppAction::OpenThemePicker => {
                 if app.view_stack.top_kind() != Some(ModalKind::ThemePicker) {
                     // Capture the active theme name straight from `app` so
@@ -8846,6 +8852,52 @@ async fn handle_view_events(
                     app.view_stack.pop();
                     app.view_stack.push(ConfigView::new_for_app(app));
                 }
+            }
+            ViewEvent::MemorySettingsApplied {
+                enabled,
+                max_size_kb,
+                memory_path,
+            } => {
+                app.use_memory = enabled;
+                app.memory_max_size_kb = max_size_kb;
+                let resolved_path = if let Some(ref mp) = memory_path {
+                    crate::config::expand_path(mp)
+                } else {
+                    let home = crate::config::effective_home_dir()
+                        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+                    home.join(".helpofai").join("memory.md")
+                };
+                app.memory_path = resolved_path.clone();
+                app.needs_redraw = true;
+
+                match crate::config_persistence::persist_memory_config(
+                    app.config_path.as_deref(),
+                    enabled,
+                    max_size_kb,
+                    memory_path.as_deref(),
+                ) {
+                    Ok(path) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!(
+                                "Memory config updated and saved to {}. Enabled: {enabled}",
+                                path.display()
+                            ),
+                        });
+                    }
+                    Err(err) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!("Failed to save memory settings to config: {err}"),
+                        });
+                    }
+                }
+
+                let _ = engine_handle
+                    .send(Op::SetMemoryConfig {
+                        enabled,
+                        path: resolved_path,
+                        max_size_kb,
+                    })
+                    .await;
             }
             ViewEvent::StatusItemsUpdated { items, final_save } => {
                 // Apply to the live App immediately so the footer reflects

@@ -1463,6 +1463,20 @@ impl Engine {
                             )))
                             .await;
                     }
+                    Op::SetMemoryConfig {
+                        enabled,
+                        path,
+                        max_size_kb,
+                    } => {
+                        self.config.memory_enabled = enabled;
+                        self.config.memory_path = path;
+                        self.config.memory_max_size_kb = max_size_kb;
+                        self.refresh_system_prompt();
+                        let _ = self
+                            .tx_event
+                            .send(Event::status("Persistent memory updated".to_string()))
+                            .await;
+                    }
                     Op::SyncSession {
                         session_id,
                         messages,

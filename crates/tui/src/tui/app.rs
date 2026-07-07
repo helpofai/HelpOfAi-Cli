@@ -5550,6 +5550,8 @@ pub enum AppAction {
     OpenStatusPicker,
     /// Open the `/feedback` picker for GitHub issue/security destinations.
     OpenFeedbackPicker,
+    /// Open the memory config modal.
+    OpenMemorySettings,
     /// Open the `/theme` picker modal with live preview of every preset.
     OpenThemePicker,
     /// Open an external URL in the system browser.

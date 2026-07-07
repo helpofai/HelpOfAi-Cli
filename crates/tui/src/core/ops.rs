@@ -121,6 +121,13 @@ pub enum Op {
     /// Update the SSE idle timeout used for subsequent streamed turns.
     SetStreamChunkTimeout { timeout_secs: u64 },
 
+    /// Update user memory settings.
+    SetMemoryConfig {
+        enabled: bool,
+        path: PathBuf,
+        max_size_kb: usize,
+    },
+
     /// Sync engine session state (used for resume/load)
     SyncSession {
         session_id: Option<String>,

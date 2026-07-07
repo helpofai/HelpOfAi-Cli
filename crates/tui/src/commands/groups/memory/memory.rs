@@ -19,7 +19,7 @@ use std::path::Path;
 use super::CommandResult;
 use crate::tui::app::App;
 
-const MEMORY_USAGE: &str = "/memory [show|path|clear|edit|search|task|help]";
+const MEMORY_USAGE: &str = "/memory [show|path|clear|edit|search|task|config|help]";
 
 fn memory_help(path: &Path) -> String {
     format!(
@@ -36,6 +36,7 @@ fn memory_help(path: &Path) -> String {
            /memory task             List active memory tasks\n\
            /memory task add <desc>  Add a new memory task\n\
            /memory task complete <n> Mark task #n as completed\n\
+           /memory config           Configure memory settings (enable/disable, path, size)\n\
            /memory help             Show this help\n\n\
          Quick capture: type `# foo` in the composer to append a timestamped\n\
          bullet without firing a turn.",
@@ -44,17 +45,21 @@ fn memory_help(path: &Path) -> String {
 }
 
 pub fn memory(app: &mut App, arg: Option<&str>) -> CommandResult {
-    if !app.use_memory {
-        return CommandResult::error(
-            "user memory is disabled. Enable with `[memory] enabled = true` in `~/.helpofai/config.toml` or `DEEPSEEK_MEMORY=on` in your environment, then restart the TUI.",
-        );
-    }
-
-    let path = app.memory_path.clone();
     let trimmed_arg = arg.unwrap_or("show").trim();
     let parts: Vec<&str> = trimmed_arg.split_whitespace().collect();
     let sub = parts.first().copied().unwrap_or("show");
 
+    if sub == "config" || sub == "settings" || sub == "configure" {
+        return CommandResult::action(crate::tui::app::AppAction::OpenMemorySettings);
+    }
+
+    if !app.use_memory {
+        return CommandResult::error(
+            "user memory is disabled. To enable it and configure settings, run `/memory config`.",
+        );
+    }
+
+    let path = app.memory_path.clone();
     match sub {
         "" | "show" => {
             let body = match fs::read_to_string(&path) {
