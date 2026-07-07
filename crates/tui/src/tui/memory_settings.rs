@@ -108,7 +108,7 @@ impl MemorySettingsView {
     fn validate_and_submit(&mut self) -> ViewAction {
         self.error_message = None;
         let max_size = match self.max_size_input.trim().parse::<usize>() {
-            Ok(val) if val >= 64 && val <= 4096 => val,
+            Ok(val) if (64..=4096).contains(&val) => val,
             _ => {
                 self.error_message = Some("Max size must be between 64 and 4096 KiB".to_string());
                 return ViewAction::None;
