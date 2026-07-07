@@ -2308,7 +2308,7 @@ impl App {
             crate::mcp::load_config_with_workspace(&mcp_config_path, &workspace)
                 .map(|cfg| cfg.servers.len())
                 .unwrap_or(0);
-        Self {
+        let app = Self {
             mode: initial_mode,
             hotbar_actions: HotbarActionRegistry::with_builtins(),
             composer: ComposerState {
