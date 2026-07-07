@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.68] - 2026-07-07
+
+### Fixed
+
+- **Memory Auto-Init**: Auto-create `~/.helpofai/memory.md` and `.helpofai/memory.md` with usage instructions when memory is enabled for the first time.
+- **Update Notification**: Show current version, latest version, and upgrade commands at startup when a newer release is available.
+- **Borrow Checker**: Fixed move-after-use compile error in `App::new` by reading `memory_path` and `workspace` from the constructed `app` instance.
+
 ## [0.8.67] - 2026-07-07
 
 ### Added
