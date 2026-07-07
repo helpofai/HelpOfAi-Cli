@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
     child: Box<dyn Child + Send + Sync>,
-    writer: Box<dyn Write + Send>,
+    writer: Arc<Mutex<Box<dyn Write + Send>>>,
     buffer: Arc<Mutex<Vec<u8>>>,
     reader_handle: Option<JoinHandle<()>>,
     rows: u16,
@@ -124,7 +124,10 @@ impl<'a> PtySessionBuilder<'a> {
         drop(pair.slave);
 
         let mut reader = pair.master.try_clone_reader().context("clone reader")?;
-        let writer = pair.master.take_writer().context("take writer")?;
+        let writer = Arc::new(Mutex::new(
+            pair.master.take_writer().context("take writer")?,
+        ));
+        let reader_writer = Arc::clone(&writer);
 
         let buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let buf_thread = Arc::clone(&buffer);
@@ -136,8 +139,18 @@ impl<'a> PtySessionBuilder<'a> {
                     match reader.read(&mut chunk) {
                         Ok(0) => break,
                         Ok(n) => {
+                            let slice = &chunk[..n];
+                            if slice.windows(4).any(|w| w == b"\x1b[6n") {
+                                // crossterm 0.29 queries cursor position at startup as a fallback
+                                // for terminal::size(). The vt parser doesn't answer, so we intercept
+                                // and answer with the configured PTY size (40 rows, 120 cols).
+                                if let Ok(mut w) = reader_writer.lock() {
+                                    let _ = w.write_all(b"\x1b[40;120R");
+                                    let _ = w.flush();
+                                }
+                            }
                             if let Ok(mut b) = buf_thread.lock() {
-                                b.extend_from_slice(&chunk[..n]);
+                                b.extend_from_slice(slice);
                             }
                         }
                         Err(_) => break,
@@ -164,8 +177,9 @@ impl PtySession {
     }
 
     pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<()> {
-        self.writer.write_all(bytes).context("pty write")?;
-        self.writer.flush().context("pty flush")?;
+        let mut w = self.writer.lock().map_err(|_| anyhow!("mutex poisoned"))?;
+        w.write_all(bytes).context("pty write")?;
+        w.flush().context("pty flush")?;
         Ok(())
     }
 

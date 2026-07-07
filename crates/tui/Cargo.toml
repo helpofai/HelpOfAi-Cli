@@ -39,11 +39,7 @@ dotenvy = "0.15.7"
 dirs = "6.0.0"
 fd-lock = "4.0.4"
 futures-util = "0.3.31"
-# ratatui 0.30 uses ratatui-crossterm 0.1.2 → crossterm 0.29.0, which added a
-# synchronised-output startup cursor-position query (DSR/CPR). That query
-# times out inside the qa_pty PTY harness → "cursor position could not be
-# read within a normal duration" crash. Pin to 0.29.x (uses crossterm 0.28).
-ratatui = "0.29"
+ratatui = "0.30"
 regex = "1.11"
 reqwest = { version = "0.13.1", default-features = false, features = ["blocking", "json", "stream", "multipart", "form", "rustls-no-provider", "http2", "gzip", "brotli"] }
 rustls.workspace = true
