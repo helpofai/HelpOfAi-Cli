@@ -2581,8 +2581,8 @@ impl App {
         };
         if use_memory {
             let _ = crate::memory::initialize_memory_files_if_needed(
-                &memory_path,
-                Some(&workspace.join(".helpofai").join("memory.md")),
+                &app.memory_path,
+                Some(&app.workspace.join(".helpofai").join("memory.md")),
             );
         }
         app
