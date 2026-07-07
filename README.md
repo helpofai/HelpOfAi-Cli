@@ -34,6 +34,28 @@ npm install -g helpofai
 helpofai --version   # 0.8.62
 ```
 
+---
+
+C:\Users\rajib\Desktop\HelpOfAi-cli>hoa update
+Checking for stable updates...
+Current binary: C:\Users\rajib\AppData\Roaming\npm\node_modules\helpofai\bin\downloads\helpofai.exe
+Current version: v0.8.66
+Latest stable release: v0.8.67
+Downloading helpofai-artifacts-sha256.txt...
+Downloading helpofai-windows-x64.exe...
+Downloading helpofai-tui-windows-x64.exe...
+SHA256 checksum verified.
+
+✅ Successfully updated to v0.8.67!
+Updated binaries:
+
+- C:\Users\rajib\AppData\Roaming\npm\node_modules\helpofai\bin\downloads\helpofai.exe (helpofai-windows-x64.exe)
+- C:\Users\rajib\AppData\Roaming\npm\node_modules\helpofai\bin\downloads\helpofai-tui.exe (helpofai-tui-windows-x64.exe)
+
+Restart the application to use the new version.
+
+---
+
 The npm wrapper (Node 18+) downloads SHA-256-verified binaries from GitHub
 Releases and installs `helpofai`, `hoa`, and `helpofai-tui`. Prefer building
 from source? Use cargo (Rust 1.88+):
@@ -261,8 +283,8 @@ HelpOfAi exists because of the people who use it, break it, and fix it.
 
 [MIT](LICENSE)
 
-> *HelpOfAi is an independent community project and is not affiliated with any
-> model provider.*
+> _HelpOfAi is an independent community project and is not affiliated with any
+> model provider._
 
 ## Star History
 

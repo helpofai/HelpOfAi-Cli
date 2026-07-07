@@ -384,6 +384,52 @@ pub fn complete_task(path: &Path, task_index: usize) -> io::Result<Option<String
     }
 }
 
+pub fn initialize_memory_files_if_needed(
+    memory_path: &Path,
+    project_memory_path: Option<&Path>,
+) -> io::Result<()> {
+    // 1. Create Global Memory if not exists
+    if !memory_path.exists() {
+        if let Some(parent) = memory_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let global_initial = concat!(
+            "# Global User Memory\n\n",
+            "This file stores your global preferences, project-agnostic facts, and lessons learned.\n",
+            "The model has access to this context on every turn to adapt to your style.\n\n",
+            "## How to Use\n",
+            "- **Quick Capture**: Type `# <note>` in the composer to quickly append a bullet here.\n",
+            "- **Model Memory**: The model will automatically add notes using the `remember` tool when it learns durable preferences.\n",
+            "- **Manual Editing**: You can run `/memory edit` or open this file directly to add/modify context.\n\n",
+            "## Preferences\n",
+            "- (Add your global coding preferences or rules here)\n"
+        );
+        fs::write(memory_path, global_initial)?;
+    }
+
+    // 2. Create Project Memory if not exists
+    if let Some(p_path) = project_memory_path {
+        if !p_path.exists() {
+            if let Some(parent) = p_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let project_initial = concat!(
+                "# Project Memory\n\n",
+                "This file is project-specific (workspace-scoped).\n",
+                "It stores active tasks, project-specific guidelines, todo lists, and context relevant only to this directory.\n\n",
+                "## How to Use\n",
+                "- **Task Management**: Use `/projectmemory task add <desc>` or `/projectmemory task complete <n>` to manage tasks.\n",
+                "- **Model Memory**: The model can write to this file using the `remember` tool with `scope='project'` to persist project-specific choices.\n",
+                "- **Manual Editing**: You can edit this file directly to document layout details, build rules, or project context.\n\n",
+                "## Active Tasks\n"
+            );
+            fs::write(p_path, project_initial)?;
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

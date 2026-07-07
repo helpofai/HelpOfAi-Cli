@@ -2578,7 +2578,14 @@ impl App {
             receipt_text: None,
             receipt_started_at: None,
             tool_evidence: Vec::new(),
+        };
+        if use_memory {
+            let _ = crate::memory::initialize_memory_files_if_needed(
+                &memory_path,
+                Some(&workspace.join(".helpofai").join("memory.md")),
+            );
         }
+        app
     }
 
     fn discover_cached_skills(

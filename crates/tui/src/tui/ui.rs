@@ -8870,6 +8870,13 @@ async fn handle_view_events(
                 app.memory_path = resolved_path.clone();
                 app.needs_redraw = true;
 
+                if enabled {
+                    let _ = crate::memory::initialize_memory_files_if_needed(
+                        &resolved_path,
+                        Some(&app.workspace.join(".helpofai").join("memory.md")),
+                    );
+                }
+
                 match crate::config_persistence::persist_memory_config(
                     app.config_path.as_deref(),
                     enabled,
@@ -11016,13 +11023,25 @@ async fn version_hint_from_startup_source(
                 return version_hint_from_release_mirror_env(current).await;
             }
 
-            let body = helpofai_release::fetch_release_json_async(
+            let body = match helpofai_release::fetch_release_json_async(
                 helpofai_release::LATEST_RELEASE_URL,
                 "latest release",
             )
             .await
-            .ok()?;
-            let json: serde_json::Value = serde_json::from_str(&body).ok()?;
+            {
+                Ok(b) => b,
+                Err(err) => {
+                    tracing::warn!("startup version check failed to fetch latest release: {err}");
+                    return None;
+                }
+            };
+            let json: serde_json::Value = match serde_json::from_str(&body) {
+                Ok(j) => j,
+                Err(err) => {
+                    tracing::warn!("startup version check failed to parse release JSON: {err}");
+                    return None;
+                }
+            };
             version_hint_from_release_json(&json, current)
         }
     }
@@ -11086,7 +11105,7 @@ fn version_hint_from_latest_tag(tag: &str, current: &str) -> Option<String> {
     }
 
     Some(format!(
-        "v{latest} available - run `helpofai update` and restart"
+        "v{latest} available (current: v{current}) - run `helpofai update` or `npm install -g helpofai` and restart"
     ))
 }
 
