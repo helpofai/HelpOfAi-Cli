@@ -80,10 +80,10 @@ function executableName(base, platform) {
 
 function releaseBaseUrl(version, repo = "helpofai/HelpOfAi-Cli") {
   // HELPOFAI_RELEASE_BASE_URL is the canonical override.
-  // DEEPSEEK_TUI_RELEASE_BASE_URL / DEEPSEEK_RELEASE_BASE_URL are legacy aliases.
+  // HELPOFAI_RELEASE_BASE_URL / DEEPSEEK_RELEASE_BASE_URL are legacy aliases.
   const override =
     process.env.HELPOFAI_RELEASE_BASE_URL ||
-    process.env.DEEPSEEK_TUI_RELEASE_BASE_URL ||
+    process.env.HELPOFAI_RELEASE_BASE_URL ||
     process.env.DEEPSEEK_RELEASE_BASE_URL;
   if (override) {
     const trimmed = String(override).trim();
@@ -134,3 +134,4 @@ module.exports = {
   releaseBaseUrl,
   releaseBinaryDirectory,
 };
+

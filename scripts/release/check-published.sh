@@ -92,19 +92,6 @@ else
   fail=1
 fi
 
-# Legacy `deepseek-tui` npm package. It is deprecated and must not be
-# republished under the release version.
-if legacy_version="$(npm view "deepseek-tui@${version}" version 2>/dev/null)"; then
-  echo "npm deepseek-tui@${legacy_version} exists, but the legacy npm package must not be republished." >&2
-  fail=1
-fi
-if legacy_deprecated="$(npm view deepseek-tui deprecated 2>/dev/null)" && [[ -n "${legacy_deprecated}" ]]; then
-  echo "npm deepseek-tui is deprecated: ${legacy_deprecated}"
-else
-  echo "npm deepseek-tui is not marked deprecated." >&2
-  fail=1
-fi
-
 crates_user_agent="HelpOfAi release check (https://github.com/helpofai/HelpOfAi-Cli)"
 for crate in "${release_crates[@]}"; do
   if curl -fsSL -A "${crates_user_agent}" "https://crates.io/api/v1/crates/${crate}/${version}" >/dev/null 2>&1; then

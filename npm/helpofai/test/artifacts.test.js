@@ -74,3 +74,4 @@ test("allAssetNames includes every matrix entry", () => {
   assert.ok(assetNames.includes("helpofai.bat"));
   assert.ok(allReleaseAssetNames().includes("helpofai.bat"));
 });
+

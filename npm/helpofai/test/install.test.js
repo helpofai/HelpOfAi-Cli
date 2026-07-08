@@ -30,17 +30,17 @@ async function exists(file) {
 }
 
 async function withoutForcedDownload(callback) {
-  const previousTui = process.env.DEEPSEEK_TUI_FORCE_DOWNLOAD;
+  const previousTui = process.env.HELPOFAI_FORCE_DOWNLOAD;
   const previousLegacy = process.env.DEEPSEEK_FORCE_DOWNLOAD;
-  delete process.env.DEEPSEEK_TUI_FORCE_DOWNLOAD;
+  delete process.env.HELPOFAI_FORCE_DOWNLOAD;
   delete process.env.DEEPSEEK_FORCE_DOWNLOAD;
   try {
     return await callback();
   } finally {
     if (previousTui === undefined) {
-      delete process.env.DEEPSEEK_TUI_FORCE_DOWNLOAD;
+      delete process.env.HELPOFAI_FORCE_DOWNLOAD;
     } else {
-      process.env.DEEPSEEK_TUI_FORCE_DOWNLOAD = previousTui;
+      process.env.HELPOFAI_FORCE_DOWNLOAD = previousTui;
     }
     if (previousLegacy === undefined) {
       delete process.env.DEEPSEEK_FORCE_DOWNLOAD;
@@ -65,8 +65,8 @@ test("install script remains parseable before the Node support guard runs", () =
 });
 
 test("install failure hint explains release base override for blocked GitHub downloads", () => {
-  const previous = process.env.DEEPSEEK_TUI_RELEASE_BASE_URL;
-  delete process.env.DEEPSEEK_TUI_RELEASE_BASE_URL;
+  const previous = process.env.HELPOFAI_RELEASE_BASE_URL;
+  delete process.env.HELPOFAI_RELEASE_BASE_URL;
   try {
     const error = Object.assign(
       new Error(
@@ -77,22 +77,22 @@ test("install failure hint explains release base override for blocked GitHub dow
 
     const hint = installFailureHint(error);
 
-    assert.match(hint, /DEEPSEEK_TUI_RELEASE_BASE_URL/);
+    assert.match(hint, /HELPOFAI_RELEASE_BASE_URL/);
     assert.match(hint, /helpofai-artifacts-sha256\.txt/);
     assert.match(hint, /platform binaries/);
     assert.match(hint, /#npm-binary-download-times-out/);
   } finally {
     if (previous === undefined) {
-      delete process.env.DEEPSEEK_TUI_RELEASE_BASE_URL;
+      delete process.env.HELPOFAI_RELEASE_BASE_URL;
     } else {
-      process.env.DEEPSEEK_TUI_RELEASE_BASE_URL = previous;
+      process.env.HELPOFAI_RELEASE_BASE_URL = previous;
     }
   }
 });
 
 test("install failure hint checks configured release base when override is already set", () => {
-  const previous = process.env.DEEPSEEK_TUI_RELEASE_BASE_URL;
-  process.env.DEEPSEEK_TUI_RELEASE_BASE_URL = "https://mirror.example/deepseek/";
+  const previous = process.env.HELPOFAI_RELEASE_BASE_URL;
+  process.env.HELPOFAI_RELEASE_BASE_URL = "https://mirror.example/deepseek/";
   try {
     const error = Object.assign(new Error("download stalled"), {
       code: "EDOWNLOADTIMEOUT",
@@ -105,9 +105,9 @@ test("install failure hint checks configured release base when override is alrea
     assert.doesNotMatch(hint, /If GitHub is unavailable/);
   } finally {
     if (previous === undefined) {
-      delete process.env.DEEPSEEK_TUI_RELEASE_BASE_URL;
+      delete process.env.HELPOFAI_RELEASE_BASE_URL;
     } else {
-      process.env.DEEPSEEK_TUI_RELEASE_BASE_URL = previous;
+      process.env.HELPOFAI_RELEASE_BASE_URL = previous;
     }
   }
 });
@@ -124,17 +124,17 @@ test("glibc preflight message is HelpOfAi-branded and actionable", () => {
 
 test("glibc preflight accepts canonical and legacy skip env vars", () => {
   const previousCodewhale = process.env.HELPOFAI_SKIP_GLIBC_CHECK;
-  const previousTui = process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK;
+  const previousTui = process.env.HELPOFAI_SKIP_GLIBC_CHECK;
   const previousLegacy = process.env.DEEPSEEK_SKIP_GLIBC_CHECK;
   delete process.env.HELPOFAI_SKIP_GLIBC_CHECK;
-  delete process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK;
+  delete process.env.HELPOFAI_SKIP_GLIBC_CHECK;
   delete process.env.DEEPSEEK_SKIP_GLIBC_CHECK;
   try {
     assert.equal(glibcInternal.skipGlibcCheck(), false);
     process.env.HELPOFAI_SKIP_GLIBC_CHECK = "1";
     assert.equal(glibcInternal.skipGlibcCheck(), true);
     delete process.env.HELPOFAI_SKIP_GLIBC_CHECK;
-    process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK = "1";
+    process.env.HELPOFAI_SKIP_GLIBC_CHECK = "1";
     assert.equal(glibcInternal.skipGlibcCheck(), true);
   } finally {
     if (previousCodewhale === undefined) {
@@ -143,9 +143,9 @@ test("glibc preflight accepts canonical and legacy skip env vars", () => {
       process.env.HELPOFAI_SKIP_GLIBC_CHECK = previousCodewhale;
     }
     if (previousTui === undefined) {
-      delete process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK;
+      delete process.env.HELPOFAI_SKIP_GLIBC_CHECK;
     } else {
-      process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK = previousTui;
+      process.env.HELPOFAI_SKIP_GLIBC_CHECK = previousTui;
     }
     if (previousLegacy === undefined) {
       delete process.env.DEEPSEEK_SKIP_GLIBC_CHECK;
@@ -222,3 +222,4 @@ test("manual binaries with mismatched checksums are not adopted", async (t) => {
   assert.equal(adopted, false);
   assert.equal(await exists(`${target}.version`), false);
 });
+

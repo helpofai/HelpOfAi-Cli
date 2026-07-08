@@ -11,7 +11,7 @@ const pkg = require("../package.json");
 
 function resolveBinaryVersion() {
   const configuredVersion =
-    process.env.DEEPSEEK_TUI_VERSION ||
+    process.env.HELPOFAI_VERSION ||
     process.env.DEEPSEEK_VERSION ||
     pkg.helpofaiBinaryVersion || pkg.deepseekBinaryVersion ||
     pkg.version;
@@ -19,7 +19,7 @@ function resolveBinaryVersion() {
 }
 
 function resolveRepo() {
-  return process.env.DEEPSEEK_TUI_GITHUB_REPO || process.env.DEEPSEEK_GITHUB_REPO || "helpofai/HelpOfAi-Cli";
+  return process.env.HELPOFAI_GITHUB_REPO || process.env.DEEPSEEK_GITHUB_REPO || "helpofai/HelpOfAi-Cli";
 }
 
 function requestStatus(url, method = "HEAD", redirects = 0) {
@@ -138,3 +138,4 @@ run().catch((error) => {
   console.error("Release asset verification failed:", error.message);
   process.exit(1);
 });
+

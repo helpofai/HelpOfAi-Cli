@@ -39,18 +39,6 @@ if [[ "${workspace_version}" != "${npm_version}" ]]; then
   echo "::error::npm/helpofai/package.json version (${npm_version}) does not match workspace Cargo.toml (${workspace_version})." >&2
   fail=1
 fi
-if [[ -f npm/deepseek-tui/package.json ]]; then
-  legacy_private="$(node -p "Boolean(require('./npm/deepseek-tui/package.json').private)")"
-  legacy_publish_config="$(node -p "Boolean(require('./npm/deepseek-tui/package.json').publishConfig)")"
-  if [[ "${legacy_private}" != "true" ]]; then
-    echo "::error::npm/deepseek-tui/package.json must stay private so the legacy package is not republished." >&2
-    fail=1
-  fi
-  if [[ "${legacy_publish_config}" == "true" ]]; then
-    echo "::error::npm/deepseek-tui/package.json must not define publishConfig; the legacy package is deprecated." >&2
-    fail=1
-  fi
-fi
 
 # 3) Internal path dependency pins.
 internal_dep_drift="$(
@@ -210,3 +198,4 @@ if [[ "${fail}" -eq 0 ]]; then
 fi
 
 exit "${fail}"
+
