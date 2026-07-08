@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.69] - 2026-07-08
+
+### Changed
+
+- **Clean Up**: Completely removed legacy `deepseek-tui` npm package and environment variable shims in favor of the canonical `helpofai` equivalents.
+
 ## [0.8.68] - 2026-07-07
 
 ### Fixed
@@ -2241,3 +2247,4 @@ Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md]
 [0.8.42]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.41...v0.8.42
 [0.8.41]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.40...v0.8.41
 [0.8.40]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.39...v0.8.40
+
