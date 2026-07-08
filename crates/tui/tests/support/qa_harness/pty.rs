@@ -131,9 +131,11 @@ impl<'a> PtySessionBuilder<'a> {
 
         let buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let buf_thread = Arc::clone(&buffer);
+        let (rows, cols) = (self.rows, self.cols);
         let reader_handle = thread::Builder::new()
             .name("qa-pty-reader".into())
             .spawn(move || {
+                let cpr_response = format!("\x1b[{};{}R", rows, cols);
                 let mut chunk = [0u8; 8192];
                 loop {
                     match reader.read(&mut chunk) {
@@ -145,7 +147,7 @@ impl<'a> PtySessionBuilder<'a> {
                                 // for terminal::size(). The vt parser doesn't answer, so we intercept
                                 // and answer with the configured PTY size (40 rows, 120 cols).
                                 if let Ok(mut w) = reader_writer.lock() {
-                                    let _ = w.write_all(b"\x1b[40;120R");
+                                    let _ = w.write_all(cpr_response.as_bytes());
                                     let _ = w.flush();
                                 }
                             }
