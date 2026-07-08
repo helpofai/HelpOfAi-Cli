@@ -82,8 +82,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # or the NSIS installer from GitHub Releases
 
 # CNB mirror for users who cannot reliably reach GitHub
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.62 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.62 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.69 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.69 helpofai-tui --locked --force
 
 # Legacy Homebrew compatibility while the formula is renamed
 brew tap helpofai/HelpOfAi-Cli
@@ -289,3 +289,5 @@ HelpOfAi exists because of the people who use it, break it, and fix it.
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/chart?repos=helpofai/HelpOfAi-Cli&type=date&legend=top-left)](https://www.star-history.com/?repos=helpofai%2FHelpOfAi&type=date&logscale=&legend=top-left)
+
+

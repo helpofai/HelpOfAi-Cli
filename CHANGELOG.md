@@ -2248,3 +2248,5 @@ Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md]
 [0.8.41]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.40...v0.8.41
 [0.8.40]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.39...v0.8.40
 
+
+
