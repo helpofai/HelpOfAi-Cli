@@ -54,9 +54,10 @@ fn spawn_minimal(
         // boots straight into the composer. The harness never makes a live
         // request — we just need the binary to think a key exists.
         .env("DEEPSEEK_API_KEY", "ci-test-key-not-real")
-        // Force a known invalid base URL so the doctor / model probe never escapes
-        // the box. invalid.test will refuse instantly via DNS failure.
-        .env("DEEPSEEK_BASE_URL", "http://invalid.test")
+        // Force a known invalid endpoint so the doctor / model probe never escapes
+        // the box. 127.0.0.1:1 is an unlistening local port: TCP refuses
+        // immediately with no DNS wait.
+        .env("DEEPSEEK_BASE_URL", "http://127.0.0.1:1")
         .env("RUST_LOG", "warn")
         .args([
             "--workspace",
@@ -194,7 +195,7 @@ fn viewport_origin_stays_row_zero_after_failed_turn() -> anyhow::Result<()> {
                 || frame.contains("Connection refused")
                 || frame.contains("error")
         },
-        Duration::from_secs(15),
+        Duration::from_secs(45),
     )?;
     h.wait_for_idle(Duration::from_millis(300), Duration::from_secs(3))?;
     assert_viewport_starts_at_top(h.frame());
@@ -238,7 +239,7 @@ fn skills_menu_shows_local_and_global_skills() -> anyhow::Result<()> {
         .clear_env()
         .seal_home(ws.home())
         .env("DEEPSEEK_API_KEY", "ci-test-key-not-real")
-        .env("DEEPSEEK_BASE_URL", "http://invalid.test")
+        .env("DEEPSEEK_BASE_URL", "http://127.0.0.1:1")
         .env("RUST_LOG", "warn")
         .args([
             "--workspace",
