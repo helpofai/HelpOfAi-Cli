@@ -5369,6 +5369,7 @@ pub(crate) fn apply_engine_error_to_app(
         envelope.category,
         crate::error_taxonomy::ErrorCategory::Authentication
     ) && app.api_key_env_only
+        && !app.skip_onboarding
     {
         app.offline_mode = true;
         app.onboarding_needs_api_key = true;

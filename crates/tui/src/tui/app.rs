@@ -1644,6 +1644,7 @@ pub struct App {
     pub theme_id: palette::ThemeId,
     // Onboarding
     pub onboarding: OnboardingState,
+    pub skip_onboarding: bool,
     pub onboarding_needs_api_key: bool,
     pub onboarding_workspace_trust_gate: bool,
     pub api_key_env_only: bool,
@@ -2449,6 +2450,7 @@ impl App {
             ui_theme,
             theme_id,
             onboarding,
+            skip_onboarding,
             onboarding_needs_api_key: needs_api_key,
             onboarding_workspace_trust_gate,
             api_key_env_only,

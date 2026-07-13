@@ -194,7 +194,7 @@ fn viewport_origin_stays_row_zero_after_failed_turn() -> anyhow::Result<()> {
                 || frame.contains("Connection refused")
                 || frame.contains("error")
         },
-        Duration::from_secs(45),
+        Duration::from_secs(15),
     )?;
     h.wait_for_idle(Duration::from_millis(300), Duration::from_secs(3))?;
     assert_viewport_starts_at_top(h.frame());
