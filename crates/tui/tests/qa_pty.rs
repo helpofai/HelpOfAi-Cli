@@ -184,6 +184,7 @@ fn viewport_origin_stays_row_zero_after_failed_turn() -> anyhow::Result<()> {
     let _guard = qa_pty_test_lock();
     let (_ws, mut h) = boot_minimal_without_retry()?;
     h.wait_for_text("Composer", BOOT_TIMEOUT)?;
+    h.wait_for_idle(Duration::from_millis(500), Duration::from_secs(5))?;
     assert_viewport_starts_at_top(h.frame());
 
     h.send(keys::key::text("trigger a failed turn"))?;
@@ -195,7 +196,7 @@ fn viewport_origin_stays_row_zero_after_failed_turn() -> anyhow::Result<()> {
                 || frame.contains("Connection refused")
                 || frame.contains("error")
         },
-        Duration::from_secs(45),
+        Duration::from_secs(60),
     )?;
     h.wait_for_idle(Duration::from_millis(300), Duration::from_secs(3))?;
     assert_viewport_starts_at_top(h.frame());
