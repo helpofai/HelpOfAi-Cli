@@ -3024,7 +3024,9 @@ impl Config {
             return Ok(value);
         }
 
-        if base_url_uses_local_host(&self.deepseek_base_url()) {
+        if base_url_uses_local_host(&self.deepseek_base_url())
+            && !matches!(provider, ApiProvider::Omniroute)
+        {
             return Ok(String::new());
         }
 
