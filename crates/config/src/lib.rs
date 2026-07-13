@@ -131,6 +131,11 @@ const DEFAULT_DEEPINFRA_MODEL: &str = "deepseek-ai/DeepSeek-V4-Pro";
 const DEFAULT_DEEPINFRA_FLASH_MODEL: &str = "deepseek-ai/DeepSeek-V4-Flash";
 const DEFAULT_DEEPINFRA_BASE_URL: &str = "https://api.deepinfra.com/v1/openai";
 
+// OmniRoute free AI gateway (https://omniroute.online) defaults.
+// Local-first: the gateway serves OpenAI-compatible `/v1` on this port.
+const DEFAULT_OMNIROUTE_MODEL: &str = "auto";
+const DEFAULT_OMNIROUTE_BASE_URL: &str = "http://localhost:20128/v1";
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum ProviderKind {
@@ -202,10 +207,12 @@ pub enum ProviderKind {
     Minimax,
     #[serde(alias = "deep-infra", alias = "deep_infra")]
     Deepinfra,
+    #[serde(alias = "omni-route", alias = "omni_route", alias = "omnirouteroute")]
+    Omniroute,
 }
 
 impl ProviderKind {
-    pub const ALL: [Self; 25] = [
+    pub const ALL: [Self; 26] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -231,6 +238,7 @@ impl ProviderKind {
         Self::Stepfun,
         Self::Minimax,
         Self::Deepinfra,
+        Self::Omniroute,
     ];
 
     #[must_use]
@@ -359,6 +367,13 @@ pub struct ProvidersToml {
     pub minimax: ProviderConfigToml,
     #[serde(default, alias = "deep-infra", alias = "deep_infra")]
     pub deepinfra: ProviderConfigToml,
+    #[serde(
+        default,
+        alias = "omni-route",
+        alias = "omni_route",
+        alias = "omnirouteroute"
+    )]
+    pub omniroute: ProviderConfigToml,
 }
 
 /// Sibling `permissions.toml` schema.
@@ -414,6 +429,7 @@ impl ProvidersToml {
             ProviderKind::Stepfun => &self.stepfun,
             ProviderKind::Minimax => &self.minimax,
             ProviderKind::Deepinfra => &self.deepinfra,
+            ProviderKind::Omniroute => &self.omniroute,
         }
     }
 
@@ -444,6 +460,7 @@ impl ProvidersToml {
             ProviderKind::Stepfun => &mut self.stepfun,
             ProviderKind::Minimax => &mut self.minimax,
             ProviderKind::Deepinfra => &mut self.deepinfra,
+            ProviderKind::Omniroute => &mut self.omniroute,
         }
     }
 }
@@ -1938,6 +1955,7 @@ impl ConfigToml {
                 ProviderKind::Stepfun => DEFAULT_STEPFUN_BASE_URL.to_string(),
                 ProviderKind::Minimax => DEFAULT_MINIMAX_BASE_URL.to_string(),
                 ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL.to_string(),
+                ProviderKind::Omniroute => DEFAULT_OMNIROUTE_BASE_URL.to_string(),
             })
         };
         // CLI flag wins outright. Otherwise: config-file → injected secrets/env.
@@ -2486,6 +2504,7 @@ fn default_model_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::Stepfun => DEFAULT_STEPFUN_MODEL,
         ProviderKind::Minimax => DEFAULT_MINIMAX_MODEL,
         ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_MODEL,
+        ProviderKind::Omniroute => DEFAULT_OMNIROUTE_MODEL,
     }
 }
 
@@ -2516,6 +2535,7 @@ fn default_base_url_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::Stepfun => DEFAULT_STEPFUN_BASE_URL,
         ProviderKind::Minimax => DEFAULT_MINIMAX_BASE_URL,
         ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL,
+        ProviderKind::Omniroute => DEFAULT_OMNIROUTE_BASE_URL,
     }
 }
 
@@ -3599,6 +3619,8 @@ struct EnvRuntimeOverrides {
     minimax_model: Option<String>,
     deepinfra_base_url: Option<String>,
     deepinfra_model: Option<String>,
+    omniroute_base_url: Option<String>,
+    omniroute_model: Option<String>,
 }
 
 impl EnvRuntimeOverrides {
@@ -3798,6 +3820,12 @@ impl EnvRuntimeOverrides {
             deepinfra_model: std::env::var("DEEPINFRA_MODEL")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
+            omniroute_base_url: std::env::var("OMNIROUTE_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            omniroute_model: std::env::var("OMNIROUTE_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
         }
     }
 
@@ -3845,6 +3873,7 @@ impl EnvRuntimeOverrides {
             ProviderKind::Stepfun => self.stepfun_base_url.clone(),
             ProviderKind::Minimax => self.minimax_base_url.clone(),
             ProviderKind::Deepinfra => self.deepinfra_base_url.clone(),
+            ProviderKind::Omniroute => self.omniroute_base_url.clone(),
         }
     }
 
@@ -3869,6 +3898,7 @@ impl EnvRuntimeOverrides {
             ProviderKind::Stepfun => self.stepfun_model.clone(),
             ProviderKind::Minimax => self.minimax_model.clone(),
             ProviderKind::Deepinfra => self.deepinfra_model.clone(),
+            ProviderKind::Omniroute => self.omniroute_model.clone(),
             _ => None,
         }?;
 

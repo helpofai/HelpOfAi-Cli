@@ -181,6 +181,8 @@ pub const ZAI_GLM_5_TURBO_MODEL: &str = "GLM-5-Turbo";
 pub const DEFAULT_ZAI_BASE_URL: &str = "https://api.z.ai/api/coding/paas/v4";
 pub const DEFAULT_STEPFUN_MODEL: &str = "step-3.7-flash";
 pub const DEFAULT_STEPFUN_BASE_URL: &str = "https://api.stepfun.ai/v1";
+pub const DEFAULT_OMNIROUTE_MODEL: &str = "auto";
+pub const DEFAULT_OMNIROUTE_BASE_URL: &str = "http://localhost:20128/v1";
 pub const DEFAULT_ANTHROPIC_MODEL: &str = "claude-sonnet-4-6";
 pub const ANTHROPIC_OPUS_MODEL: &str = "claude-opus-4-8";
 pub const ANTHROPIC_HAIKU_MODEL: &str = "claude-haiku-4-5";
@@ -224,6 +226,7 @@ pub enum ApiProvider {
     Stepfun,
     Minimax,
     Deepinfra,
+    Omniroute,
 }
 
 impl ApiProvider {
@@ -328,7 +331,7 @@ impl ApiProvider {
 
     /// `ApiProvider` discriminant → `ProviderKind` lookup.
     /// Index 1 is `None` for the legacy `DeepseekCN` variant.
-    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 26] = [
+    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 27] = [
         Some(helpofai_config::ProviderKind::Deepseek),
         None, // DeepseekCN
         Some(helpofai_config::ProviderKind::NvidiaNim),
@@ -355,10 +358,11 @@ impl ApiProvider {
         Some(helpofai_config::ProviderKind::Stepfun),
         Some(helpofai_config::ProviderKind::Minimax),
         Some(helpofai_config::ProviderKind::Deepinfra),
+        Some(helpofai_config::ProviderKind::Omniroute),
     ];
 
     /// `ProviderKind` discriminant → `ApiProvider` lookup.
-    const FROM_KIND_LOOKUP: [Self; 25] = [
+    const FROM_KIND_LOOKUP: [Self; 26] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -384,6 +388,7 @@ impl ApiProvider {
         Self::Stepfun,
         Self::Minimax,
         Self::Deepinfra,
+        Self::Omniroute,
     ];
 
     /// Map to the config-level `ProviderKind`.
@@ -500,6 +505,25 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
     // resolves context windows, output limits, and thinking support from
     // models.rs lookups.  Ollama also falls through to model-based lookups
     // with 8192 as the last-resort fallback instead of a hardcoded floor.
+    if matches!(provider, ApiProvider::Omniroute) {
+        // OmniRoute is a 237-provider gateway that accepts arbitrary model
+        // routing instructions verbatim: `auto`, `auto/coding`, `cc/claude-...`,
+        // `glm/glm-5.1`, etc. It speaks OpenAI chat completions and
+        // transcodes upstream, so treat it as chat-completions and let the
+        // gateway resolve the real upstream model + thinking support.
+        return ProviderCapability {
+            provider,
+            resolved_model: resolved_model.to_string(),
+            context_window: crate::models::context_window_for_model(resolved_model)
+                .unwrap_or(200_000),
+            max_output: crate::models::max_output_tokens_for_model(resolved_model).unwrap_or(8192),
+            thinking_supported: true,
+            cache_telemetry_supported: false,
+            request_payload_mode: RequestPayloadMode::ChatCompletions,
+            alias_deprecation: None,
+        };
+    }
+
     if matches!(provider, ApiProvider::XiaomiMimo) {
         return ProviderCapability {
             provider,
@@ -1093,6 +1117,7 @@ pub fn model_completion_names_for_provider(provider: ApiProvider) -> Vec<&'stati
             vec![DEFAULT_HUGGINGFACE_MODEL, DEFAULT_HUGGINGFACE_FLASH_MODEL]
         }
         ApiProvider::Deepinfra => vec![DEFAULT_DEEPINFRA_MODEL, DEFAULT_DEEPINFRA_FLASH_MODEL],
+        ApiProvider::Omniroute => Vec::new(),
         ApiProvider::WanjieArk => {
             vec![
                 DEFAULT_WANJIE_ARK_MODEL,
@@ -2317,6 +2342,13 @@ pub struct ProvidersConfig {
     pub huggingface: ProviderConfig,
     #[serde(default, alias = "deep-infra", alias = "deep_infra")]
     pub deepinfra: ProviderConfig,
+    #[serde(
+        default,
+        alias = "omni-route",
+        alias = "omni_route",
+        alias = "omnirouteroute"
+    )]
+    pub omniroute: ProviderConfig,
     #[serde(default, alias = "together-ai")]
     pub together: ProviderConfig,
     #[serde(
@@ -2608,6 +2640,7 @@ impl Config {
             ApiProvider::Volcengine => &providers.volcengine,
             ApiProvider::Huggingface => &providers.huggingface,
             ApiProvider::Deepinfra => &providers.deepinfra,
+            ApiProvider::Omniroute => &providers.omniroute,
             ApiProvider::Together => &providers.together,
             ApiProvider::OpenaiCodex => &providers.openai_codex,
             ApiProvider::Anthropic => &providers.anthropic,
@@ -2640,6 +2673,7 @@ impl Config {
             ApiProvider::Volcengine => &mut providers.volcengine,
             ApiProvider::Huggingface => &mut providers.huggingface,
             ApiProvider::Deepinfra => &mut providers.deepinfra,
+            ApiProvider::Omniroute => &mut providers.omniroute,
             ApiProvider::Together => &mut providers.together,
             ApiProvider::OpenaiCodex => &mut providers.openai_codex,
             ApiProvider::Anthropic => &mut providers.anthropic,
@@ -2787,6 +2821,7 @@ impl Config {
             ApiProvider::Volcengine => DEFAULT_VOLCENGINE_MODEL,
             ApiProvider::Huggingface => DEFAULT_HUGGINGFACE_MODEL,
             ApiProvider::Deepinfra => DEFAULT_DEEPINFRA_MODEL,
+            ApiProvider::Omniroute => DEFAULT_OMNIROUTE_MODEL,
             ApiProvider::Together => DEFAULT_TOGETHER_MODEL,
             ApiProvider::OpenaiCodex => DEFAULT_OPENAI_CODEX_MODEL,
             ApiProvider::Zai => DEFAULT_ZAI_MODEL,
@@ -2836,7 +2871,8 @@ impl Config {
             | ApiProvider::OpenaiCodex
             | ApiProvider::Zai
             | ApiProvider::Stepfun
-            | ApiProvider::Minimax => None,
+            | ApiProvider::Minimax
+            | ApiProvider::Omniroute => None,
         };
         let configured_base_url = provider_base.or(root_base);
         let base = if provider == ApiProvider::XiaomiMimo {
@@ -2884,6 +2920,7 @@ impl Config {
                         ApiProvider::Volcengine => DEFAULT_VOLCENGINE_BASE_URL,
                         ApiProvider::Huggingface => DEFAULT_HUGGINGFACE_BASE_URL,
                         ApiProvider::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL,
+                        ApiProvider::Omniroute => DEFAULT_OMNIROUTE_BASE_URL,
                         ApiProvider::Together => DEFAULT_TOGETHER_BASE_URL,
                         ApiProvider::OpenaiCodex => DEFAULT_OPENAI_CODEX_BASE_URL,
                         ApiProvider::Zai => DEFAULT_ZAI_BASE_URL,
@@ -3954,6 +3991,13 @@ fn apply_env_overrides(config: &mut Config) {
                     .deepinfra
                     .base_url = Some(value);
             }
+            ApiProvider::Omniroute => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .omniroute
+                    .base_url = Some(value);
+            }
             ApiProvider::Together => {
                 config
                     .providers
@@ -4194,6 +4238,7 @@ fn apply_env_overrides(config: &mut Config) {
             ApiProvider::Volcengine => &mut providers.volcengine,
             ApiProvider::Huggingface => &mut providers.huggingface,
             ApiProvider::Deepinfra => &mut providers.deepinfra,
+            ApiProvider::Omniroute => &mut providers.omniroute,
             ApiProvider::Together => &mut providers.together,
             ApiProvider::OpenaiCodex => &mut providers.openai_codex,
             ApiProvider::Anthropic => &mut providers.anthropic,
@@ -4393,6 +4438,7 @@ fn apply_env_overrides(config: &mut Config) {
                 ApiProvider::Volcengine => &mut providers.volcengine,
                 ApiProvider::Huggingface => &mut providers.huggingface,
                 ApiProvider::Deepinfra => &mut providers.deepinfra,
+                ApiProvider::Omniroute => &mut providers.omniroute,
                 ApiProvider::Together => &mut providers.together,
                 ApiProvider::OpenaiCodex => &mut providers.openai_codex,
                 ApiProvider::Anthropic => &mut providers.anthropic,
@@ -4598,6 +4644,7 @@ pub(crate) fn provider_passes_model_through(provider: ApiProvider) -> bool {
             | ApiProvider::Moonshot
             | ApiProvider::Ollama
             | ApiProvider::Huggingface
+            | ApiProvider::Omniroute
     )
 }
 
@@ -5112,6 +5159,7 @@ fn merge_providers(
             zai: merge_provider_config(base.zai, override_cfg.zai),
             stepfun: merge_provider_config(base.stepfun, override_cfg.stepfun),
             minimax: merge_provider_config(base.minimax, override_cfg.minimax),
+            omniroute: merge_provider_config(base.omniroute, override_cfg.omniroute),
         }),
     }
 }
@@ -9403,6 +9451,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
 
     #[test]
     fn direct_provider_ignores_foreign_deepseek_root_default_model() {
+        let _lock = lock_test_env();
         let config = Config {
             provider: Some("zai".to_string()),
             default_text_model: Some(DEFAULT_TEXT_MODEL.to_string()),
@@ -12269,5 +12318,66 @@ model = "deepseek-ai/deepseek-v4-pro"
         assert_eq!(config.deepseek_base_url(), "https://short-hf.example/v1");
         assert_eq!(config.default_model(), "org/short-model");
         Ok(())
+    }
+
+    #[test]
+    fn omniroute_passes_model_through() {
+        // OmniRoute is a 237-provider gateway: model strings are routing
+        // instructions (`auto`, `auto/coding`, `cc/claude-...`, `glm/glm-5.1`)
+        // and must reach the gateway verbatim.
+        assert!(provider_passes_model_through(ApiProvider::Omniroute));
+    }
+
+    #[test]
+    fn omniroute_provider_consistency_with_config_crate() {
+        use helpofai_config::ProviderKind;
+        // The TUI mirror must stay aligned with the config-crate source
+        // of truth: same discriminants, both directions.
+        assert_eq!(ApiProvider::Omniroute.kind(), Some(ProviderKind::Omniroute));
+        assert_eq!(
+            ApiProvider::from_kind(ProviderKind::Omniroute),
+            ApiProvider::Omniroute
+        );
+        assert_eq!(
+            ApiProvider::parse("omniroute"),
+            Some(ApiProvider::Omniroute)
+        );
+        assert_eq!(
+            ApiProvider::parse("omni-route"),
+            Some(ApiProvider::Omniroute)
+        );
+    }
+
+    #[test]
+    fn omniroute_capability_is_chat_completions_with_thinking() {
+        // The gateway speaks OpenAI chat completions and transcodes upstream,
+        // so HelpOfAi always uses the chat-completions dialect and lets
+        // OmniRoute resolve the real upstream model + reasoning support.
+        let auto = provider_capability(ApiProvider::Omniroute, "auto");
+        assert_eq!(
+            auto.request_payload_mode,
+            RequestPayloadMode::ChatCompletions
+        );
+        assert!(auto.thinking_supported);
+        assert!(!auto.cache_telemetry_supported);
+
+        // A concrete upstream route is still chat-completions and reasoning-aware.
+        let upstream = provider_capability(ApiProvider::Omniroute, "cc/claude-opus-4-7");
+        assert_eq!(
+            upstream.request_payload_mode,
+            RequestPayloadMode::ChatCompletions
+        );
+        assert!(upstream.thinking_supported);
+        assert!(upstream.context_window >= 200_000);
+    }
+
+    #[test]
+    fn omniroute_defaults_point_at_local_gateway() {
+        // Local-first: the gateway serves OpenAI-compatible `/v1` on this
+        // port, and the default model is the smart `auto` router.
+        let provider = ApiProvider::Omniroute.metadata().expect("registered");
+        assert_eq!(provider.default_base_url(), "http://localhost:20128/v1");
+        assert_eq!(provider.default_model(), "auto");
+        assert!(provider.env_vars().contains(&"OMNIROUTE_API_KEY"));
     }
 }

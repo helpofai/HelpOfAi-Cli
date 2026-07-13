@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.70] - 2026-07-13
+
+### Added
+
+- **OmniRoute provider**: Registered the OmniRoute free AI gateway
+  (`http://localhost:20128/v1`) as a first-class provider so
+  HelpOfAi/cli can route through its 237-provider catalog from one
+  endpoint. Defaults to the local gateway and the smart `auto` router.
+- **Gateway model passthrough**: OmniRoute is a model-passthrough
+  provider, so routing instructions reach the gateway verbatim —
+  `auto`, `auto/coding`, `auto/cheap`, `cc/claude-opus-4-7`,
+  `glm/glm-5.1`, etc. The `/model` picker is populated from
+  OmniRoute's own `/v1/models` catalog via the existing discovery path.
+- **Reasoning + chat-completions dialect**: OmniRoute speaks
+  OpenAI chat completions and transcodes upstream, so HelpOfAi
+  always uses the chat-completions dialect while the gateway resolves
+  the real upstream model and its thinking/reasoning support.
+
+### Fixed
+
+- **OmniRoute build + test stabilization**: Completed the `ApiProvider::Omniroute`
+  wiring (default model/base-url constants, `ProvidersConfig` merge, and
+  reasoning-effort match arms) so the provider compiles, and stabilized four TUI
+  tests against environment-specific state (Windows `\\?\` path prefix, CRLF
+  prompt line endings, and `auto_model` isolation from local settings).
+
 ## [0.8.69] - 2026-07-08
 
 ### Changed
@@ -2224,6 +2250,7 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
 [Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.62...HEAD
+[0.8.70]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.69...v0.8.70
 [0.8.62]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.61...v0.8.62
 [0.8.61]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.60...v0.8.61
 [0.8.60]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.59...v0.8.60

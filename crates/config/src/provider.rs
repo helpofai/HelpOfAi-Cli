@@ -12,12 +12,13 @@ use super::{
     DEFAULT_MINIMAX_BASE_URL, DEFAULT_MINIMAX_MODEL, DEFAULT_MOONSHOT_BASE_URL,
     DEFAULT_MOONSHOT_MODEL, DEFAULT_NOVITA_BASE_URL, DEFAULT_NOVITA_MODEL,
     DEFAULT_NVIDIA_NIM_BASE_URL, DEFAULT_NVIDIA_NIM_MODEL, DEFAULT_OLLAMA_BASE_URL,
-    DEFAULT_OLLAMA_MODEL, DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_CODEX_BASE_URL,
-    DEFAULT_OPENAI_CODEX_MODEL, DEFAULT_OPENAI_MODEL, DEFAULT_OPENROUTER_BASE_URL,
-    DEFAULT_OPENROUTER_MODEL, DEFAULT_SGLANG_BASE_URL, DEFAULT_SGLANG_MODEL,
-    DEFAULT_SILICONFLOW_BASE_URL, DEFAULT_SILICONFLOW_CN_BASE_URL, DEFAULT_SILICONFLOW_MODEL,
-    DEFAULT_STEPFUN_BASE_URL, DEFAULT_STEPFUN_MODEL, DEFAULT_TOGETHER_BASE_URL,
-    DEFAULT_TOGETHER_MODEL, DEFAULT_VLLM_BASE_URL, DEFAULT_VLLM_MODEL, DEFAULT_VOLCENGINE_BASE_URL,
+    DEFAULT_OLLAMA_MODEL, DEFAULT_OMNIROUTE_BASE_URL, DEFAULT_OMNIROUTE_MODEL,
+    DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_CODEX_BASE_URL, DEFAULT_OPENAI_CODEX_MODEL,
+    DEFAULT_OPENAI_MODEL, DEFAULT_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_MODEL,
+    DEFAULT_SGLANG_BASE_URL, DEFAULT_SGLANG_MODEL, DEFAULT_SILICONFLOW_BASE_URL,
+    DEFAULT_SILICONFLOW_CN_BASE_URL, DEFAULT_SILICONFLOW_MODEL, DEFAULT_STEPFUN_BASE_URL,
+    DEFAULT_STEPFUN_MODEL, DEFAULT_TOGETHER_BASE_URL, DEFAULT_TOGETHER_MODEL,
+    DEFAULT_VLLM_BASE_URL, DEFAULT_VLLM_MODEL, DEFAULT_VOLCENGINE_BASE_URL,
     DEFAULT_VOLCENGINE_MODEL, DEFAULT_WANJIE_ARK_BASE_URL, DEFAULT_WANJIE_ARK_MODEL,
     DEFAULT_XIAOMI_MIMO_BASE_URL, DEFAULT_XIAOMI_MIMO_MODEL, DEFAULT_ZAI_BASE_URL,
     DEFAULT_ZAI_MODEL, ProviderKind,
@@ -485,6 +486,18 @@ provider!(
     aliases: ["deep-infra", "deep_infra"]
 );
 
+provider!(
+    Omniroute,
+    Omniroute,
+    "omniroute",
+    "OmniRoute",
+    DEFAULT_OMNIROUTE_BASE_URL,
+    DEFAULT_OMNIROUTE_MODEL,
+    ["OMNIROUTE_API_KEY"],
+    "omniroute",
+    aliases: ["omni-route", "omni_route", "omnirouteroute", "omnirouter"]
+);
+
 static DEEPSEEK: Deepseek = Deepseek;
 static NVIDIA_NIM: NvidiaNim = NvidiaNim;
 static OPENAI: Openai = Openai;
@@ -510,8 +523,9 @@ static ZAI: Zai = Zai;
 static STEPFUN: Stepfun = Stepfun;
 static MINIMAX: Minimax = Minimax;
 static DEEPINFRA: Deepinfra = Deepinfra;
+static OMNIROUTE: Omniroute = Omniroute;
 
-static PROVIDER_REGISTRY: [&dyn Provider; 25] = [
+static PROVIDER_REGISTRY: [&dyn Provider; 26] = [
     &DEEPSEEK,
     &NVIDIA_NIM,
     &OPENAI,
@@ -537,6 +551,7 @@ static PROVIDER_REGISTRY: [&dyn Provider; 25] = [
     &STEPFUN,
     &MINIMAX,
     &DEEPINFRA,
+    &OMNIROUTE,
 ];
 
 /// Return all built-in provider metadata entries in `ProviderKind::ALL` order.
@@ -681,5 +696,36 @@ mod tests {
             "Anthropic",
             "alphabetical display order should lead with Anthropic"
         );
+    }
+
+    #[test]
+    fn omniroute_is_registered_and_parseable() {
+        // OmniRoute is registered in the registry and resolves from its
+        // canonical id and documented aliases.
+        let provider = provider_for_kind(ProviderKind::Omniroute);
+        assert_eq!(provider.id(), "omniroute");
+        assert_eq!(provider.display_name(), "OmniRoute");
+        assert_eq!(provider.default_base_url(), "http://localhost:20128/v1");
+        assert_eq!(provider.default_model(), "auto");
+        assert_eq!(provider.wire(), WireFormat::ChatCompletions);
+        assert!(provider.env_vars().contains(&"OMNIROUTE_API_KEY"));
+
+        // Parse by id and aliases.
+        for id in ["omniroute", "omni-route", "omni_route", "omnirouteroute"] {
+            let parsed = ProviderKind::parse(id).expect("omniroute should parse");
+            assert_eq!(parsed, ProviderKind::Omniroute);
+        }
+        // resolve_provider walks the registry by id/alias.
+        assert!(resolve_provider("omniroute").is_some());
+    }
+
+    #[test]
+    fn omniroute_appears_in_display_and_registry_counts() {
+        // No provider dropped/duplicated by the sort, and the registry
+        // length stays in lockstep with ProviderKind::ALL.
+        let display = providers_sorted_for_display();
+        assert_eq!(display.len(), all_providers().len());
+        assert!(display.iter().any(|p| p.kind() == ProviderKind::Omniroute));
+        assert_eq!(ProviderKind::ALL.len(), all_providers().len());
     }
 }

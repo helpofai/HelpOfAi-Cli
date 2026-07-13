@@ -852,7 +852,15 @@ fn join_relative_components(base: &Path, relative: &[&str]) -> PathBuf {
 }
 
 fn canonicalize_workspace_or_keep(workspace: &Path) -> PathBuf {
-    fs::canonicalize(workspace).unwrap_or_else(|_| workspace.to_path_buf())
+    let canon = fs::canonicalize(workspace).unwrap_or_else(|_| workspace.to_path_buf());
+    // On Windows `fs::canonicalize` returns a verbatim `\\?\C:\...` path. Strip
+    // that prefix so resolved paths stay comparable with the non-prefixed paths
+    // tests and external tooling construct (e.g. `source_path`).
+    let canon_str = canon.to_string_lossy();
+    match canon_str.strip_prefix(r"\\?\") {
+        Some(stripped) => PathBuf::from(stripped),
+        None => canon,
+    }
 }
 
 fn project_context_parent_search_stop_dir() -> Option<PathBuf> {

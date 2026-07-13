@@ -2830,6 +2830,11 @@ mod tests {
         // rather than enumerating AGENTS.md / CLAUDE.md by name. Verify the
         // scope-nesting stance survives.
         let prompt = compose_prompt(Personality::Calm);
+        // `constitution.md` is embedded verbatim via `include_str!`; on checkouts
+        // with CRLF line endings (e.g. `core.autocrlf` on Windows) the prose
+        // spans `in\r\nscope`. Normalize before asserting so the check is
+        // line-ending-agnostic.
+        let prompt = prompt.replace("\r\n", "\n");
         assert!(prompt.contains("then project instructions"));
         assert!(
             prompt.contains("the nearest in\nscope winning over the broader")

@@ -2380,7 +2380,10 @@ fn media_file_mentions_point_to_attach_instead_of_inlining_bytes() {
 #[tokio::test]
 async fn model_change_update_syncs_engine_model_before_compaction() {
     let mut app = create_test_app();
-    app.model = "deepseek-v4-flash".to_string();
+    // Set a concrete model via the proper API so `auto_model` is cleared;
+    // a direct `app.model = ...` assignment leaves `auto_model` inherited
+    // from local settings, which would resolve to the auto default instead.
+    app.set_model_selection("deepseek-v4-flash".to_string());
     let compaction = app.compaction_config();
     let mut engine = crate::core::engine::mock_engine_handle();
 
