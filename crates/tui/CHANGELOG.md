@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.71] - 2026-07-13
+
+### Fixed
+
+- **OmniRoute localhost auth**: The CLI was sending an empty API key to
+  `http://localhost:20128` because the localhost shortcut in
+  `deepseek_api_key()` applied to every provider. OmniRoute is a gateway
+  that requires its own token even on localhost; the shortcut now skips
+  `ApiProvider::Omniroute` so the configured gateway key reaches the
+  server.
+- **qa_pty failed-turn flakiness**: The viewport-origin test used
+  `http://invalid.test`, whose DNS timeout exceeded the wait window on
+  Windows. Replaced with `127.0.0.1:1`, an unlistening local port that
+  refuses instantly with no DNS wait.
+
 ## [0.8.70] - 2026-07-13
 
 ### Added
