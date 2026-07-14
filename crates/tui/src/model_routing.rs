@@ -630,7 +630,7 @@ async fn auto_route_inventory_recommendation(
     selected_thinking_mode: &str,
 ) -> Result<Option<InventoryAutoRouteRecommendation>> {
     let mut router_config = config.clone();
-    router_config.provider = Some(ApiProvider::Deepseek.as_str().to_string());
+    router_config.provider = Some(inventory.router_provider.as_str().to_string());
     router_config.default_text_model = Some(inventory.router_model.to_string());
 
     let client = DeepSeekClient::new(&router_config)?;

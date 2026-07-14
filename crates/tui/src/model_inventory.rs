@@ -107,11 +107,18 @@ impl ModelInventory {
             }
         }
 
+        let router_provider = match active_provider {
+            ApiProvider::Omniroute => ApiProvider::Omniroute,
+            ApiProvider::DeepseekCN => ApiProvider::DeepseekCN,
+            _ => ApiProvider::Deepseek,
+        };
+        let router_available = has_api_key_for(config, router_provider);
+
         Self {
             active_provider,
-            router_provider: ApiProvider::Deepseek,
+            router_provider,
             router_model: "deepseek-v4-flash",
-            router_available: has_api_key_for(config, ApiProvider::Deepseek),
+            router_available,
             candidates,
         }
     }
