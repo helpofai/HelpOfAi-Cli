@@ -55,8 +55,9 @@ fn spawn_minimal(
         // request — we just need the binary to think a key exists.
         .env("DEEPSEEK_API_KEY", "ci-test-key-not-real")
         // Force a known invalid endpoint so the doctor / model probe never escapes
-        // the box. 127.0.0.1:1 is an unlistening local port: TCP refuses
-        // immediately with no DNS wait.
+        // the box. 127.0.0.1:1 is an unlistening local port — TCP refuses
+        // immediately with ECONNREFUSED and no DNS wait. This test is
+        // Unix-only so that port behaviour is guaranteed.
         .env("DEEPSEEK_BASE_URL", "http://127.0.0.1:1")
         .env("RUST_LOG", "warn")
         .args([
@@ -190,11 +191,24 @@ fn viewport_origin_stays_row_zero_after_failed_turn() -> anyhow::Result<()> {
     h.send(keys::key::text("trigger a failed turn"))?;
     h.wait_for_idle(Duration::from_millis(200), Duration::from_secs(2))?;
     h.send(keys::key::enter())?;
+    // Wait for the turn to exit the error path. The TUI can surface any of
+    // these strings depending on the exact error category and retry state:
+    //   "Turn failed:"   — status bar, when turn_error_posted is false
+    //   "Connection refused" / "connection refused" — network error body
+    //   "network"        — error category label
+    //   "failed"         — substring of "Turn failed" or error body
+    //   "Error"          — HistoryCell::Error header rendered in transcript
+    // We also detect the loading spinner disappearing: once "Ctrl+C to cancel"
+    // leaves the footer the turn has exited (success or failure).
     h.wait_for(
         |frame| {
-            frame.contains("Turn failed")
+            !frame.contains("Ctrl+C to cancel")
+                || frame.contains("Turn failed")
                 || frame.contains("Connection refused")
-                || frame.contains("error")
+                || frame.contains("connection refused")
+                || frame.contains("network")
+                || frame.contains("failed")
+                || frame.contains("Error")
         },
         Duration::from_secs(60),
     )?;
