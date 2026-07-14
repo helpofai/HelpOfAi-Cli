@@ -180,6 +180,8 @@ impl<'a> PtySessionBuilder<'a> {
                             pending.clear();
                             let tail = if data.ends_with(b"\x1b[6") {
                                 3
+                            } else if data.ends_with(b"\x1b[") {
+                                2
                             } else if data.ends_with(b"\x1b") {
                                 1
                             } else {
