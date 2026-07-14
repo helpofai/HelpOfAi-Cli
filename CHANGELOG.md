@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.74] - 2026-07-14
+
+### Fixed
+
+- **OmniRoute stream reasoning**: Treat OmniRoute as always-reasoning in the SSE stream parser to correctly capture and render thinking/reasoning blocks when using the `auto` routing model.
+
 ## [0.8.73] - 2026-07-14
 
 ### Fixed
