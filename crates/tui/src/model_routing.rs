@@ -468,6 +468,16 @@ pub(crate) async fn resolve_auto_route_with_inventory(
     selected_thinking_mode: &str,
 ) -> Result<AutoRouteSelection> {
     let inventory = ModelInventory::from_config(config);
+    if config.api_provider() == ApiProvider::Omniroute {
+        // OmniRoute handles auto-routing natively on the server side (e.g. via
+        // the "auto" model). Bypassing the local classification router avoids
+        // sending out-of-band requests and prevents DeepSeek credential checks.
+        return Ok(auto_route_from_inventory_heuristic(
+            config,
+            latest_request,
+            &inventory,
+        ));
+    }
     if !inventory.router_available {
         // Fall back to heuristic-only auto routing when the flash router
         // is unavailable (e.g. non-DeepSeek providers like wanjie-ark).
