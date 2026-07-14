@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.75] - 2026-07-15
+
+### Fixed
+
+- **OmniRoute auto-router authentication**: Dynamically resolve the auto-routing classifier provider to OmniRoute (or DeepSeek China) when it is active, avoiding missing DeepSeek credential errors.
+
 ## [0.8.74] - 2026-07-14
 
 ### Fixed
