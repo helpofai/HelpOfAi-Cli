@@ -2064,6 +2064,16 @@ fn is_reasoning_model_for_stream(provider: ApiProvider, model: &str) -> bool {
     if requires_reasoning_content(model) {
         return true;
     }
+    // OmniRoute is a routing gateway that normalizes `reasoning_content` from
+    // all upstream providers into the standard delta field. When the model is
+    // "auto" or an auto-combo like "auto/coding", `model_supports_reasoning`
+    // returns false and reasoning deltas are silently dropped, producing the
+    // "Model returned reasoning but no answer" error. Treat OmniRoute as
+    // always-reasoning so delta.reasoning_content is rendered as a thinking
+    // block regardless of the selected model name.
+    if matches!(provider, ApiProvider::Omniroute) {
+        return true;
+    }
     provider_accepts_reasoning_content(provider) && model_supports_reasoning(model)
 }
 
