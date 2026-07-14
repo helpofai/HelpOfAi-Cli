@@ -135,24 +135,62 @@ impl<'a> PtySessionBuilder<'a> {
         let reader_handle = thread::Builder::new()
             .name("qa-pty-reader".into())
             .spawn(move || {
+                // crossterm queries the cursor position (ESC[6n, a Device Status
+                // Report request) during startup and at other points (e.g. terminal
+                // mode recovery / re-probes while the TUI is live). A real terminal
+                // answers with a Cursor Position Report (CPR, ESC[r;cR); the vt100
+                // *parser* we use for assertions does not, so we answer on its
+                // behalf with the configured PTY size.
+                //
+                // If a query is ever left unanswered, crossterm blocks for ~2s
+                // waiting for a CPR that never arrives and then surfaces
+                // "The cursor position could not be read within a normal duration"
+                // onto the screen — which is exactly the failure this harness is
+                // meant to prevent. So we must answer *every* query, and tolerate
+                // the 4-byte query being split across PTY reads.
                 let cpr_response = format!("\x1b[{};{}R", rows, cols);
+                // Bytes left over from a previous read that might be the head of a
+                // split DSR query (`ESC` or `ESC[6`).
+                let mut pending: Vec<u8> = Vec::new();
                 let mut chunk = [0u8; 8192];
                 loop {
                     match reader.read(&mut chunk) {
                         Ok(0) => break,
                         Ok(n) => {
-                            let slice = &chunk[..n];
-                            if slice.windows(4).any(|w| w == b"\x1b[6n") {
-                                // crossterm 0.29 queries cursor position at startup as a fallback
-                                // for terminal::size(). The vt parser doesn't answer, so we intercept
-                                // and answer with the configured PTY size (40 rows, 120 cols).
-                                if let Ok(mut w) = reader_writer.lock() {
-                                    let _ = w.write_all(cpr_response.as_bytes());
-                                    let _ = w.flush();
+                            let mut data = std::mem::take(&mut pending);
+                            data.extend_from_slice(&chunk[..n]);
+                            // Answer + strip every DSR cursor-position query in this
+                            // buffer. Scanning byte-by-byte (rather than only when all
+                            // four bytes share one read) means a query straddling a
+                            // read boundary — carried in `pending` — is still handled.
+                            let mut i = 0;
+                            while i < data.len() {
+                                if data[i..].starts_with(b"\x1b[6n") {
+                                    if let Ok(mut w) = reader_writer.lock() {
+                                        let _ = w.write_all(cpr_response.as_bytes());
+                                        let _ = w.flush();
+                                    }
+                                    data.drain(i..i + 4);
+                                    continue;
                                 }
+                                i += 1;
+                            }
+                            // Carry any trailing bytes that could be the head of a
+                            // split DSR into the next read so we don't miss it.
+                            pending.clear();
+                            let tail = if data.ends_with(b"\x1b[6") {
+                                3
+                            } else if data.ends_with(b"\x1b") {
+                                1
+                            } else {
+                                0
+                            };
+                            if tail > 0 {
+                                pending.extend_from_slice(&data[data.len() - tail..]);
+                                data.truncate(data.len() - tail);
                             }
                             if let Ok(mut b) = buf_thread.lock() {
-                                b.extend_from_slice(slice);
+                                b.extend_from_slice(&data);
                             }
                         }
                         Err(_) => break,

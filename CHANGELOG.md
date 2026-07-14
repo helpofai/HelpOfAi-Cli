@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.72] - 2026-07-14
+
+### Fixed
+
+- **qa_pty cursor-read reliability**: The PTY test harness now answers
+  every cursor-position (DSR `ESC[6n`) query from the headless terminal,
+  including queries split across PTY reads or duplicated within a single
+  read. A missed query previously left crossterm blocking until it
+  surfaced "The cursor position could not be read within a normal
+  duration" onto the screen, which corrupted the viewport and broke
+  `viewport_origin_stays_row_zero_after_failed_turn`. The query is also
+  now stripped from the parsed terminal stream.
+
 ## [0.8.71] - 2026-07-13
 
 ### Fixed

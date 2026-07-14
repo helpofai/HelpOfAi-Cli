@@ -1,6 +1,6 @@
 {
   "name": "@helpofai/runtime-sdk",
-  "version": "0.8.71",
+  "version": "0.8.72",
   "description": "Typed JavaScript helpers for HelpOfAi Runtime API fleet endpoints.",
   "license": "MIT",
   "type": "module",
