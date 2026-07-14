@@ -2021,7 +2021,7 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "helpofai-agent"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "helpofai-config",
  "serde",
@@ -2029,7 +2029,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-app-server"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "axum",
@@ -2057,7 +2057,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-cli"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2085,7 +2085,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-config"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "dirs",
@@ -2101,7 +2101,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-core"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2120,7 +2120,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-execpolicy"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "helpofai-protocol",
@@ -2129,7 +2129,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-helpflow"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "allocative",
  "anyhow",
@@ -2142,7 +2142,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-hooks"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2156,7 +2156,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-mcp"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "serde",
@@ -2165,7 +2165,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-protocol"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "chrono",
  "serde",
@@ -2175,7 +2175,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-release"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "reqwest",
@@ -2186,7 +2186,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-secrets"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "dirs",
  "keyring",
@@ -2199,7 +2199,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-state"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2211,7 +2211,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-tools"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2225,7 +2225,7 @@ dependencies = [
 
 [[package]]
 name = "helpofai-tui"
-version = "0.8.72"
+version = "0.8.73"
 dependencies = [
  "allocative",
  "anyhow",

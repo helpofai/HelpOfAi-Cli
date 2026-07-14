@@ -101,6 +101,7 @@ function deriveProvidersFromConfig(cfg: string): ProviderFact[] {
     Zai: { id: "zai", label: "Z.ai", env: "ZAI_API_KEY / Z_AI_API_KEY" },
     Stepfun: { id: "stepfun", label: "StepFun", env: "STEPFUN_API_KEY / STEP_API_KEY" },
     Minimax: { id: "minimax", label: "MiniMax", env: "MINIMAX_API_KEY" },
+    Omniroute: { id: "omniroute", label: "OmniRoute", env: "OMNIROUTE_API_KEY" },
   };
   // Log loudly on unmapped variants so a new provider can never be silently
   // dropped from the drift-derived facts again. DeepseekCN is the one

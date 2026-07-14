@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.73] - 2026-07-14
+
+### Fixed
+
+- Provider logic issues and aligned with CodeWhale structure.
+
 ## [0.8.72] - 2026-07-14
 
 ### Fixed
@@ -2277,7 +2283,10 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.62...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.73...HEAD
+[0.8.73]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.72...v0.8.73
+[0.8.72]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.71...v0.8.72
+[0.8.71]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.70...v0.8.71
 [0.8.70]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.69...v0.8.70
 [0.8.62]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.61...v0.8.62
 [0.8.61]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.60...v0.8.61

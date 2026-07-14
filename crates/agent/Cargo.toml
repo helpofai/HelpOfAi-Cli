@@ -7,7 +7,7 @@ repository.workspace = true
 description = "Model/provider registry and fallback strategy for DeepSeek workspace architecture"
 
 [dependencies]
-helpofai-config = { path = "../config", version = "0.8.70" }
+helpofai-config = { path = "../config", version = "0.8.73" }
 serde.workspace = true
 
 

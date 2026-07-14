@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.73] - 2026-07-14
+
+### Fixed
+
+- Provider logic issues and aligned with CodeWhale structure.
+
 ## [0.8.72] - 2026-07-14
 
 ### Fixed
@@ -705,85 +711,6 @@ folds in several community contributions.
 - Unused dependencies: `tracing-appender` and `zeroize` (TUI crate),
   `rustls` (release crate); the orphaned `vendor/schemaui-0.12.0` lockfile
   leftover and a machine-specific one-off `scripts/verify_task.sh`.
-
-## [0.8.56] - 2026-06-09
-
-### Added
-
-- **Status picker localization.** The status picker surface (7 MessageIds) is
-  now localized across all supported locales (#2896, @gordonlu).
-- **Approval dialog localization.** The approval dialog surface is now
-  localized across 7 locales: English, Simplified Chinese, Japanese,
-  Vietnamese, Portuguese, Spanish, and French (#2891, @gordonlu).
-- **Volcengine provider in TUI dispatcher.** The `helpofai` / `helpofai-tui`
-  CLI dispatcher now allows the Volcengine provider, so users can launch
-  directly into a Volcengine-backed session (#2923, @hongchen1993).
-- **Dispatcher API-key preference.** When a provider-specific API key is
-  supplied via the CLI dispatcher, it is now preferred over the saved root
-  key, fixing a regression where saved keys masked explicit CLI keys (#2928,
-  @hongchen1993).
-- **Qwen 3.6 Plus model support.** Added complete Qwen 3.6 Plus model
-  resolution with dedicated version-bump tests (#2930, @idling11).
-- **Oversized paste spill.** Pastes larger than ~10 KB are now written to
-  `.helpofai/pastes/` instead of being truncated or dropped, preserving the
-  full content for the session (#2920, @sximelon).
-- **Cross-session prompt cache.** Added a disk-backed cross-session prompt
-  base-section cache so post-mode-flip and post-restart turns reuse the
-  byte-stable prefix without rebuilding it from scratch.
-
-### Fixed
-
-- **Background shell routing.** Shell commands expected to take >5 seconds are
-  now automatically guided to background tasks instead of blocking the agent
-  loop, with the task panel syncing immediately on cancel (#2947, #2941,
-  @cyq1017, @idling11).
-- **`allow_shell` error naming.** Shell-tool refusal errors now explicitly name
-  `allow_shell = false` as the reason and suggest `/config allow_shell true` as
-  the escape hatch (#2905, @cyq1017).
-- **Prefix-cache stability across mode flips.** `allow_shell` is now decoupled
-  from the static system-prompt prefix, so mode changes (Plan ↔ Agent ↔ YOLO)
-  no longer rebuild the byte-stable message[0] and invalidate the DeepSeek
-  prefix cache (#2949, @LeoAlex0).
-- **`visibility="internal"` explained.** The Runtime Policy Reference section
-  of the system prompt now explains the `visibility="internal"` attribute so
-  models stop narrating their current mode between steps (#2951, @LeoAlex0).
-- **Bocha web search response handling.** Updated response parsing for the
-  Bocha search backend after an upstream API change (#2946, @h3c-hexin).
-- **PDF read hang.** Full-PDF reads now use `extract_text_by_pages` to avoid
-  a hang on large or complex PDFs (#2898, @idling11).
-- **9 critical bugs.** Fixed bugs across tools, client, and commands: stale
-  `ContentBlockStop` cleanup, missing `#[test]` attribute, trailing-space
-  restoration on English `ApprovalField` labels, and several
-  correctness/stability issues (#2880, @HUQIANTAO).
-
-### Changed
-
-- **CNB shim cleanup.** Removed deprecated `deepseek` shim references from the
-  CNB mirror path.
-- **Style.** Applied `cargo fmt` to `crates/tools/src/file.rs`.
-
-## [0.8.55] - 2026-06-08
-
-### Added
-
-- **Together AI provider.** Added Together AI as a first-class provider
-  (`[providers.together]`, `TOGETHER_API_KEY`/`TOGETHER_BASE_URL`/`TOGETHER_MODEL`)
-  with default models `deepseek-ai/DeepSeek-V4-Pro` and
-  `deepseek-ai/DeepSeek-V4-Flash`, TUI provider-picker/auth/capability support,
-  and CLI `auth list`/`auth status` coverage.
-- **Model catalog updates.** Added Qwen 3.7 Max (`qwen/qwen3.7-max`), MiniMax 2.7
-  (`minimax/minimax-2.7`), and NVIDIA Nemotron 3 Ultra (`nvidia/nemotron-3-ultra`)
-  on OpenRouter.
-- **OpenAI Codex (ChatGPT) provider — experimental.** Added an `openai-codex`
-  provider that reuses an existing ChatGPT/Codex CLI OAuth login. The access
-  token is read and refreshed from `~/.codex/auth.json` (no API key is stored),
-  and requests use the OpenAI Responses API at `/codex/responses` with the
-  `chatgpt-account-id` header and `responses=experimental` beta opt-in. Env
-  overrides: `OPENAI_CODEX_ACCESS_TOKEN`/`CODEX_ACCESS_TOKEN`,
-  `OPENAI_CODEX_BASE_URL`/`CODEX_BASE_URL`, `OPENAI_CODEX_MODEL`/`CODEX_MODEL`,
-  `OPENAI_CODEX_ACCOUNT_ID`/`CODEX_ACCOUNT_ID`, `OPENAI_CODEX_AUTH_FILE`,
-  `CODEX_HOME`. Default model `gpt-5.5`. The live Responses round-trip has not
-  been exercised against the production backend in CI; treat as preview.
 
 ---
 
