@@ -1439,6 +1439,8 @@ pub struct App {
     /// Persisted model selections by provider name. Loaded from settings so
     /// `/model` and the picker can surface saved provider-specific choices.
     pub provider_models: HashMap<String, String>,
+    /// Dynamically fetched models for gateway providers like OmniRoute.
+    pub fetched_gateway_models: std::sync::Arc<std::sync::Mutex<Option<Vec<String>>>>,
     /// When true, the model is auto-selected based on request complexity
     /// rather than using a fixed model. The `/model auto` command sets this.
     /// `dispatch_user_message` calls `auto_model_heuristic` to resolve the
@@ -2362,6 +2364,7 @@ impl App {
             last_status_message_seen: None,
             model,
             provider_models,
+            fetched_gateway_models: std::sync::Arc::new(std::sync::Mutex::new(None)),
             auto_model,
             last_effective_model: None,
             api_provider: provider,

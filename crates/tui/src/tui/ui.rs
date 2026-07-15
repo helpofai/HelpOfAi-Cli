@@ -7348,6 +7348,28 @@ async fn apply_command_result(
             }
             AppAction::OpenModelPicker => {
                 if app.view_stack.top_kind() != Some(ModalKind::ModelPicker) {
+                    if app.api_provider == ApiProvider::Omniroute {
+                        let is_manual = config.provider_config_for(ApiProvider::Omniroute)
+                            .and_then(|c| c.mode.as_deref()) == Some("manual");
+                        if is_manual {
+                            let cell = app.fetched_gateway_models.clone();
+                            let need_fetch = {
+                                let guard = cell.lock().unwrap();
+                                guard.is_none()
+                            };
+                            if need_fetch {
+                                let config_clone = config.clone();
+                                app.status_message = Some("Fetching gateway models...".to_string());
+                                tokio::spawn(async move {
+                                    if let Ok(models) = fetch_available_models(&config_clone).await {
+                                        if let Ok(mut guard) = cell.lock() {
+                                            *guard = Some(models);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
                     app.view_stack
                         .push(crate::tui::model_picker::ModelPickerView::new(app));
                 }

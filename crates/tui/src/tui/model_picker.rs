@@ -58,6 +58,11 @@ pub struct ModelPickerView {
     /// so the picker doesn't quietly forget the user's chosen IDs.
     show_custom_model_row: bool,
     model_rows: Vec<ModelPickerRow>,
+    fetched_gateway_models: std::sync::Arc<std::sync::Mutex<Option<Vec<String>>>>,
+    last_fetched_models_hash: u64,
+    api_provider: ApiProvider,
+    model_ids_passthrough: bool,
+    provider_models: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,6 +108,13 @@ impl ModelPickerView {
             focus: Pane::Model,
             show_custom_model_row,
             model_rows,
+            fetched_gateway_models: app.fetched_gateway_models.clone(),
+            last_fetched_models_hash: app.fetched_gateway_models.lock().ok()
+                .and_then(|g| g.as_ref().map(|v| v.len() as u64))
+                .unwrap_or(0),
+            api_provider: app.api_provider,
+            model_ids_passthrough: app.model_ids_passthrough,
+            provider_models: app.provider_models.clone(),
         }
     }
 
@@ -381,6 +393,21 @@ fn picker_model_ids_for_provider(provider: ApiProvider) -> Vec<&'static str> {
 }
 
 fn picker_model_rows_for_app(app: &App) -> Vec<ModelPickerRow> {
+    let fetched = app.fetched_gateway_models.lock().ok().and_then(|g| g.clone());
+    picker_model_rows(
+        app.api_provider,
+        app.model_ids_passthrough,
+        &app.provider_models,
+        fetched.as_deref(),
+    )
+}
+
+fn picker_model_rows(
+    api_provider: ApiProvider,
+    model_ids_passthrough: bool,
+    provider_models: &std::collections::HashMap<String, String>,
+    fetched_models: Option<&[String]>,
+) -> Vec<ModelPickerRow> {
     let mut rows = Vec::new();
     push_model_row(
         &mut rows,
@@ -389,18 +416,33 @@ fn picker_model_rows_for_app(app: &App) -> Vec<ModelPickerRow> {
         picker_model_hint("auto"),
     );
 
-    for id in model_completion_names_for_provider(app.api_provider) {
+    if api_provider == ApiProvider::Omniroute {
+        if let Some(models) = fetched_models {
+            for id in models {
+                if id != "auto" {
+                    push_model_row(
+                        &mut rows,
+                        id.clone(),
+                        Some(api_provider),
+                        picker_model_hint(id),
+                    );
+                }
+            }
+        }
+    }
+
+    for id in model_completion_names_for_provider(api_provider) {
         if id != "auto" {
             push_model_row(
                 &mut rows,
                 id.to_string(),
-                Some(app.api_provider),
+                Some(api_provider),
                 picker_model_hint(id),
             );
         }
     }
 
-    if !app.model_ids_passthrough {
+    if !model_ids_passthrough {
         for id in model_registry::seeded_model_ids() {
             if let Some(metadata) = model_registry::lookup(id) {
                 let provider = model_registry::serving_provider(metadata.provider);
@@ -414,35 +456,24 @@ fn picker_model_rows_for_app(app: &App) -> Vec<ModelPickerRow> {
         }
     }
 
-    if let Some(model) = app
-        .provider_models
-        .get(app.api_provider.as_str())
+    if let Some(model) = provider_models
+        .get(api_provider.as_str())
         .map(|model| model.trim())
         .filter(|model| !model.is_empty())
     {
         push_model_row(
             &mut rows,
             model.to_string(),
-            Some(app.api_provider),
-            format!("{} saved", app.api_provider.display_name()),
+            Some(api_provider),
+            format!("{} saved", api_provider.display_name()),
         );
     }
 
-    // Surface models saved under *other* providers in config (#2596). The
-    // active provider's list comes first; cross-provider saved models follow as
-    // a clearly labelled tail so a custom model that has never been selected on
-    // the current provider is still reachable. Selecting one switches provider
-    // on apply via `resolved_provider` / `build_event`. Rows are sorted by
-    // provider key so ordering stays deterministic regardless of map iteration.
-    // Parse each provider key once: drop unknown keys (cannot be applied) and
-    // the active provider (already listed above) in a single pass. `key` is
-    // kept only to keep ordering deterministic via the sort below.
-    let mut other_provider_models: Vec<(&String, ApiProvider, &String)> = app
-        .provider_models
+    let mut other_provider_models: Vec<(&String, ApiProvider, &String)> = provider_models
         .iter()
         .filter_map(|(key, model)| {
             let provider = ApiProvider::parse(key)?;
-            (provider != app.api_provider).then_some((key, provider, model))
+            (provider != api_provider).then_some((key, provider, model))
         })
         .collect();
     other_provider_models.sort_by_key(|(a, ..)| *a);
@@ -601,6 +632,36 @@ impl ModalView for ModelPickerView {
 
     fn render(&self, area: Rect, buf: &mut Buffer) {
         self.render_classic(area, buf);
+     }
+
+    fn tick(&mut self) -> ViewAction {
+        let (current_hash, fetched_list) = {
+            if let Ok(guard) = self.fetched_gateway_models.lock() {
+                (guard.as_ref().map(|v| v.len() as u64).unwrap_or(0), guard.clone())
+            } else {
+                (0, None)
+            }
+        };
+        if current_hash != self.last_fetched_models_hash {
+            self.last_fetched_models_hash = current_hash;
+            let old_selected_model = self.model_rows.get(self.selected_model_idx).map(|r| r.id.clone());
+            self.model_rows = picker_model_rows(
+                self.api_provider,
+                self.model_ids_passthrough,
+                &self.provider_models,
+                fetched_list.as_deref(),
+            );
+            if let Some(old_model) = old_selected_model {
+                if let Some(pos) = self.model_rows.iter().position(|r| r.id == old_model) {
+                    self.selected_model_idx = pos;
+                } else {
+                    self.selected_model_idx = 0;
+                }
+            } else {
+                self.selected_model_idx = 0;
+            }
+        }
+        ViewAction::None
     }
 }
 
