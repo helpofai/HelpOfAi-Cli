@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.78] - 2026-07-15
+
+### Added
+
+- Support for dynamically fetching and selecting models from the OmniRoute gateway in the Model Picker.
+
+### Fixed
+
+- Friendly network error connection message when the local OmniRoute server is offline.
+
 ## [0.8.77] - 2026-07-15
 
 ### Added

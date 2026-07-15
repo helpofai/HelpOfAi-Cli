@@ -109,7 +109,10 @@ impl ModelPickerView {
             show_custom_model_row,
             model_rows,
             fetched_gateway_models: app.fetched_gateway_models.clone(),
-            last_fetched_models_hash: app.fetched_gateway_models.lock().ok()
+            last_fetched_models_hash: app
+                .fetched_gateway_models
+                .lock()
+                .ok()
                 .and_then(|g| g.as_ref().map(|v| v.len() as u64))
                 .unwrap_or(0),
             api_provider: app.api_provider,
@@ -393,7 +396,11 @@ fn picker_model_ids_for_provider(provider: ApiProvider) -> Vec<&'static str> {
 }
 
 fn picker_model_rows_for_app(app: &App) -> Vec<ModelPickerRow> {
-    let fetched = app.fetched_gateway_models.lock().ok().and_then(|g| g.clone());
+    let fetched = app
+        .fetched_gateway_models
+        .lock()
+        .ok()
+        .and_then(|g| g.clone());
     picker_model_rows(
         app.api_provider,
         app.model_ids_passthrough,
@@ -632,19 +639,25 @@ impl ModalView for ModelPickerView {
 
     fn render(&self, area: Rect, buf: &mut Buffer) {
         self.render_classic(area, buf);
-     }
+    }
 
     fn tick(&mut self) -> ViewAction {
         let (current_hash, fetched_list) = {
             if let Ok(guard) = self.fetched_gateway_models.lock() {
-                (guard.as_ref().map(|v| v.len() as u64).unwrap_or(0), guard.clone())
+                (
+                    guard.as_ref().map(|v| v.len() as u64).unwrap_or(0),
+                    guard.clone(),
+                )
             } else {
                 (0, None)
             }
         };
         if current_hash != self.last_fetched_models_hash {
             self.last_fetched_models_hash = current_hash;
-            let old_selected_model = self.model_rows.get(self.selected_model_idx).map(|r| r.id.clone());
+            let old_selected_model = self
+                .model_rows
+                .get(self.selected_model_idx)
+                .map(|r| r.id.clone());
             self.model_rows = picker_model_rows(
                 self.api_provider,
                 self.model_ids_passthrough,

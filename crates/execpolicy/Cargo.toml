@@ -8,7 +8,7 @@ description = "Execution policy and approval model parity for DeepSeek workspace
 
 [dependencies]
 anyhow.workspace = true
-helpofai-protocol = { path = "../protocol", version = "0.8.73" }
+helpofai-protocol = { path = "../protocol", version = "0.8.78" }
 serde.workspace = true
 
 

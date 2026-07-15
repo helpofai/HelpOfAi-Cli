@@ -44,8 +44,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # または GitHub Releases の NSIS インストーラ
 
 # GitHub に安定して到達できない場合の CNB ミラー
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.73 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.73 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.78 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.78 helpofai-tui --locked --force
 
 # 旧 Homebrew 互換。formula の改名が完了するまで deepseek-tui 名のままです
 brew tap helpofai/HelpOfAi-Cli
