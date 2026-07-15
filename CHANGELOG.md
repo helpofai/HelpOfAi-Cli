@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+### [Unreleased]
+
+## [0.8.77] - 2026-07-15
+
+### Added
+
+- OmniRoute provider integration is now fully functional and passes all tests.
+
+### Fixed
+
+- Adjusted DeepSeek base URL logic to avoid env overrides when base_url is not set (fixes test).
 
 ## [0.8.76] - 2026-07-15
 
