@@ -33,6 +33,7 @@ impl CommandGroup for CoreCommands {
             Box::new(FunctionCommand::new(&EXIT_INFO, run_exit)),
             Box::new(FunctionCommand::new(&MODEL_INFO, run_model)),
             Box::new(FunctionCommand::new(&MODELS_INFO, run_models)),
+            Box::new(FunctionCommand::new(&GATEWAY_INFO, run_gateway)),
             Box::new(FunctionCommand::new(&PROVIDER_INFO, run_provider)),
             Box::new(FunctionCommand::new(&QUEUE_INFO, run_queue)),
             Box::new(FunctionCommand::new(&STASH_INFO, run_stash)),
@@ -90,6 +91,12 @@ static MODELS_INFO: CommandInfo = CommandInfo {
     aliases: &["moxingliebiao"],
     usage: "/models",
     description_id: MessageId::CmdModelsDescription,
+};
+static GATEWAY_INFO: CommandInfo = CommandInfo {
+    name: "gateway",
+    aliases: &["omniroute"],
+    usage: "/gateway [status|models|ping]",
+    description_id: MessageId::CmdHelpDescription,
 };
 static PROVIDER_INFO: CommandInfo = CommandInfo {
     name: "provider",
@@ -222,6 +229,9 @@ fn run_model(app: &mut App, arg: Option<&str>) -> CommandResult {
 fn run_models(app: &mut App, arg: Option<&str>) -> CommandResult {
     run_registered(app, "models", arg)
 }
+fn run_gateway(app: &mut App, arg: Option<&str>) -> CommandResult {
+    run_registered(app, "gateway", arg)
+}
 fn run_provider(app: &mut App, arg: Option<&str>) -> CommandResult {
     run_registered(app, "provider", arg)
 }
@@ -289,6 +299,7 @@ pub(in crate::commands) fn dispatch(
         "exit" | "quit" | "q" | "tuichu" => core::exit(),
         "model" | "moxing" => core::model(app, arg),
         "models" | "moxingliebiao" => core::models(app),
+        "gateway" | "omniroute" => core::gateway(app, arg),
         "provider" => provider::provider(app, arg),
         "queue" | "queued" => queue::queue(app, arg),
         "stash" | "park" => stash::stash(app, arg),

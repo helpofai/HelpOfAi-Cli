@@ -9,12 +9,12 @@
 - **Active branch:** `helpofai/cli-agents` (also at
   `origin/helpofai/cli-agents`). has shipped; all new work lands
   here.
-- **Workspace version is intentionally still `0.8.70`** in `Cargo.toml` — the
-  bump to `0.8.70` is deferred until the GLM-5.2 routing is smoke-tested end to
+- **Workspace version is intentionally still `0.8.76`** in `Cargo.toml` — the
+  bump to `0.8.76` is deferred until the GLM-5.2 routing is smoke-tested end to
   end against live Z.ai + OpenRouter (see CHANGELOG `## [Unreleased]`). Do not
   bump it opportunistically.
-- **Milestone guidepost:** GitHub milestone `v0.8.70` (id 47 or latest). Check live state
-  with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.70" --state open`.
+- **Milestone guidepost:** GitHub milestone `v0.8.76/latest` (id 47 or latest). Check live state
+  with `gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.76" --state open`.
 - **Default branch is `main`.** Never commit directly to `main`; always work on
   `helpofai/cli-agents` (or a fresh branch off it for an isolated
   change). Open a PR into `main` only when a unit of work is reviewable.
@@ -43,7 +43,7 @@
 - Configurable sub-agent depth stays. No arbitrary new limits unless clearly
   needed and explained.
 - The sub-agent **TUI freeze reported in older handoffs is resolved** by the
-  v0.8.70 cutover (cap-20, persist-debounce, AgentProgress redraw throttle,
+  v0.8.76 cutover (cap-20, persist-debounce, AgentProgress redraw throttle,
   ListSubAgents coalescing, input-pump-off-render-thread). The leading
   "blocking I/O starves the worker pool" theory was measured and **disproven**
   (`git rev-parse` ~10ms, 18-core machine). Do not commit a speculative
@@ -96,7 +96,7 @@
 - Close or update issues and PRs only after verifying the landed commit on the
   relevant branch. If the release branch already contains equivalent behavior,
   leave a clear note linking the commit and describing any remaining delta.
-- For the active release queue, start from the GitHub `v0.8.70` milestone
-  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.70"`) and refresh
+- For the active release queue, start from the GitHub `v0.8.76` milestone
+  (`gh issue list --repo helpofai/HelpOfAi-Cli --milestone "v0.8.76"`) and refresh
   state before acting. Older per-version triage docs under `docs/` are
   historical reference only.

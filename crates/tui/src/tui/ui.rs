@@ -4958,6 +4958,134 @@ async fn fetch_available_models(config: &Config) -> Result<Vec<String>> {
     Ok(ids)
 }
 
+async fn run_gateway_command(config: &Config, subcommand: &str) -> Result<String> {
+    use crate::config::ApiProvider;
+    use std::time::Instant;
+
+    let active_provider = config.api_provider();
+    if active_provider != ApiProvider::Omniroute {
+        return Ok(format!(
+            "Gateway commands are only available when the active provider is OmniRoute. \
+             Current active provider: {}",
+            active_provider.display_name()
+        ));
+    }
+
+    let base_url = config.deepseek_base_url();
+    let api_key = config
+        .provider_config_for(ApiProvider::Omniroute)
+        .and_then(|e| e.api_key.clone())
+        .or_else(|| std::env::var("OMNIROUTE_API_KEY").ok())
+        .unwrap_or_default();
+
+    let client = reqwest::Client::new();
+    let url = if base_url.ends_with("/v1") || base_url.ends_with("/v1/") {
+        format!("{}/models", base_url.trim_end_matches('/'))
+    } else {
+        format!("{}/v1/models", base_url.trim_end_matches('/'))
+    };
+
+    match subcommand {
+        "ping" => {
+            let start = Instant::now();
+            let response = client.get(&url).bearer_auth(&api_key).send().await?;
+            let latency = start.elapsed();
+
+            let status = response.status();
+            if status.is_success() {
+                Ok(format!(
+                    "✓ OmniRoute Gateway Ping: **{} ms** (HTTP {})",
+                    latency.as_millis(),
+                    status.as_u16()
+                ))
+            } else {
+                Ok(format!(
+                    "✗ OmniRoute Gateway Ping: HTTP Error {} (took {} ms)",
+                    status.as_u16(),
+                    latency.as_millis()
+                ))
+            }
+        }
+        "models" => {
+            let response = client
+                .get(&url)
+                .bearer_auth(&api_key)
+                .send()
+                .await?
+                .json::<serde_json::Value>()
+                .await?;
+
+            let mut model_ids = Vec::new();
+            if let Some(data) = response.get("data").and_then(|d| d.as_array()) {
+                for item in data {
+                    if let Some(id) = item.get("id").and_then(|id| id.as_str()) {
+                        model_ids.push(id.to_string());
+                    }
+                }
+            }
+
+            if model_ids.is_empty() {
+                Ok("No models returned by OmniRoute gateway.".to_string())
+            } else {
+                model_ids.sort();
+                let list = model_ids
+                    .iter()
+                    .map(|id| format!("  - {}", id))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                Ok(format!(
+                    "OmniRoute Gateway Models ({} available):\n{}",
+                    model_ids.len(),
+                    list
+                ))
+            }
+        }
+        "status" => {
+            let start = Instant::now();
+            let response = client.get(&url).bearer_auth(&api_key).send().await?;
+            let latency = start.elapsed().as_millis();
+            let headers = response.headers().clone();
+
+            let status = response.status();
+            if !status.is_success() {
+                return Ok(format!(
+                    "✗ OmniRoute Offline\nGateway Endpoint: {}\nHTTP status: {}",
+                    base_url,
+                    status.as_u16()
+                ));
+            }
+
+            let data = response.json::<serde_json::Value>().await?;
+            let model_count = data
+                .get("data")
+                .and_then(|d| d.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
+
+            let version = headers
+                .get("x-omniroute-version")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("3.8.x");
+            let cache_hit = headers
+                .get("x-omniroute-cache-hit")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("false");
+
+            Ok(format!(
+                "✓ OmniRoute Online\n\
+                 ──────────────────────────────\n\
+                 **Gateway URL:** {}\n\
+                 **Version:** {}\n\
+                 **Models:** {} Available\n\
+                 **Last Latency:** {} ms\n\
+                 **Cache State:** hit={}",
+                base_url, version, model_count, latency, cache_hit
+            ))
+        }
+        _ => unreachable!(),
+    }
+}
+
 async fn run_cache_warmup(app: &App, config: &Config) -> Result<(Usage, String, PromptInspection)> {
     let client = DeepSeekClient::new(config)?;
     let base_url = client.base_url().to_string();
@@ -7050,6 +7178,22 @@ async fn apply_command_result(
                                 config.api_provider().display_name()
                             ),
                         });
+                    }
+                }
+            }
+            AppAction::FetchGateway { subcommand } => {
+                app.status_message = Some(format!("Querying gateway {}...", subcommand));
+                match run_gateway_command(config, &subcommand).await {
+                    Ok(result) => {
+                        app.add_message(HistoryCell::System { content: result });
+                        app.status_message =
+                            Some(format!("Gateway query {} completed", subcommand));
+                    }
+                    Err(error) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!("Gateway command failed: {error}"),
+                        });
+                        app.status_message = Some("Gateway command failed".to_string());
                     }
                 }
             }

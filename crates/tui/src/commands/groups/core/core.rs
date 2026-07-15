@@ -267,6 +267,19 @@ pub fn models(_app: &mut App) -> CommandResult {
     CommandResult::action(AppAction::FetchModels)
 }
 
+/// Query local or online OmniRoute gateway.
+pub fn gateway(_app: &mut App, arg: Option<&str>) -> CommandResult {
+    let subcommand = arg.unwrap_or("status").trim().to_ascii_lowercase();
+    if !matches!(subcommand.as_str(), "status" | "models" | "ping") {
+        return CommandResult::error(
+            "Invalid gateway subcommand. Try: status, models, or ping.\n\
+             Usage: /gateway [status|models|ping]"
+                .to_string(),
+        );
+    }
+    CommandResult::action(AppAction::FetchGateway { subcommand })
+}
+
 /// List sub-agent status from the engine
 pub fn subagents(app: &mut App) -> CommandResult {
     if app.view_stack.top_kind() != Some(ModalKind::SubAgents) {
