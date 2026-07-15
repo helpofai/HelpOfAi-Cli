@@ -2040,6 +2040,10 @@ fn should_replay_reasoning_content_for_provider(
         return true;
     }
 
+    if matches!(provider, ApiProvider::Omniroute) {
+        return true;
+    }
+
     if !provider_accepts_reasoning_content(provider) {
         // Generic non-DeepSeek model on a provider that rejects the field:
         // keep stripping it (preserves the #1542 fix). But a known DeepSeek
@@ -4196,7 +4200,11 @@ mod alias_thinking_detection_tests {
         // about where reasoning tokens live. Effort=None isolates the
         // model/provider dimension shared by both.
         for model in ["deepseek-v4-pro", "deepseek-reasoner", "qwen3-coder"] {
-            for provider in [ApiProvider::Openai, ApiProvider::Deepseek] {
+            for provider in [
+                ApiProvider::Openai,
+                ApiProvider::Deepseek,
+                ApiProvider::Omniroute,
+            ] {
                 assert_eq!(
                     is_reasoning_model_for_stream(provider, model),
                     should_replay_reasoning_content_for_provider(provider, model, None),
