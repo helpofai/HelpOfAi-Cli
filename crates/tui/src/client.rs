@@ -708,6 +708,16 @@ impl DeepSeekClient {
     }
 }
 
+fn api_provider_uses_anthropic_messages(api_provider: ApiProvider) -> bool {
+    matches!(
+        api_provider,
+        ApiProvider::Anthropic
+            | ApiProvider::DeepseekAnthropic
+            | ApiProvider::MinimaxAnthropic
+            | ApiProvider::Openmodel
+    )
+}
+
 fn build_default_headers(
     api_key: &str,
     extra_headers: &HashMap<String, String>,
@@ -717,7 +727,7 @@ fn build_default_headers(
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     let api_key = api_key.trim();
-    if api_provider == ApiProvider::Anthropic {
+    if api_provider_uses_anthropic_messages(api_provider) {
         // #3014: the Messages API authenticates with `x-api-key` (never
         // `Authorization: Bearer`) and pins the wire contract via
         // `anthropic-version`.
@@ -726,7 +736,10 @@ fn build_default_headers(
             HeaderValue::from_static("2023-06-01"),
         );
     }
-    let auth_header_name = if !api_key.is_empty() && api_provider == ApiProvider::Anthropic {
+    let auth_header_name = if !api_key.is_empty()
+        && api_provider_uses_anthropic_messages(api_provider)
+        && api_provider != ApiProvider::Openmodel
+    {
         Some(HeaderName::from_static("x-api-key"))
     } else if !api_key.is_empty()
         && api_provider == ApiProvider::XiaomiMimo
@@ -1169,7 +1182,7 @@ impl LlmClient for DeepSeekClient {
         if self.api_provider == ApiProvider::OpenaiCodex {
             return self.handle_responses_message(request).await;
         }
-        if self.api_provider == ApiProvider::Anthropic {
+        if api_provider_uses_anthropic_messages(self.api_provider) {
             return self.handle_anthropic_message(request).await;
         }
         self.create_message_chat(&request).await
@@ -1182,7 +1195,7 @@ impl LlmClient for DeepSeekClient {
         if self.api_provider == ApiProvider::OpenaiCodex {
             return self.handle_responses_stream(request).await;
         }
-        if self.api_provider == ApiProvider::Anthropic {
+        if api_provider_uses_anthropic_messages(self.api_provider) {
             return self.handle_anthropic_stream(request).await;
         }
         self.handle_chat_completion_stream(request).await
@@ -1294,7 +1307,9 @@ pub(super) fn apply_reasoning_effort(
             ApiProvider::Openai
             | ApiProvider::WanjieArk
             | ApiProvider::Arcee
-            | ApiProvider::Huggingface => {}
+            | ApiProvider::Huggingface
+            | ApiProvider::Qianfan
+            | ApiProvider::Custom => {}
             ApiProvider::Moonshot => {
                 // #3024: Kimi models accept thinking enable/disable.
                 body["thinking"] = json!({ "type": "disabled" });
@@ -1303,7 +1318,10 @@ pub(super) fn apply_reasoning_effort(
                 // #3024: Ollama OpenAI-compat endpoint accepts think param.
                 body["think"] = json!(false);
             }
-            ApiProvider::Anthropic => {
+            ApiProvider::Anthropic
+            | ApiProvider::DeepseekAnthropic
+            | ApiProvider::MinimaxAnthropic
+            | ApiProvider::Openmodel => {
                 // #3014: thinking/effort shaping happens natively inside
                 // client/anthropic.rs (adaptive thinking + output_config),
                 // not via OpenAI-dialect fields.
@@ -1316,8 +1334,12 @@ pub(super) fn apply_reasoning_effort(
             ApiProvider::Minimax => {
                 body["thinking"] = json!({ "type": "disabled" });
             }
-            ApiProvider::Stepfun => {}
-            ApiProvider::Omniroute => {}
+            ApiProvider::Stepfun
+            | ApiProvider::Sakana
+            | ApiProvider::LongCat
+            | ApiProvider::Meta
+            | ApiProvider::Xai
+            | ApiProvider::Omniroute => {}
         },
         "low" | "minimal" | "medium" | "mid" | "high" | "" => match provider {
             // DeepSeek compatibility: low/medium both map to high
@@ -1372,7 +1394,11 @@ pub(super) fn apply_reasoning_effort(
                 };
                 body["reasoning_effort"] = json!(value);
             }
-            ApiProvider::Openai | ApiProvider::WanjieArk | ApiProvider::OpenaiCodex => {}
+            ApiProvider::Openai
+            | ApiProvider::WanjieArk
+            | ApiProvider::OpenaiCodex
+            | ApiProvider::Qianfan
+            | ApiProvider::Custom => {}
             ApiProvider::Moonshot => {
                 // #3024: Kimi models accept thinking enable.
                 body["thinking"] = json!({ "type": "enabled" });
@@ -1381,7 +1407,10 @@ pub(super) fn apply_reasoning_effort(
                 // #3024: Ollama think param.
                 body["think"] = json!(true);
             }
-            ApiProvider::Anthropic => {
+            ApiProvider::Anthropic
+            | ApiProvider::DeepseekAnthropic
+            | ApiProvider::MinimaxAnthropic
+            | ApiProvider::Openmodel => {
                 // #3014: thinking/effort shaping happens natively inside
                 // client/anthropic.rs (adaptive thinking + output_config),
                 // not via OpenAI-dialect fields.
@@ -1401,8 +1430,12 @@ pub(super) fn apply_reasoning_effort(
                     "clear_thinking": false,
                 });
             }
-            ApiProvider::Stepfun => {}
-            ApiProvider::Omniroute => {}
+            ApiProvider::Stepfun
+            | ApiProvider::Sakana
+            | ApiProvider::LongCat
+            | ApiProvider::Meta
+            | ApiProvider::Xai
+            | ApiProvider::Omniroute => {}
         },
         "xhigh" | "max" | "highest" | "ultracode" => match provider {
             ApiProvider::Deepseek
@@ -1437,7 +1470,11 @@ pub(super) fn apply_reasoning_effort(
                 // "max" to "high" instead of sending an invalid value.
                 body["reasoning_effort"] = json!("high");
             }
-            ApiProvider::Openai | ApiProvider::WanjieArk | ApiProvider::OpenaiCodex => {}
+            ApiProvider::Openai
+            | ApiProvider::WanjieArk
+            | ApiProvider::OpenaiCodex
+            | ApiProvider::Qianfan
+            | ApiProvider::Custom => {}
             ApiProvider::Moonshot => {
                 // #3024: Kimi models accept thinking enable.
                 body["thinking"] = json!({ "type": "enabled" });
@@ -1446,7 +1483,10 @@ pub(super) fn apply_reasoning_effort(
                 // #3024: Ollama think param.
                 body["think"] = json!(true);
             }
-            ApiProvider::Anthropic => {
+            ApiProvider::Anthropic
+            | ApiProvider::DeepseekAnthropic
+            | ApiProvider::MinimaxAnthropic
+            | ApiProvider::Openmodel => {
                 // #3014: thinking/effort shaping happens natively inside
                 // client/anthropic.rs (adaptive thinking + output_config),
                 // not via OpenAI-dialect fields.
@@ -1466,8 +1506,12 @@ pub(super) fn apply_reasoning_effort(
                     "clear_thinking": false,
                 });
             }
-            ApiProvider::Stepfun => {}
-            ApiProvider::Omniroute => {}
+            ApiProvider::Stepfun
+            | ApiProvider::Sakana
+            | ApiProvider::LongCat
+            | ApiProvider::Meta
+            | ApiProvider::Xai
+            | ApiProvider::Omniroute => {}
         },
         _ => {}
     }

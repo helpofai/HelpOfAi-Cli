@@ -136,6 +136,22 @@ const DEFAULT_DEEPINFRA_BASE_URL: &str = "https://api.deepinfra.com/v1/openai";
 const DEFAULT_OMNIROUTE_MODEL: &str = "auto";
 const DEFAULT_OMNIROUTE_BASE_URL: &str = "http://localhost:20128/v1";
 
+const DEFAULT_DEEPSEEK_ANTHROPIC_MODEL: &str = DEFAULT_DEEPSEEK_MODEL;
+const DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL: &str = "https://api.deepseek.com/anthropic";
+const DEFAULT_QIANFAN_MODEL: &str = "ernie-4.0-turbo-8k";
+const DEFAULT_QIANFAN_BASE_URL: &str = "https://api.baiduqianfan.ai/v1";
+const DEFAULT_OPENMODEL_MODEL: &str = "deepseek-v4-flash";
+const DEFAULT_OPENMODEL_BASE_URL: &str = "https://api.openmodel.ai";
+const DEFAULT_MINIMAX_ANTHROPIC_BASE_URL: &str = "https://api.minimax.io/anthropic";
+const DEFAULT_SAKANA_MODEL: &str = "fugu";
+const DEFAULT_SAKANA_BASE_URL: &str = "https://api.sakana.ai/v1";
+const DEFAULT_LONGCAT_MODEL: &str = "LongCat-2.0";
+const DEFAULT_LONGCAT_BASE_URL: &str = "https://api.longcat.chat/openai/v1";
+const DEFAULT_META_MODEL: &str = "muse-spark-1.1";
+const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
+const DEFAULT_XAI_MODEL: &str = "grok-4.5";
+const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum ProviderKind {
@@ -209,10 +225,43 @@ pub enum ProviderKind {
     Deepinfra,
     #[serde(alias = "omni-route", alias = "omni_route", alias = "omnirouteroute")]
     Omniroute,
+    #[serde(
+        alias = "deepseek-anthropic",
+        alias = "deepseek_anthropic",
+        alias = "deepseek-claude",
+        alias = "deepseek_claude"
+    )]
+    DeepseekAnthropic,
+    #[serde(alias = "baidu-qianfan", alias = "baidu_qianfan", alias = "baidu")]
+    Qianfan,
+    #[serde(alias = "open-model", alias = "open_model")]
+    Openmodel,
+    #[serde(
+        alias = "minimax_anthropic",
+        alias = "mini-max-anthropic",
+        alias = "mini_max_anthropic"
+    )]
+    MinimaxAnthropic,
+    #[serde(alias = "sakana-ai", alias = "sakana_ai", alias = "fugu")]
+    Sakana,
+    #[serde(alias = "long-cat", alias = "meituan-longcat", alias = "meituan")]
+    LongCat,
+    #[serde(
+        alias = "meta-ai",
+        alias = "meta_ai",
+        alias = "meta-model-api",
+        alias = "meta_model_api",
+        alias = "muse",
+        alias = "muse-spark"
+    )]
+    Meta,
+    #[serde(alias = "x-ai", alias = "x_ai", alias = "grok")]
+    Xai,
+    Custom,
 }
 
 impl ProviderKind {
-    pub const ALL: [Self; 26] = [
+    pub const ALL: [Self; 35] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -239,6 +288,15 @@ impl ProviderKind {
         Self::Minimax,
         Self::Deepinfra,
         Self::Omniroute,
+        Self::DeepseekAnthropic,
+        Self::Qianfan,
+        Self::Openmodel,
+        Self::MinimaxAnthropic,
+        Self::Sakana,
+        Self::LongCat,
+        Self::Meta,
+        Self::Xai,
+        Self::Custom,
     ];
 
     #[must_use]
@@ -298,6 +356,22 @@ pub struct ProviderConfigToml {
     #[serde(default)]
     pub http_headers: BTreeMap<String, String>,
     pub path_suffix: Option<String>,
+}
+
+impl ProviderConfigToml {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        let blank = |value: Option<&String>| value.map_or(true, |value| value.trim().is_empty());
+
+        blank(self.api_key.as_ref())
+            && blank(self.base_url.as_ref())
+            && blank(self.model.as_ref())
+            && blank(self.mode.as_ref())
+            && blank(self.auth_mode.as_ref())
+            && self.insecure_skip_tls_verify.is_none()
+            && self.http_headers.is_empty()
+            && blank(self.path_suffix.as_ref())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -374,6 +448,42 @@ pub struct ProvidersToml {
         alias = "omnirouteroute"
     )]
     pub omniroute: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub deepseek_anthropic: ProviderConfigToml,
+    #[serde(
+        default,
+        skip_serializing_if = "ProviderConfigToml::is_empty",
+        alias = "baidu-qianfan",
+        alias = "baidu_qianfan",
+        alias = "baidu"
+    )]
+    pub qianfan: ProviderConfigToml,
+    #[serde(
+        default,
+        skip_serializing_if = "ProviderConfigToml::is_empty",
+        alias = "open-model",
+        alias = "open_model"
+    )]
+    pub openmodel: ProviderConfigToml,
+    #[serde(
+        default,
+        skip_serializing_if = "ProviderConfigToml::is_empty",
+        alias = "minimax-anthropic",
+        alias = "minimaxAnthropic",
+        alias = "mini-max-anthropic",
+        alias = "mini_max_anthropic"
+    )]
+    pub minimax_anthropic: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub sakana: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub longcat: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub meta: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub xai: ProviderConfigToml,
+    #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
+    pub custom: ProviderConfigToml,
 }
 
 /// Sibling `permissions.toml` schema.
@@ -430,6 +540,15 @@ impl ProvidersToml {
             ProviderKind::Minimax => &self.minimax,
             ProviderKind::Deepinfra => &self.deepinfra,
             ProviderKind::Omniroute => &self.omniroute,
+            ProviderKind::DeepseekAnthropic => &self.deepseek_anthropic,
+            ProviderKind::Qianfan => &self.qianfan,
+            ProviderKind::Openmodel => &self.openmodel,
+            ProviderKind::MinimaxAnthropic => &self.minimax_anthropic,
+            ProviderKind::Sakana => &self.sakana,
+            ProviderKind::LongCat => &self.longcat,
+            ProviderKind::Meta => &self.meta,
+            ProviderKind::Xai => &self.xai,
+            ProviderKind::Custom => &self.custom,
         }
     }
 
@@ -461,6 +580,15 @@ impl ProvidersToml {
             ProviderKind::Minimax => &mut self.minimax,
             ProviderKind::Deepinfra => &mut self.deepinfra,
             ProviderKind::Omniroute => &mut self.omniroute,
+            ProviderKind::DeepseekAnthropic => &mut self.deepseek_anthropic,
+            ProviderKind::Qianfan => &mut self.qianfan,
+            ProviderKind::Openmodel => &mut self.openmodel,
+            ProviderKind::MinimaxAnthropic => &mut self.minimax_anthropic,
+            ProviderKind::Sakana => &mut self.sakana,
+            ProviderKind::LongCat => &mut self.longcat,
+            ProviderKind::Meta => &mut self.meta,
+            ProviderKind::Xai => &mut self.xai,
+            ProviderKind::Custom => &mut self.custom,
         }
     }
 }
@@ -1956,6 +2084,15 @@ impl ConfigToml {
                 ProviderKind::Minimax => DEFAULT_MINIMAX_BASE_URL.to_string(),
                 ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL.to_string(),
                 ProviderKind::Omniroute => DEFAULT_OMNIROUTE_BASE_URL.to_string(),
+                ProviderKind::DeepseekAnthropic => DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL.to_string(),
+                ProviderKind::Qianfan => DEFAULT_QIANFAN_BASE_URL.to_string(),
+                ProviderKind::Openmodel => DEFAULT_OPENMODEL_BASE_URL.to_string(),
+                ProviderKind::MinimaxAnthropic => DEFAULT_MINIMAX_ANTHROPIC_BASE_URL.to_string(),
+                ProviderKind::Sakana => DEFAULT_SAKANA_BASE_URL.to_string(),
+                ProviderKind::LongCat => DEFAULT_LONGCAT_BASE_URL.to_string(),
+                ProviderKind::Meta => DEFAULT_META_BASE_URL.to_string(),
+                ProviderKind::Xai => DEFAULT_XAI_BASE_URL.to_string(),
+                ProviderKind::Custom => "http://localhost/v1".to_string(),
             })
         };
         // CLI flag wins outright. Otherwise: config-file → injected secrets/env.
@@ -2505,6 +2642,15 @@ fn default_model_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::Minimax => DEFAULT_MINIMAX_MODEL,
         ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_MODEL,
         ProviderKind::Omniroute => DEFAULT_OMNIROUTE_MODEL,
+        ProviderKind::DeepseekAnthropic => DEFAULT_DEEPSEEK_ANTHROPIC_MODEL,
+        ProviderKind::Qianfan => DEFAULT_QIANFAN_MODEL,
+        ProviderKind::Openmodel => DEFAULT_OPENMODEL_MODEL,
+        ProviderKind::MinimaxAnthropic => DEFAULT_MINIMAX_MODEL,
+        ProviderKind::Sakana => DEFAULT_SAKANA_MODEL,
+        ProviderKind::LongCat => DEFAULT_LONGCAT_MODEL,
+        ProviderKind::Meta => DEFAULT_META_MODEL,
+        ProviderKind::Xai => DEFAULT_XAI_MODEL,
+        ProviderKind::Custom => "custom-model",
     }
 }
 
@@ -2536,6 +2682,15 @@ fn default_base_url_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::Minimax => DEFAULT_MINIMAX_BASE_URL,
         ProviderKind::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL,
         ProviderKind::Omniroute => DEFAULT_OMNIROUTE_BASE_URL,
+        ProviderKind::DeepseekAnthropic => DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL,
+        ProviderKind::Qianfan => DEFAULT_QIANFAN_BASE_URL,
+        ProviderKind::Openmodel => DEFAULT_OPENMODEL_BASE_URL,
+        ProviderKind::MinimaxAnthropic => DEFAULT_MINIMAX_ANTHROPIC_BASE_URL,
+        ProviderKind::Sakana => DEFAULT_SAKANA_BASE_URL,
+        ProviderKind::LongCat => DEFAULT_LONGCAT_BASE_URL,
+        ProviderKind::Meta => DEFAULT_META_BASE_URL,
+        ProviderKind::Xai => DEFAULT_XAI_BASE_URL,
+        ProviderKind::Custom => "http://localhost/v1",
     }
 }
 
@@ -3621,6 +3776,24 @@ struct EnvRuntimeOverrides {
     deepinfra_model: Option<String>,
     omniroute_base_url: Option<String>,
     omniroute_model: Option<String>,
+    deepseek_anthropic_base_url: Option<String>,
+    deepseek_anthropic_model: Option<String>,
+    qianfan_base_url: Option<String>,
+    qianfan_model: Option<String>,
+    openmodel_base_url: Option<String>,
+    openmodel_model: Option<String>,
+    minimax_anthropic_base_url: Option<String>,
+    minimax_anthropic_model: Option<String>,
+    sakana_base_url: Option<String>,
+    sakana_model: Option<String>,
+    longcat_base_url: Option<String>,
+    longcat_model: Option<String>,
+    meta_base_url: Option<String>,
+    meta_model: Option<String>,
+    xai_base_url: Option<String>,
+    xai_model: Option<String>,
+    custom_base_url: Option<String>,
+    custom_model: Option<String>,
 }
 
 impl EnvRuntimeOverrides {
@@ -3826,6 +3999,66 @@ impl EnvRuntimeOverrides {
             omniroute_model: std::env::var("OMNIROUTE_MODEL")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
+            deepseek_anthropic_base_url: std::env::var("DEEPSEEK_ANTHROPIC_BASE_URL")
+                .or_else(|_| std::env::var("DEEPSEEK_CLAUDE_BASE_URL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            deepseek_anthropic_model: std::env::var("DEEPSEEK_ANTHROPIC_MODEL")
+                .or_else(|_| std::env::var("DEEPSEEK_CLAUDE_MODEL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            qianfan_base_url: std::env::var("QIANFAN_BASE_URL")
+                .or_else(|_| std::env::var("BAIDU_QIANFAN_BASE_URL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            qianfan_model: std::env::var("QIANFAN_MODEL")
+                .or_else(|_| std::env::var("BAIDU_QIANFAN_MODEL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            openmodel_base_url: std::env::var("OPENMODEL_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            openmodel_model: std::env::var("OPENMODEL_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            minimax_anthropic_base_url: std::env::var("MINIMAX_ANTHROPIC_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            minimax_anthropic_model: std::env::var("MINIMAX_ANTHROPIC_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            sakana_base_url: std::env::var("SAKANA_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            sakana_model: std::env::var("SAKANA_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            longcat_base_url: std::env::var("LONGCAT_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            longcat_model: std::env::var("LONGCAT_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            meta_base_url: std::env::var("META_BASE_URL")
+                .or_else(|_| std::env::var("META_MODEL_API_BASE_URL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            meta_model: std::env::var("META_MODEL")
+                .or_else(|_| std::env::var("META_MODEL_API_MODEL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            xai_base_url: std::env::var("XAI_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            xai_model: std::env::var("XAI_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            custom_base_url: std::env::var("CUSTOM_BASE_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            custom_model: std::env::var("CUSTOM_MODEL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
         }
     }
 
@@ -3874,6 +4107,15 @@ impl EnvRuntimeOverrides {
             ProviderKind::Minimax => self.minimax_base_url.clone(),
             ProviderKind::Deepinfra => self.deepinfra_base_url.clone(),
             ProviderKind::Omniroute => self.omniroute_base_url.clone(),
+            ProviderKind::DeepseekAnthropic => self.deepseek_anthropic_base_url.clone(),
+            ProviderKind::Qianfan => self.qianfan_base_url.clone(),
+            ProviderKind::Openmodel => self.openmodel_base_url.clone(),
+            ProviderKind::MinimaxAnthropic => self.minimax_anthropic_base_url.clone(),
+            ProviderKind::Sakana => self.sakana_base_url.clone(),
+            ProviderKind::LongCat => self.longcat_base_url.clone(),
+            ProviderKind::Meta => self.meta_base_url.clone(),
+            ProviderKind::Xai => self.xai_base_url.clone(),
+            ProviderKind::Custom => self.custom_base_url.clone(),
         }
     }
 
@@ -3899,6 +4141,15 @@ impl EnvRuntimeOverrides {
             ProviderKind::Minimax => self.minimax_model.clone(),
             ProviderKind::Deepinfra => self.deepinfra_model.clone(),
             ProviderKind::Omniroute => self.omniroute_model.clone(),
+            ProviderKind::DeepseekAnthropic => self.deepseek_anthropic_model.clone(),
+            ProviderKind::Qianfan => self.qianfan_model.clone(),
+            ProviderKind::Openmodel => self.openmodel_model.clone(),
+            ProviderKind::MinimaxAnthropic => self.minimax_anthropic_model.clone(),
+            ProviderKind::Sakana => self.sakana_model.clone(),
+            ProviderKind::LongCat => self.longcat_model.clone(),
+            ProviderKind::Meta => self.meta_model.clone(),
+            ProviderKind::Xai => self.xai_model.clone(),
+            ProviderKind::Custom => self.custom_model.clone(),
             _ => None,
         }?;
 
@@ -6198,13 +6449,18 @@ unix_socket_path = "/tmp/cw-hooks.sock"
                 default_base_url_for_provider(kind)
             );
             assert!(!provider.display_name().trim().is_empty());
-            assert!(!provider.env_vars().is_empty());
+            if kind != ProviderKind::Custom {
+                assert!(!provider.env_vars().is_empty());
+            }
             // OpenAI Codex (ChatGPT) speaks the Responses API and Anthropic
             // speaks the native Messages API; every other built-in provider
             // is OpenAI-compatible Chat Completions.
             let expected_wire = match kind {
                 ProviderKind::OpenaiCodex => provider::WireFormat::Responses,
-                ProviderKind::Anthropic => provider::WireFormat::AnthropicMessages,
+                ProviderKind::Anthropic
+                | ProviderKind::DeepseekAnthropic
+                | ProviderKind::MinimaxAnthropic
+                | ProviderKind::Openmodel => provider::WireFormat::AnthropicMessages,
                 _ => provider::WireFormat::ChatCompletions,
             };
             assert_eq!(provider.wire(), expected_wire);

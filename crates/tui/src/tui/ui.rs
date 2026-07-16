@@ -161,7 +161,7 @@ const CONTEXT_WARNING_THRESHOLD_PERCENT: f64 = 85.0;
 const CONTEXT_CRITICAL_THRESHOLD_PERCENT: f64 = 95.0;
 const CONTEXT_SUGGEST_COMPACT_THRESHOLD_PERCENT: f64 = 60.0;
 const UI_IDLE_POLL_MS: u64 = 48;
-const UI_ACTIVE_POLL_MS: u64 = 24;
+const UI_ACTIVE_POLL_MS: u64 = 16;
 const SUBAGENT_HOOK_PREVIEW_LIMIT: usize = 2_048;
 const WEB_CONFIG_POLL_MS: u64 = 16;
 const DISPATCH_WATCHDOG_TIMEOUT: Duration = Duration::from_secs(30);
@@ -177,7 +177,7 @@ const TOOL_HANG_WATCHDOG_TIMEOUT: Duration = Duration::from_secs(900);
 // sub-agents running). Drives the footer water-spout animation as well as
 // the per-tool spinner pulse — keep this fast enough that the spout reads as
 // motion (~12 fps) instead of teleport-frames.
-const UI_STATUS_ANIMATION_MS: u64 = 80;
+const UI_STATUS_ANIMATION_MS: u64 = 50;
 const SIDEBAR_VISIBLE_MIN_WIDTH: u16 = 100;
 const DEFAULT_TERMINAL_PROBE_TIMEOUT_MS: u64 = 500;
 const PERIODIC_FULL_REPAINT_EVERY_N: u64 = 50;
@@ -8388,6 +8388,15 @@ fn render(f: &mut Frame, app: &mut App) {
             crate::config::ApiProvider::Zai => Some("Z.ai"),
             crate::config::ApiProvider::Stepfun => Some("StepFun"),
             crate::config::ApiProvider::Minimax => Some("MiniMax"),
+            crate::config::ApiProvider::DeepseekAnthropic => Some("DeepSeek (Anthropic)"),
+            crate::config::ApiProvider::Qianfan => Some("Qianfan"),
+            crate::config::ApiProvider::Openmodel => Some("OpenModel"),
+            crate::config::ApiProvider::MinimaxAnthropic => Some("MiniMax (Anthropic)"),
+            crate::config::ApiProvider::Sakana => Some("Sakana"),
+            crate::config::ApiProvider::LongCat => Some("LongCat"),
+            crate::config::ApiProvider::Meta => Some("Meta"),
+            crate::config::ApiProvider::Xai => Some("xAI"),
+            crate::config::ApiProvider::Custom => Some("Custom"),
         };
         let status_indicator_started_at = if app.low_motion {
             None
@@ -9512,6 +9521,15 @@ async fn apply_provider_picker_api_key(
             ApiProvider::Zai => &mut providers.zai,
             ApiProvider::Stepfun => &mut providers.stepfun,
             ApiProvider::Minimax => &mut providers.minimax,
+            ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+            ApiProvider::Qianfan => &mut providers.qianfan,
+            ApiProvider::Openmodel => &mut providers.openmodel,
+            ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+            ApiProvider::Sakana => &mut providers.sakana,
+            ApiProvider::LongCat => &mut providers.longcat,
+            ApiProvider::Meta => &mut providers.meta,
+            ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Custom => &mut providers.custom,
         };
         entry.api_key = Some(api_key);
     }
@@ -9577,6 +9595,15 @@ fn set_provider_auth_mode_in_memory(config: &mut Config, provider: ApiProvider, 
         ApiProvider::Zai => &mut providers.zai,
         ApiProvider::Stepfun => &mut providers.stepfun,
         ApiProvider::Minimax => &mut providers.minimax,
+        ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+        ApiProvider::Qianfan => &mut providers.qianfan,
+        ApiProvider::Openmodel => &mut providers.openmodel,
+        ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+        ApiProvider::Sakana => &mut providers.sakana,
+        ApiProvider::LongCat => &mut providers.longcat,
+        ApiProvider::Meta => &mut providers.meta,
+        ApiProvider::Xai => &mut providers.xai,
+        ApiProvider::Custom => &mut providers.custom,
     };
     entry.auth_mode = Some(auth_mode);
 }

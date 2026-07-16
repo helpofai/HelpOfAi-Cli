@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.79] - 2026-07-16
+
+### Added
+
+- **9 New Providers**: Added support for `DeepseekAnthropic`, `Qianfan`, `Openmodel`, `MinimaxAnthropic`, `Sakana`, `LongCat`, `Meta`, `Xai`, and `Custom` across registry, capability configurations, header mapping, and picker views.
+- **Dynamic Status & Spinner Engine**: Composer box title now displays active statuses (`Generating response...`, `Compacting context...`, `Running <tool_name>...`) with smooth rotating braille spinners.
+- **Optimized Render Loop Pacing**: Boosted visual frame rates by reducing active poll rates to 16ms and active animation intervals to 50ms.
+
+### Fixed
+
+- **Transparent Reasoning-Only Retry**: Automatically retry when a reasoning model returns thinking but fails to yield a final answer or tool calls.
+- **Hermetic Unit Testing**: Hardened environment isolation in DeepSeek defaults test to prevent host configuration leakage.
+
 ## [0.8.78] - 2026-07-15
 
 ### Added

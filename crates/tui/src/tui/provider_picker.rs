@@ -713,7 +713,7 @@ mod tests {
         let config = Config::default();
         let picker = ProviderPickerView::new(ApiProvider::Deepseek, &config);
 
-        let rendered = render_text(&picker, 80, 23);
+        let rendered = render_text(&picker, 80, 40);
 
         assert!(rendered.contains("DeepSeek *"));
         assert!(rendered.contains("Ollama"));
