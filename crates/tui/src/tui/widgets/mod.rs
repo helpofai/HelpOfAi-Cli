@@ -553,47 +553,55 @@ fn composer_running_status(app: &App) -> Option<String> {
     if !app.is_loading && !matches!(app.runtime_turn_status.as_deref(), Some("in_progress")) {
         return None;
     }
-    
+
     let spinner = composer_status_spinner_frame(app.turn_started_at);
-    
+
     if app.is_compacting {
         return Some(format!("{spinner} Compacting context..."));
     }
-    
+
     // Check if subagents or tools are active
     if let Some(active) = app.active_cell.as_ref() {
-        let has_running_tools = active.entries().iter().any(|cell| {
-            match cell {
-                crate::tui::history::HistoryCell::Tool(t) => {
-                    t.status() == Some(crate::tui::history::ToolStatus::Running)
-                }
-                _ => false,
+        let has_running_tools = active.entries().iter().any(|cell| match cell {
+            crate::tui::history::HistoryCell::Tool(t) => {
+                t.status() == Some(crate::tui::history::ToolStatus::Running)
             }
+            _ => false,
         });
         if has_running_tools {
             // Get the first running tool's name if possible
-            let tool_name = active.entries().iter().find_map(|cell| {
-                match cell {
-                    crate::tui::history::HistoryCell::Tool(t) => {
-                        if t.status() == Some(crate::tui::history::ToolStatus::Running) {
-                            match t {
-                                crate::tui::history::ToolCell::Generic(c) => Some(c.name.clone()),
-                                crate::tui::history::ToolCell::Mcp(c) => Some(c.tool.clone()),
-                                crate::tui::history::ToolCell::WebSearch(_) => Some("web_search".to_string()),
-                                crate::tui::history::ToolCell::ViewImage(_) => Some("view_image".to_string()),
-                                crate::tui::history::ToolCell::Exploring(_) => Some("explore".to_string()),
-                                crate::tui::history::ToolCell::Exec(_) => Some("shell".to_string()),
-                                crate::tui::history::ToolCell::PlanUpdate(_) => Some("update_plan".to_string()),
-                                crate::tui::history::ToolCell::PatchSummary(_) => Some("apply_patch".to_string()),
-                                crate::tui::history::ToolCell::Review(_) => Some("review".to_string()),
-                                crate::tui::history::ToolCell::DiffPreview(_) => Some("diff".to_string()),
+            let tool_name = active.entries().iter().find_map(|cell| match cell {
+                crate::tui::history::HistoryCell::Tool(t) => {
+                    if t.status() == Some(crate::tui::history::ToolStatus::Running) {
+                        match t {
+                            crate::tui::history::ToolCell::Generic(c) => Some(c.name.clone()),
+                            crate::tui::history::ToolCell::Mcp(c) => Some(c.tool.clone()),
+                            crate::tui::history::ToolCell::WebSearch(_) => {
+                                Some("web_search".to_string())
                             }
-                        } else {
-                            None
+                            crate::tui::history::ToolCell::ViewImage(_) => {
+                                Some("view_image".to_string())
+                            }
+                            crate::tui::history::ToolCell::Exploring(_) => {
+                                Some("explore".to_string())
+                            }
+                            crate::tui::history::ToolCell::Exec(_) => Some("shell".to_string()),
+                            crate::tui::history::ToolCell::PlanUpdate(_) => {
+                                Some("update_plan".to_string())
+                            }
+                            crate::tui::history::ToolCell::PatchSummary(_) => {
+                                Some("apply_patch".to_string())
+                            }
+                            crate::tui::history::ToolCell::Review(_) => Some("review".to_string()),
+                            crate::tui::history::ToolCell::DiffPreview(_) => {
+                                Some("diff".to_string())
+                            }
                         }
+                    } else {
+                        None
                     }
-                    _ => None,
                 }
+                _ => None,
             });
             if let Some(name) = tool_name {
                 return Some(format!("{spinner} Running {name}..."));
@@ -602,7 +610,7 @@ fn composer_running_status(app: &App) -> Option<String> {
             }
         }
     }
-    
+
     // Default to generating/thinking
     Some(format!("{spinner} Generating response..."))
 }
