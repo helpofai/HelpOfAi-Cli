@@ -361,7 +361,7 @@ pub struct ProviderConfigToml {
 impl ProviderConfigToml {
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        let blank = |value: Option<&String>| value.map_or(true, |value| value.trim().is_empty());
+        let blank = |value: Option<&String>| value.is_none_or(|value| value.trim().is_empty());
 
         blank(self.api_key.as_ref())
             && blank(self.base_url.as_ref())

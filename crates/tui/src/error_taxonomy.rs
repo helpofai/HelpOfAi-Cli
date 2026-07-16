@@ -223,12 +223,10 @@ impl From<LlmError> for ErrorEnvelope {
             LlmError::NetworkError(message) => {
                 let mut display_msg = message.clone();
                 if message.contains("localhost:20128") || message.contains("127.0.0.1:20128") {
-                    display_msg = format!(
-                        "Connection failed: The local OmniRoute gateway (http://localhost:20128) is not running.\n\n\
+                    display_msg = "Connection failed: The local OmniRoute gateway (http://localhost:20128) is not running.\n\n\
                         💡 How to resolve:\n\
                         1. Start your OmniRoute gateway server locally.\n\
-                        2. Or switch the active provider by typing `/provider deepseek` or `/provider openai` in the TUI input bar."
-                    );
+                        2. Or switch the active provider by typing `/provider deepseek` or `/provider openai` in the TUI input bar.".to_string();
                 }
                 Self::new(
                     ErrorCategory::Network,
