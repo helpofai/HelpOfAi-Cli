@@ -925,8 +925,7 @@ impl Engine {
             // streamed, ship the partial state to the rest of the turn
             // pipeline so we don't double-bill the user by re-running it.
             let stream_died_with_nothing = (stream_errors > 0
-                || (current_text_visible.trim().is_empty()
-                    && current_thinking.trim().is_empty()))
+                || (current_text_visible.trim().is_empty() && current_thinking.trim().is_empty()))
                 && tool_uses.is_empty()
                 && !pending_message_complete;
             let reasoning_only_no_output = stream_errors == 0
