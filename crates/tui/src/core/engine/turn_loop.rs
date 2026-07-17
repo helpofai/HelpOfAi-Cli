@@ -924,10 +924,10 @@ impl Engine {
             // nothing actionable — if any tool call landed or text was
             // streamed, ship the partial state to the rest of the turn
             // pipeline so we don't double-bill the user by re-running it.
-            let stream_died_with_nothing = stream_errors > 0
+            let stream_died_with_nothing = (stream_errors > 0
+                || (current_text_visible.trim().is_empty()
+                    && current_thinking.trim().is_empty()))
                 && tool_uses.is_empty()
-                && current_text_visible.trim().is_empty()
-                && current_thinking.trim().is_empty()
                 && !pending_message_complete;
             let reasoning_only_no_output = stream_errors == 0
                 && tool_uses.is_empty()
@@ -1297,9 +1297,14 @@ impl Engine {
                         !pending_steers.is_empty(),
                         holding_for_subagents,
                     ) {
-                        let message = "Model returned reasoning but no answer or tool call; \
-                                       turn ended without output. Send a follow-up to retry."
-                            .to_string();
+                        let message = if current_thinking.is_empty() {
+                            "Model returned an empty response with no content or tool calls. Please check your provider/gateway configuration."
+                                .to_string()
+                        } else {
+                            "Model returned reasoning but no answer or tool call; \
+                             turn ended without output. Send a follow-up to retry."
+                                .to_string()
+                        };
                         crate::logging::warn(&message);
                         let _ = self.tx_event.send(Event::status(message)).await;
                     }
