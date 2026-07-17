@@ -181,6 +181,8 @@ pub const ZAI_GLM_5_TURBO_MODEL: &str = "GLM-5-Turbo";
 pub const DEFAULT_ZAI_BASE_URL: &str = "https://api.z.ai/api/coding/paas/v4";
 pub const DEFAULT_STEPFUN_MODEL: &str = "step-3.7-flash";
 pub const DEFAULT_STEPFUN_BASE_URL: &str = "https://api.stepfun.ai/v1";
+pub const DEFAULT_OMNIROUTE_MODEL: &str = "auto";
+pub const DEFAULT_OMNIROUTE_BASE_URL: &str = "http://localhost:20128/v1";
 pub const DEFAULT_ANTHROPIC_MODEL: &str = "claude-sonnet-4-6";
 pub const ANTHROPIC_OPUS_MODEL: &str = "claude-opus-4-8";
 pub const ANTHROPIC_HAIKU_MODEL: &str = "claude-haiku-4-5";
@@ -194,6 +196,22 @@ pub const MINIMAX_M2_1_MODEL: &str = "MiniMax-M2.1";
 pub const MINIMAX_M2_1_HIGHSPEED_MODEL: &str = "MiniMax-M2.1-highspeed";
 pub const MINIMAX_M2_MODEL: &str = "MiniMax-M2";
 pub const DEFAULT_MINIMAX_BASE_URL: &str = "https://api.minimax.io/v1";
+
+pub const DEFAULT_DEEPSEEK_ANTHROPIC_MODEL: &str = DEFAULT_TEXT_MODEL;
+pub const DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL: &str = "https://api.deepseek.com/anthropic";
+pub const DEFAULT_QIANFAN_MODEL: &str = "ernie-4.0-turbo-8k";
+pub const DEFAULT_QIANFAN_BASE_URL: &str = "https://api.baiduqianfan.ai/v1";
+pub const DEFAULT_OPENMODEL_MODEL: &str = "deepseek-v4-flash";
+pub const DEFAULT_OPENMODEL_BASE_URL: &str = "https://api.openmodel.ai";
+pub const DEFAULT_MINIMAX_ANTHROPIC_BASE_URL: &str = "https://api.minimax.io/anthropic";
+pub const DEFAULT_SAKANA_MODEL: &str = "fugu-3.5-pro";
+pub const DEFAULT_SAKANA_BASE_URL: &str = "https://api.sakana.ai/v1";
+pub const DEFAULT_LONGCAT_MODEL: &str = "longcat-v1.5";
+pub const DEFAULT_LONGCAT_BASE_URL: &str = "https://api.longcat.ai/v1";
+pub const DEFAULT_META_MODEL: &str = "llama-3.5-70b";
+pub const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
+pub const DEFAULT_XAI_MODEL: &str = "grok-2.5";
+pub const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -224,6 +242,16 @@ pub enum ApiProvider {
     Stepfun,
     Minimax,
     Deepinfra,
+    Omniroute,
+    DeepseekAnthropic,
+    Qianfan,
+    Openmodel,
+    MinimaxAnthropic,
+    Sakana,
+    LongCat,
+    Meta,
+    Xai,
+    Custom,
 }
 
 impl ApiProvider {
@@ -328,7 +356,7 @@ impl ApiProvider {
 
     /// `ApiProvider` discriminant → `ProviderKind` lookup.
     /// Index 1 is `None` for the legacy `DeepseekCN` variant.
-    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 26] = [
+    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 36] = [
         Some(helpofai_config::ProviderKind::Deepseek),
         None, // DeepseekCN
         Some(helpofai_config::ProviderKind::NvidiaNim),
@@ -355,10 +383,20 @@ impl ApiProvider {
         Some(helpofai_config::ProviderKind::Stepfun),
         Some(helpofai_config::ProviderKind::Minimax),
         Some(helpofai_config::ProviderKind::Deepinfra),
+        Some(helpofai_config::ProviderKind::Omniroute),
+        Some(helpofai_config::ProviderKind::DeepseekAnthropic),
+        Some(helpofai_config::ProviderKind::Qianfan),
+        Some(helpofai_config::ProviderKind::Openmodel),
+        Some(helpofai_config::ProviderKind::MinimaxAnthropic),
+        Some(helpofai_config::ProviderKind::Sakana),
+        Some(helpofai_config::ProviderKind::LongCat),
+        Some(helpofai_config::ProviderKind::Meta),
+        Some(helpofai_config::ProviderKind::Xai),
+        Some(helpofai_config::ProviderKind::Custom),
     ];
 
     /// `ProviderKind` discriminant → `ApiProvider` lookup.
-    const FROM_KIND_LOOKUP: [Self; 25] = [
+    const FROM_KIND_LOOKUP: [Self; 35] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -384,6 +422,16 @@ impl ApiProvider {
         Self::Stepfun,
         Self::Minimax,
         Self::Deepinfra,
+        Self::Omniroute,
+        Self::DeepseekAnthropic,
+        Self::Qianfan,
+        Self::Openmodel,
+        Self::MinimaxAnthropic,
+        Self::Sakana,
+        Self::LongCat,
+        Self::Meta,
+        Self::Xai,
+        Self::Custom,
     ];
 
     /// Map to the config-level `ProviderKind`.
@@ -465,7 +513,10 @@ pub enum RequestPayloadMode {
 /// in the API payload (after normalization / provider-specific mapping).
 #[must_use]
 pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> ProviderCapability {
-    if matches!(provider, ApiProvider::Anthropic) {
+    if matches!(
+        provider,
+        ApiProvider::Anthropic | ApiProvider::MinimaxAnthropic | ApiProvider::Openmodel
+    ) {
         return ProviderCapability {
             provider,
             resolved_model: resolved_model.to_string(),
@@ -476,7 +527,7 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
             max_output: crate::models::max_output_tokens_for_model(resolved_model)
                 .unwrap_or(64_000),
             thinking_supported: crate::models::model_supports_reasoning(resolved_model),
-            cache_telemetry_supported: true,
+            cache_telemetry_supported: matches!(provider, ApiProvider::Anthropic),
             request_payload_mode: RequestPayloadMode::AnthropicMessages,
             alias_deprecation: None,
         };
@@ -500,6 +551,25 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
     // resolves context windows, output limits, and thinking support from
     // models.rs lookups.  Ollama also falls through to model-based lookups
     // with 8192 as the last-resort fallback instead of a hardcoded floor.
+    if matches!(provider, ApiProvider::Omniroute) {
+        // OmniRoute is a 237-provider gateway that accepts arbitrary model
+        // routing instructions verbatim: `auto`, `auto/coding`, `cc/claude-...`,
+        // `glm/glm-5.1`, etc. It speaks OpenAI chat completions and
+        // transcodes upstream, so treat it as chat-completions and let the
+        // gateway resolve the real upstream model + thinking support.
+        return ProviderCapability {
+            provider,
+            resolved_model: resolved_model.to_string(),
+            context_window: crate::models::context_window_for_model(resolved_model)
+                .unwrap_or(200_000),
+            max_output: crate::models::max_output_tokens_for_model(resolved_model).unwrap_or(8192),
+            thinking_supported: true,
+            cache_telemetry_supported: false,
+            request_payload_mode: RequestPayloadMode::ChatCompletions,
+            alias_deprecation: None,
+        };
+    }
+
     if matches!(provider, ApiProvider::XiaomiMimo) {
         return ProviderCapability {
             provider,
@@ -529,7 +599,10 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
     }
 
     let model_lower = resolved_model.to_ascii_lowercase();
-    let alias_deprecation = if matches!(provider, ApiProvider::Deepseek | ApiProvider::DeepseekCN) {
+    let alias_deprecation = if matches!(
+        provider,
+        ApiProvider::Deepseek | ApiProvider::DeepseekCN | ApiProvider::DeepseekAnthropic
+    ) {
         deepseek_alias_deprecation(&model_lower)
     } else {
         None
@@ -579,8 +652,14 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
             | ApiProvider::Volcengine
     );
 
-    // Request payload mode: all current providers use chat completions.
-    let request_payload_mode = RequestPayloadMode::ChatCompletions;
+    let request_payload_mode = if matches!(
+        provider,
+        ApiProvider::DeepseekAnthropic | ApiProvider::MinimaxAnthropic | ApiProvider::Openmodel
+    ) {
+        RequestPayloadMode::AnthropicMessages
+    } else {
+        RequestPayloadMode::ChatCompletions
+    };
 
     ProviderCapability {
         provider,
@@ -1093,6 +1172,7 @@ pub fn model_completion_names_for_provider(provider: ApiProvider) -> Vec<&'stati
             vec![DEFAULT_HUGGINGFACE_MODEL, DEFAULT_HUGGINGFACE_FLASH_MODEL]
         }
         ApiProvider::Deepinfra => vec![DEFAULT_DEEPINFRA_MODEL, DEFAULT_DEEPINFRA_FLASH_MODEL],
+        ApiProvider::Omniroute => Vec::new(),
         ApiProvider::WanjieArk => {
             vec![
                 DEFAULT_WANJIE_ARK_MODEL,
@@ -1124,6 +1204,15 @@ pub fn model_completion_names_for_provider(provider: ApiProvider) -> Vec<&'stati
             MINIMAX_M2_1_HIGHSPEED_MODEL,
             MINIMAX_M2_MODEL,
         ],
+        ApiProvider::DeepseekAnthropic => vec![DEFAULT_DEEPSEEK_ANTHROPIC_MODEL],
+        ApiProvider::Qianfan => vec![DEFAULT_QIANFAN_MODEL],
+        ApiProvider::Openmodel => vec![DEFAULT_OPENMODEL_MODEL],
+        ApiProvider::MinimaxAnthropic => vec![DEFAULT_MINIMAX_MODEL],
+        ApiProvider::Sakana => vec![DEFAULT_SAKANA_MODEL],
+        ApiProvider::LongCat => vec![DEFAULT_LONGCAT_MODEL],
+        ApiProvider::Meta => vec![DEFAULT_META_MODEL],
+        ApiProvider::Xai => vec![DEFAULT_XAI_MODEL],
+        ApiProvider::Custom => vec!["custom-model"],
     }
 }
 
@@ -1340,6 +1429,8 @@ pub struct MemoryConfig {
     /// `# foo` typed in the composer to append to that file. Default `false`.
     #[serde(default)]
     pub enabled: Option<bool>,
+    /// Maximum size of the user memory file in KiB. Default: 512 KiB.
+    pub max_size_kb: Option<usize>,
 }
 
 /// Xiaomi MiMo speech/TTS output configuration.
@@ -2315,6 +2406,13 @@ pub struct ProvidersConfig {
     pub huggingface: ProviderConfig,
     #[serde(default, alias = "deep-infra", alias = "deep_infra")]
     pub deepinfra: ProviderConfig,
+    #[serde(
+        default,
+        alias = "omni-route",
+        alias = "omni_route",
+        alias = "omnirouteroute"
+    )]
+    pub omniroute: ProviderConfig,
     #[serde(default, alias = "together-ai")]
     pub together: ProviderConfig,
     #[serde(
@@ -2333,6 +2431,36 @@ pub struct ProvidersConfig {
     pub stepfun: ProviderConfig,
     #[serde(default)]
     pub minimax: ProviderConfig,
+    #[serde(default, alias = "deepseekAnthropic")]
+    pub deepseek_anthropic: ProviderConfig,
+    #[serde(
+        default,
+        alias = "baidu-qianfan",
+        alias = "baidu_qianfan",
+        alias = "baidu",
+        alias = "qianfan"
+    )]
+    pub qianfan: ProviderConfig,
+    #[serde(default, alias = "openmodel", alias = "openModel")]
+    pub openmodel: ProviderConfig,
+    #[serde(
+        default,
+        alias = "minimax-anthropic",
+        alias = "minimaxAnthropic",
+        alias = "mini-max-anthropic",
+        alias = "mini_max_anthropic"
+    )]
+    pub minimax_anthropic: ProviderConfig,
+    #[serde(default, alias = "sakana", alias = "sakanaAi", alias = "fugu")]
+    pub sakana: ProviderConfig,
+    #[serde(default, alias = "longcat", alias = "longCat", alias = "meituan")]
+    pub longcat: ProviderConfig,
+    #[serde(default, alias = "meta", alias = "metaAi", alias = "muse")]
+    pub meta: ProviderConfig,
+    #[serde(default, alias = "xai", alias = "xAi", alias = "grok")]
+    pub xai: ProviderConfig,
+    #[serde(default)]
+    pub custom: ProviderConfig,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -2606,12 +2734,22 @@ impl Config {
             ApiProvider::Volcengine => &providers.volcengine,
             ApiProvider::Huggingface => &providers.huggingface,
             ApiProvider::Deepinfra => &providers.deepinfra,
+            ApiProvider::Omniroute => &providers.omniroute,
             ApiProvider::Together => &providers.together,
             ApiProvider::OpenaiCodex => &providers.openai_codex,
             ApiProvider::Anthropic => &providers.anthropic,
             ApiProvider::Zai => &providers.zai,
             ApiProvider::Stepfun => &providers.stepfun,
             ApiProvider::Minimax => &providers.minimax,
+            ApiProvider::DeepseekAnthropic => &providers.deepseek_anthropic,
+            ApiProvider::Qianfan => &providers.qianfan,
+            ApiProvider::Openmodel => &providers.openmodel,
+            ApiProvider::MinimaxAnthropic => &providers.minimax_anthropic,
+            ApiProvider::Sakana => &providers.sakana,
+            ApiProvider::LongCat => &providers.longcat,
+            ApiProvider::Meta => &providers.meta,
+            ApiProvider::Xai => &providers.xai,
+            ApiProvider::Custom => &providers.custom,
         })
     }
 
@@ -2638,12 +2776,22 @@ impl Config {
             ApiProvider::Volcengine => &mut providers.volcengine,
             ApiProvider::Huggingface => &mut providers.huggingface,
             ApiProvider::Deepinfra => &mut providers.deepinfra,
+            ApiProvider::Omniroute => &mut providers.omniroute,
             ApiProvider::Together => &mut providers.together,
             ApiProvider::OpenaiCodex => &mut providers.openai_codex,
             ApiProvider::Anthropic => &mut providers.anthropic,
             ApiProvider::Zai => &mut providers.zai,
             ApiProvider::Stepfun => &mut providers.stepfun,
             ApiProvider::Minimax => &mut providers.minimax,
+            ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+            ApiProvider::Qianfan => &mut providers.qianfan,
+            ApiProvider::Openmodel => &mut providers.openmodel,
+            ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+            ApiProvider::Sakana => &mut providers.sakana,
+            ApiProvider::LongCat => &mut providers.longcat,
+            ApiProvider::Meta => &mut providers.meta,
+            ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Custom => &mut providers.custom,
         }
     }
 
@@ -2754,12 +2902,14 @@ impl Config {
             return DEFAULT_XIAOMI_MIMO_MODEL.to_string();
         }
         if let Some(model) = self.default_text_model.as_deref()
+            && provider != ApiProvider::Omniroute
             && (provider_passes_model_through(provider)
                 || self.active_provider_preserves_custom_base_url_model())
         {
             return model.trim().to_string();
         }
         if let Some(model) = self.default_text_model.as_deref()
+            && provider != ApiProvider::Omniroute
             && !root_deepseek_model_is_foreign_to_direct_provider(provider, model)
             && let Some(normalized) = normalize_model_name_for_provider(provider, model)
         {
@@ -2785,12 +2935,22 @@ impl Config {
             ApiProvider::Volcengine => DEFAULT_VOLCENGINE_MODEL,
             ApiProvider::Huggingface => DEFAULT_HUGGINGFACE_MODEL,
             ApiProvider::Deepinfra => DEFAULT_DEEPINFRA_MODEL,
+            ApiProvider::Omniroute => DEFAULT_OMNIROUTE_MODEL,
             ApiProvider::Together => DEFAULT_TOGETHER_MODEL,
             ApiProvider::OpenaiCodex => DEFAULT_OPENAI_CODEX_MODEL,
             ApiProvider::Zai => DEFAULT_ZAI_MODEL,
             ApiProvider::Stepfun => DEFAULT_STEPFUN_MODEL,
             ApiProvider::Anthropic => DEFAULT_ANTHROPIC_MODEL,
             ApiProvider::Minimax => DEFAULT_MINIMAX_MODEL,
+            ApiProvider::DeepseekAnthropic => DEFAULT_DEEPSEEK_ANTHROPIC_MODEL,
+            ApiProvider::Qianfan => DEFAULT_QIANFAN_MODEL,
+            ApiProvider::Openmodel => DEFAULT_OPENMODEL_MODEL,
+            ApiProvider::MinimaxAnthropic => DEFAULT_MINIMAX_MODEL,
+            ApiProvider::Sakana => DEFAULT_SAKANA_MODEL,
+            ApiProvider::LongCat => DEFAULT_LONGCAT_MODEL,
+            ApiProvider::Meta => DEFAULT_META_MODEL,
+            ApiProvider::Xai => DEFAULT_XAI_MODEL,
+            ApiProvider::Custom => "custom-model",
         }
         .to_string()
     }
@@ -2834,7 +2994,17 @@ impl Config {
             | ApiProvider::OpenaiCodex
             | ApiProvider::Zai
             | ApiProvider::Stepfun
-            | ApiProvider::Minimax => None,
+            | ApiProvider::Minimax
+            | ApiProvider::Omniroute
+            | ApiProvider::DeepseekAnthropic
+            | ApiProvider::Qianfan
+            | ApiProvider::Openmodel
+            | ApiProvider::MinimaxAnthropic
+            | ApiProvider::Sakana
+            | ApiProvider::LongCat
+            | ApiProvider::Meta
+            | ApiProvider::Xai
+            | ApiProvider::Custom => None,
         };
         let configured_base_url = provider_base.or(root_base);
         let base = if provider == ApiProvider::XiaomiMimo {
@@ -2850,7 +3020,13 @@ impl Config {
             resolve_xiaomi_mimo_base_url(configured_base_url, api_key, mode)
         } else {
             configured_base_url
-                .or_else(env_base_url_override)
+                .or_else(|| {
+                    if matches!(provider, ApiProvider::Deepseek | ApiProvider::DeepseekCN) {
+                        env_base_url_override()
+                    } else {
+                        None
+                    }
+                })
                 .unwrap_or_else(|| {
                     match provider {
                         ApiProvider::Deepseek => DEFAULT_DEEPSEEK_BASE_URL,
@@ -2882,12 +3058,22 @@ impl Config {
                         ApiProvider::Volcengine => DEFAULT_VOLCENGINE_BASE_URL,
                         ApiProvider::Huggingface => DEFAULT_HUGGINGFACE_BASE_URL,
                         ApiProvider::Deepinfra => DEFAULT_DEEPINFRA_BASE_URL,
+                        ApiProvider::Omniroute => DEFAULT_OMNIROUTE_BASE_URL,
                         ApiProvider::Together => DEFAULT_TOGETHER_BASE_URL,
                         ApiProvider::OpenaiCodex => DEFAULT_OPENAI_CODEX_BASE_URL,
                         ApiProvider::Zai => DEFAULT_ZAI_BASE_URL,
                         ApiProvider::Stepfun => DEFAULT_STEPFUN_BASE_URL,
                         ApiProvider::Anthropic => DEFAULT_ANTHROPIC_BASE_URL,
                         ApiProvider::Minimax => DEFAULT_MINIMAX_BASE_URL,
+                        ApiProvider::DeepseekAnthropic => DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL,
+                        ApiProvider::Qianfan => DEFAULT_QIANFAN_BASE_URL,
+                        ApiProvider::Openmodel => DEFAULT_OPENMODEL_BASE_URL,
+                        ApiProvider::MinimaxAnthropic => DEFAULT_MINIMAX_ANTHROPIC_BASE_URL,
+                        ApiProvider::Sakana => DEFAULT_SAKANA_BASE_URL,
+                        ApiProvider::LongCat => DEFAULT_LONGCAT_BASE_URL,
+                        ApiProvider::Meta => DEFAULT_META_BASE_URL,
+                        ApiProvider::Xai => DEFAULT_XAI_BASE_URL,
+                        ApiProvider::Custom => "http://localhost/v1",
                     }
                     .to_string()
                 })
@@ -2985,7 +3171,9 @@ impl Config {
             return Ok(value);
         }
 
-        if base_url_uses_local_host(&self.deepseek_base_url()) {
+        if base_url_uses_local_host(&self.deepseek_base_url())
+            && !matches!(provider, ApiProvider::Omniroute)
+        {
             return Ok(String::new());
         }
 
@@ -3079,6 +3267,12 @@ impl Config {
             .unwrap_or_else(|| PathBuf::from("./memory.md"))
     }
 
+    /// Resolve the project-specific memory file path.
+    #[must_use]
+    pub fn project_memory_path(&self, workspace: &std::path::Path) -> PathBuf {
+        workspace.join(".helpofai").join("memory.md")
+    }
+
     /// Resolve the default speech/TTS output directory, if configured.
     #[must_use]
     pub fn speech_output_dir(&self) -> Option<PathBuf> {
@@ -3126,6 +3320,15 @@ impl Config {
             .as_ref()
             .and_then(|m| m.enabled)
             .unwrap_or(false)
+    }
+
+    /// Return the configured maximum memory size in KiB. Defaults to 512 KiB.
+    #[must_use]
+    pub fn memory_max_size_kb(&self) -> usize {
+        self.memory
+            .as_ref()
+            .and_then(|m| m.max_size_kb)
+            .unwrap_or(512)
     }
 
     /// Return the configured vision model config, inheriting api_key from main config.
@@ -3937,6 +4140,13 @@ fn apply_env_overrides(config: &mut Config) {
                     .deepinfra
                     .base_url = Some(value);
             }
+            ApiProvider::Omniroute => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .omniroute
+                    .base_url = Some(value);
+            }
             ApiProvider::Together => {
                 config
                     .providers
@@ -3970,6 +4180,69 @@ fn apply_env_overrides(config: &mut Config) {
                     .providers
                     .get_or_insert_with(ProvidersConfig::default)
                     .minimax
+                    .base_url = Some(value);
+            }
+            ApiProvider::DeepseekAnthropic => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .deepseek_anthropic
+                    .base_url = Some(value);
+            }
+            ApiProvider::Qianfan => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .qianfan
+                    .base_url = Some(value);
+            }
+            ApiProvider::Openmodel => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .openmodel
+                    .base_url = Some(value);
+            }
+            ApiProvider::MinimaxAnthropic => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .minimax_anthropic
+                    .base_url = Some(value);
+            }
+            ApiProvider::Sakana => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .sakana
+                    .base_url = Some(value);
+            }
+            ApiProvider::LongCat => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .longcat
+                    .base_url = Some(value);
+            }
+            ApiProvider::Meta => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .meta
+                    .base_url = Some(value);
+            }
+            ApiProvider::Xai => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .xai
+                    .base_url = Some(value);
+            }
+            ApiProvider::Custom => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .custom
                     .base_url = Some(value);
             }
         }
@@ -4177,12 +4450,22 @@ fn apply_env_overrides(config: &mut Config) {
             ApiProvider::Volcengine => &mut providers.volcengine,
             ApiProvider::Huggingface => &mut providers.huggingface,
             ApiProvider::Deepinfra => &mut providers.deepinfra,
+            ApiProvider::Omniroute => &mut providers.omniroute,
             ApiProvider::Together => &mut providers.together,
             ApiProvider::OpenaiCodex => &mut providers.openai_codex,
             ApiProvider::Anthropic => &mut providers.anthropic,
             ApiProvider::Zai => &mut providers.zai,
             ApiProvider::Stepfun => &mut providers.stepfun,
             ApiProvider::Minimax => &mut providers.minimax,
+            ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+            ApiProvider::Qianfan => &mut providers.qianfan,
+            ApiProvider::Openmodel => &mut providers.openmodel,
+            ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+            ApiProvider::Sakana => &mut providers.sakana,
+            ApiProvider::LongCat => &mut providers.longcat,
+            ApiProvider::Meta => &mut providers.meta,
+            ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Custom => &mut providers.custom,
         };
         let mut provider_headers = entry.http_headers.clone().unwrap_or_default();
         provider_headers.extend(headers);
@@ -4376,12 +4659,22 @@ fn apply_env_overrides(config: &mut Config) {
                 ApiProvider::Volcengine => &mut providers.volcengine,
                 ApiProvider::Huggingface => &mut providers.huggingface,
                 ApiProvider::Deepinfra => &mut providers.deepinfra,
+                ApiProvider::Omniroute => &mut providers.omniroute,
                 ApiProvider::Together => &mut providers.together,
                 ApiProvider::OpenaiCodex => &mut providers.openai_codex,
                 ApiProvider::Anthropic => &mut providers.anthropic,
                 ApiProvider::Zai => &mut providers.zai,
                 ApiProvider::Stepfun => &mut providers.stepfun,
                 ApiProvider::Minimax => &mut providers.minimax,
+                ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+                ApiProvider::Qianfan => &mut providers.qianfan,
+                ApiProvider::Openmodel => &mut providers.openmodel,
+                ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+                ApiProvider::Sakana => &mut providers.sakana,
+                ApiProvider::LongCat => &mut providers.longcat,
+                ApiProvider::Meta => &mut providers.meta,
+                ApiProvider::Xai => &mut providers.xai,
+                ApiProvider::Custom => &mut providers.custom,
             };
             entry.model = Some(value);
         }
@@ -4581,6 +4874,7 @@ pub(crate) fn provider_passes_model_through(provider: ApiProvider) -> bool {
             | ApiProvider::Moonshot
             | ApiProvider::Ollama
             | ApiProvider::Huggingface
+            | ApiProvider::Omniroute
     )
 }
 
@@ -5095,6 +5389,22 @@ fn merge_providers(
             zai: merge_provider_config(base.zai, override_cfg.zai),
             stepfun: merge_provider_config(base.stepfun, override_cfg.stepfun),
             minimax: merge_provider_config(base.minimax, override_cfg.minimax),
+            omniroute: merge_provider_config(base.omniroute, override_cfg.omniroute),
+            deepseek_anthropic: merge_provider_config(
+                base.deepseek_anthropic,
+                override_cfg.deepseek_anthropic,
+            ),
+            qianfan: merge_provider_config(base.qianfan, override_cfg.qianfan),
+            openmodel: merge_provider_config(base.openmodel, override_cfg.openmodel),
+            minimax_anthropic: merge_provider_config(
+                base.minimax_anthropic,
+                override_cfg.minimax_anthropic,
+            ),
+            sakana: merge_provider_config(base.sakana, override_cfg.sakana),
+            longcat: merge_provider_config(base.longcat, override_cfg.longcat),
+            meta: merge_provider_config(base.meta, override_cfg.meta),
+            xai: merge_provider_config(base.xai, override_cfg.xai),
+            custom: merge_provider_config(base.custom, override_cfg.custom),
         }),
     }
 }
@@ -9023,6 +9333,7 @@ scan_helpofai_only = true
 
     #[test]
     fn deepseek_provider_defaults_to_beta_endpoint() {
+        let _lock = lock_test_env();
         let config = Config::default();
 
         assert_eq!(config.api_provider(), ApiProvider::Deepseek);
@@ -9386,6 +9697,7 @@ http_headers = { "X-Model-Provider-Id" = "from-file" }
 
     #[test]
     fn direct_provider_ignores_foreign_deepseek_root_default_model() {
+        let _lock = lock_test_env();
         let config = Config {
             provider: Some("zai".to_string()),
             default_text_model: Some(DEFAULT_TEXT_MODEL.to_string()),
@@ -12252,5 +12564,66 @@ model = "deepseek-ai/deepseek-v4-pro"
         assert_eq!(config.deepseek_base_url(), "https://short-hf.example/v1");
         assert_eq!(config.default_model(), "org/short-model");
         Ok(())
+    }
+
+    #[test]
+    fn omniroute_passes_model_through() {
+        // OmniRoute is a 237-provider gateway: model strings are routing
+        // instructions (`auto`, `auto/coding`, `cc/claude-...`, `glm/glm-5.1`)
+        // and must reach the gateway verbatim.
+        assert!(provider_passes_model_through(ApiProvider::Omniroute));
+    }
+
+    #[test]
+    fn omniroute_provider_consistency_with_config_crate() {
+        use helpofai_config::ProviderKind;
+        // The TUI mirror must stay aligned with the config-crate source
+        // of truth: same discriminants, both directions.
+        assert_eq!(ApiProvider::Omniroute.kind(), Some(ProviderKind::Omniroute));
+        assert_eq!(
+            ApiProvider::from_kind(ProviderKind::Omniroute),
+            ApiProvider::Omniroute
+        );
+        assert_eq!(
+            ApiProvider::parse("omniroute"),
+            Some(ApiProvider::Omniroute)
+        );
+        assert_eq!(
+            ApiProvider::parse("omni-route"),
+            Some(ApiProvider::Omniroute)
+        );
+    }
+
+    #[test]
+    fn omniroute_capability_is_chat_completions_with_thinking() {
+        // The gateway speaks OpenAI chat completions and transcodes upstream,
+        // so HelpOfAi always uses the chat-completions dialect and lets
+        // OmniRoute resolve the real upstream model + reasoning support.
+        let auto = provider_capability(ApiProvider::Omniroute, "auto");
+        assert_eq!(
+            auto.request_payload_mode,
+            RequestPayloadMode::ChatCompletions
+        );
+        assert!(auto.thinking_supported);
+        assert!(!auto.cache_telemetry_supported);
+
+        // A concrete upstream route is still chat-completions and reasoning-aware.
+        let upstream = provider_capability(ApiProvider::Omniroute, "cc/claude-opus-4-7");
+        assert_eq!(
+            upstream.request_payload_mode,
+            RequestPayloadMode::ChatCompletions
+        );
+        assert!(upstream.thinking_supported);
+        assert!(upstream.context_window >= 200_000);
+    }
+
+    #[test]
+    fn omniroute_defaults_point_at_local_gateway() {
+        // Local-first: the gateway serves OpenAI-compatible `/v1` on this
+        // port, and the default model is the smart `auto` router.
+        let provider = ApiProvider::Omniroute.metadata().expect("registered");
+        assert_eq!(provider.default_base_url(), "http://localhost:20128/v1");
+        assert_eq!(provider.default_model(), "auto");
+        assert!(provider.env_vars().contains(&"OMNIROUTE_API_KEY"));
     }
 }

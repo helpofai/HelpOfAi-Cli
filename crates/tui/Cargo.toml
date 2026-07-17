@@ -20,12 +20,12 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.100"
-helpofai-config = { path = "../config", version = "0.8.62" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.8.62" }
-helpofai-protocol = { path = "../protocol", version = "0.8.62" }
-helpofai-release = { path = "../release", version = "0.8.62" }
-helpofai-secrets = { path = "../secrets", version = "0.8.62" }
-helpofai-tools = { path = "../tools", version = "0.8.62" }
+helpofai-config = { path = "../config", version = "0.8.88" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.88" }
+helpofai-protocol = { path = "../protocol", version = "0.8.88" }
+helpofai-release = { path = "../release", version = "0.8.88" }
+helpofai-secrets = { path = "../secrets", version = "0.8.88" }
+helpofai-tools = { path = "../tools", version = "0.8.88" }
 schemaui = { version = "0.12.0", default-features = false, optional = true }
 async-stream = "0.3.6"
 async-trait = "0.1"
@@ -89,6 +89,9 @@ arboard = "3.4"
 [target.'cfg(not(target_env = "ohos"))'.dependencies]
 portable-pty = "0.9"
 starlark = "0.13.0"
+# Pin allocative to =0.3.4: starlark_map 0.13.0 uses hashbrown 0.14.x types
+# (HashTable, RawTable) that are not Allocative in allocative >= 0.3.5.
+allocative = "=0.3.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.3"
@@ -96,3 +99,5 @@ objc2-foundation = { version = "0.3.2", default-features = false, features = ["s
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.60", features = ["Win32_Foundation", "Win32_Media_Audio", "Win32_Security", "Win32_System_Console", "Win32_System_Diagnostics_Debug", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
+
+

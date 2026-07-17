@@ -774,6 +774,26 @@ pub(crate) fn build_context_menu_entries(app: &App, mouse: MouseEvent) -> Vec<Co
             description: app.tr(MessageId::CtxMenuCopyMessageDesc).to_string(),
             action: ContextMenuAction::CopyCell { cell_index },
         });
+        if let Some(cell) = app.cell_at_virtual_index(cell_index) {
+            if let Some(content) = cell.raw_content() {
+                let code_blocks = crate::tui::markdown_render::extract_code_blocks(content);
+                for (cb_idx, code) in code_blocks.iter().enumerate() {
+                    let trimmed_code = code.trim();
+                    if !trimmed_code.is_empty() {
+                        let label_desc = if trimmed_code.contains('\n') {
+                            format!("{}...", trimmed_code.lines().next().unwrap_or(""))
+                        } else {
+                            trimmed_code.to_string()
+                        };
+                        entries.push(ContextMenuEntry {
+                            label: format!("Copy Code Block #{}", cb_idx + 1),
+                            description: truncate_line_to_width(&label_desc, 28),
+                            action: ContextMenuAction::CopyText { text: code.clone() },
+                        });
+                    }
+                }
+            }
+        }
         entries.push(ContextMenuEntry {
             label: app.tr(MessageId::CtxMenuOpenInEditor).to_string(),
             description: app.tr(MessageId::CtxMenuOpenInEditorDesc).to_string(),

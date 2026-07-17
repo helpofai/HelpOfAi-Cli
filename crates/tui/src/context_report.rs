@@ -113,6 +113,7 @@ pub enum SourceKind {
     RuntimePolicy,
     EnvironmentBlock,
     UserMemory,
+    ProjectMemory,
     SessionGoal,
     HandoffRelay,
     ToolSchemas,
@@ -202,8 +203,11 @@ pub fn build_headless_context_report(config: &Config, workspace: &Path) -> Promp
     let mut builder = base_source_entries(&model, workspace, Some(&selected_skills_dir));
     let memory_path = config.memory_path();
 
-    if let Some(memory_block) = crate::memory::compose_block(config.memory_enabled(), &memory_path)
-    {
+    if let Some(memory_block) = crate::memory::compose_block(
+        config.memory_enabled(),
+        &memory_path,
+        config.memory_max_size_kb(),
+    ) {
         builder.push(SourceEntry::text(
             SourceKind::UserMemory,
             "User memory",
@@ -218,6 +222,31 @@ pub fn build_headless_context_report(config: &Config, workspace: &Path) -> Promp
             SourceKind::UserMemory,
             "User memory",
             Some(memory_path.display().to_string()),
+            Some(6),
+            "disabled, missing, or empty",
+        ));
+    }
+
+    let proj_memory_path = config.project_memory_path(workspace);
+    if let Some(proj_memory_block) = crate::memory::compose_project_block(
+        config.memory_enabled(),
+        &proj_memory_path,
+        config.memory_max_size_kb(),
+    ) {
+        builder.push(SourceEntry::text(
+            SourceKind::ProjectMemory,
+            "Project memory",
+            Some(proj_memory_path.display().to_string()),
+            ActivationReason::ConfigEnabled,
+            &proj_memory_block,
+            CountingConfidence::High,
+            Some(6),
+        ));
+    } else {
+        builder.push(SourceEntry::omitted(
+            SourceKind::ProjectMemory,
+            "Project memory",
+            Some(proj_memory_path.display().to_string()),
             Some(6),
             "disabled, missing, or empty",
         ));
@@ -374,7 +403,9 @@ fn add_app_runtime_entries(builder: &mut ReportBuilder, app: &App) {
         Some(4),
     ));
 
-    if let Some(memory_block) = crate::memory::compose_block(app.use_memory, &app.memory_path) {
+    if let Some(memory_block) =
+        crate::memory::compose_block(app.use_memory, &app.memory_path, app.memory_max_size_kb)
+    {
         builder.push(SourceEntry::text(
             SourceKind::UserMemory,
             "User memory",
@@ -392,6 +423,30 @@ fn add_app_runtime_entries(builder: &mut ReportBuilder, app: &App) {
             Some(6),
             "disabled, missing, or empty",
         ));
+    }
+
+    if let Some(proj_path) = app.project_memory_path.as_ref() {
+        if let Some(proj_memory_block) =
+            crate::memory::compose_project_block(app.use_memory, proj_path, app.memory_max_size_kb)
+        {
+            builder.push(SourceEntry::text(
+                SourceKind::ProjectMemory,
+                "Project memory",
+                Some(proj_path.display().to_string()),
+                ActivationReason::ConfigEnabled,
+                &proj_memory_block,
+                CountingConfidence::High,
+                Some(6),
+            ));
+        } else {
+            builder.push(SourceEntry::omitted(
+                SourceKind::ProjectMemory,
+                "Project memory",
+                Some(proj_path.display().to_string()),
+                Some(6),
+                "disabled, missing, or empty",
+            ));
+        }
     }
 
     if let Some(goal) = app

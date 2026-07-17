@@ -23,7 +23,7 @@ pub use header::{HeaderData, HeaderWidget, header_status_indicator_frame};
 pub use renderable::Renderable;
 
 use std::collections::HashSet;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::localization::{Locale, MessageId, tr};
 use crate::palette;
@@ -540,6 +540,81 @@ fn render_jump_to_latest_button(
         .set_style(Style::default().fg(arrow).add_modifier(Modifier::BOLD));
 }
 
+fn composer_status_spinner_frame(turn_started_at: Option<Instant>) -> &'static str {
+    const COMPOSER_SPINNER_FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"];
+    let elapsed_ms = turn_started_at
+        .map(|t| t.elapsed().as_millis())
+        .unwrap_or(0);
+    let idx = (elapsed_ms / 60) as usize % COMPOSER_SPINNER_FRAMES.len();
+    COMPOSER_SPINNER_FRAMES[idx]
+}
+
+fn composer_running_status(app: &App) -> Option<String> {
+    if !app.is_loading && !matches!(app.runtime_turn_status.as_deref(), Some("in_progress")) {
+        return None;
+    }
+
+    let spinner = composer_status_spinner_frame(app.turn_started_at);
+
+    if app.is_compacting {
+        return Some(format!("{spinner} Compacting context..."));
+    }
+
+    // Check if subagents or tools are active
+    if let Some(active) = app.active_cell.as_ref() {
+        let has_running_tools = active.entries().iter().any(|cell| match cell {
+            crate::tui::history::HistoryCell::Tool(t) => {
+                t.status() == Some(crate::tui::history::ToolStatus::Running)
+            }
+            _ => false,
+        });
+        if has_running_tools {
+            // Get the first running tool's name if possible
+            let tool_name = active.entries().iter().find_map(|cell| match cell {
+                crate::tui::history::HistoryCell::Tool(t) => {
+                    if t.status() == Some(crate::tui::history::ToolStatus::Running) {
+                        match t {
+                            crate::tui::history::ToolCell::Generic(c) => Some(c.name.clone()),
+                            crate::tui::history::ToolCell::Mcp(c) => Some(c.tool.clone()),
+                            crate::tui::history::ToolCell::WebSearch(_) => {
+                                Some("web_search".to_string())
+                            }
+                            crate::tui::history::ToolCell::ViewImage(_) => {
+                                Some("view_image".to_string())
+                            }
+                            crate::tui::history::ToolCell::Exploring(_) => {
+                                Some("explore".to_string())
+                            }
+                            crate::tui::history::ToolCell::Exec(_) => Some("shell".to_string()),
+                            crate::tui::history::ToolCell::PlanUpdate(_) => {
+                                Some("update_plan".to_string())
+                            }
+                            crate::tui::history::ToolCell::PatchSummary(_) => {
+                                Some("apply_patch".to_string())
+                            }
+                            crate::tui::history::ToolCell::Review(_) => Some("review".to_string()),
+                            crate::tui::history::ToolCell::DiffPreview(_) => {
+                                Some("diff".to_string())
+                            }
+                        }
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            });
+            if let Some(name) = tool_name {
+                return Some(format!("{spinner} Running {name}..."));
+            } else {
+                return Some(format!("{spinner} Running tools..."));
+            }
+        }
+    }
+
+    // Default to generating/thinking
+    Some(format!("{spinner} Generating response..."))
+}
+
 pub struct ComposerWidget<'a> {
     app: &'a App,
     max_height: u16,
@@ -653,7 +728,11 @@ impl Renderable for ComposerWidget<'_> {
             layout_input_with_scroll(input_text, input_cursor, content_width, input_rows_budget);
         let is_draft_mode = input_text.contains('\n') || visible_lines.len() > 1;
         if has_panel {
-            let border_color = if input_text.trim().is_empty() {
+            let border_color = if self.app.is_loading
+                || matches!(self.app.runtime_turn_status.as_deref(), Some("in_progress"))
+            {
+                palette::DEEPSEEK_SKY
+            } else if input_text.trim().is_empty() {
                 palette::BORDER_COLOR
             } else {
                 self.mode_color()
@@ -738,18 +817,22 @@ impl Renderable for ComposerWidget<'_> {
                 None
             };
 
-            let mut block = Block::default()
-                .title(Line::from(Span::styled(
-                    if self.app.is_history_search_active() {
-                        self.app
-                            .tr(crate::localization::MessageId::HistorySearchTitle)
-                    } else if is_draft_mode {
-                        "Draft"
-                    } else {
-                        "Composer"
-                    },
+            let title_span = if let Some(status) = composer_running_status(self.app) {
+                Span::styled(status, Style::default().fg(palette::DEEPSEEK_SKY))
+            } else if self.app.is_history_search_active() {
+                Span::styled(
+                    self.app
+                        .tr(crate::localization::MessageId::HistorySearchTitle),
                     Style::default().fg(palette::TEXT_MUTED),
-                )))
+                )
+            } else if is_draft_mode {
+                Span::styled("Draft", Style::default().fg(palette::TEXT_MUTED))
+            } else {
+                Span::styled("Composer", Style::default().fg(palette::TEXT_MUTED))
+            };
+
+            let mut block = Block::default()
+                .title(Line::from(title_span))
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(border_color))
                 .style(background);
@@ -766,7 +849,6 @@ impl Renderable for ComposerWidget<'_> {
         } else {
             Block::default().style(background).render(area, buf);
         }
-
         let mut input_lines = Vec::new();
         if input_text.is_empty() {
             if let Some(ref suggestion) = self.app.prompt_suggestion

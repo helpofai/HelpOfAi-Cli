@@ -468,6 +468,16 @@ pub(crate) async fn resolve_auto_route_with_inventory(
     selected_thinking_mode: &str,
 ) -> Result<AutoRouteSelection> {
     let inventory = ModelInventory::from_config(config);
+    if config.api_provider() == ApiProvider::Omniroute {
+        // OmniRoute handles auto-routing natively on the server side (e.g. via
+        // the "auto" model). Bypassing the local classification router avoids
+        // sending out-of-band requests and prevents DeepSeek credential checks.
+        return Ok(auto_route_from_inventory_heuristic(
+            config,
+            latest_request,
+            &inventory,
+        ));
+    }
     if !inventory.router_available {
         // Fall back to heuristic-only auto routing when the flash router
         // is unavailable (e.g. non-DeepSeek providers like wanjie-ark).
@@ -493,12 +503,19 @@ pub(crate) async fn resolve_auto_route_with_inventory(
     )
     .await
     {
-        Ok(Some(recommendation)) => Ok(AutoRouteSelection {
-            provider: recommendation.provider,
-            model: recommendation.model,
-            reasoning_effort: recommendation.reasoning_effort,
-            source: AutoRouteSource::FlashRouter,
-        }),
+        Ok(Some(recommendation)) => {
+            let provider = if config.api_provider() == ApiProvider::Omniroute {
+                config.api_provider()
+            } else {
+                recommendation.provider
+            };
+            Ok(AutoRouteSelection {
+                provider,
+                model: recommendation.model,
+                reasoning_effort: recommendation.reasoning_effort,
+                source: AutoRouteSource::FlashRouter,
+            })
+        }
         Ok(None) | Err(_) => Ok(heuristic),
     }
 }
@@ -536,8 +553,13 @@ pub(crate) fn resolve_explicit_route_with_inventory(
         return None;
     }
 
+    let provider = if active_provider == ApiProvider::Omniroute {
+        active_provider
+    } else {
+        candidate.provider
+    };
     Some(AutoRouteSelection {
-        provider: candidate.provider,
+        provider,
         model: candidate.model.clone(),
         reasoning_effort: config.reasoning_effort().map(ReasoningEffort::from_setting),
         source: AutoRouteSource::Heuristic,
@@ -581,23 +603,28 @@ fn auto_route_from_inventory_heuristic(
     latest_request: &str,
     inventory: &ModelInventory,
 ) -> AutoRouteSelection {
+    let active_provider = config.api_provider();
     let Some(active) = inventory.active_default() else {
         return AutoRouteSelection {
-            provider: config.api_provider(),
+            provider: active_provider,
             model: config.default_model(),
             reasoning_effort: Some(crate::auto_reasoning::select(false, latest_request)),
             source: AutoRouteSource::Heuristic,
         };
     };
-    // Use the candidates' cheap/big info for complexity-based routing.
-    let router_candidates = provider_router_candidates(config.api_provider(), &active.model);
+    let router_candidates = provider_router_candidates(active_provider, &active.model);
     let chosen = if router_candidates.cheap.is_some() {
         auto_model_heuristic_for_candidates(latest_request, &active.model, &router_candidates)
     } else {
         active.model.clone()
     };
+    let provider = if active_provider == ApiProvider::Omniroute {
+        active_provider
+    } else {
+        active.provider
+    };
     AutoRouteSelection {
-        provider: active.provider,
+        provider,
         model: chosen,
         reasoning_effort: Some(crate::auto_reasoning::select(false, latest_request)),
         source: AutoRouteSource::Heuristic,
@@ -613,7 +640,7 @@ async fn auto_route_inventory_recommendation(
     selected_thinking_mode: &str,
 ) -> Result<Option<InventoryAutoRouteRecommendation>> {
     let mut router_config = config.clone();
-    router_config.provider = Some(ApiProvider::Deepseek.as_str().to_string());
+    router_config.provider = Some(inventory.router_provider.as_str().to_string());
     router_config.default_text_model = Some(inventory.router_model.to_string());
 
     let client = DeepSeekClient::new(&router_config)?;

@@ -59,3 +59,4 @@ test("version flags fall back to package metadata when the binary is unavailable
   assert.match(lines.join("\n"), /helpofai \(npm wrapper\) v/);
   assert.match(lines.join("\n"), /binary version: v/);
 });
+

@@ -42,6 +42,7 @@ pub mod keybindings;
 pub mod live_transcript;
 pub mod markdown_render;
 mod mcp_routing;
+pub mod memory_settings;
 pub mod model_picker;
 pub mod mouse_ui;
 pub mod notifications;

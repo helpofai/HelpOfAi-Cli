@@ -241,6 +241,7 @@ fn provider_base_url_table_key(provider: ApiProvider) -> anyhow::Result<&'static
         ApiProvider::Arcee => Ok("arcee"),
         ApiProvider::Huggingface => Ok("huggingface"),
         ApiProvider::Deepinfra => Ok("deepinfra"),
+        ApiProvider::Omniroute => Ok("omniroute"),
         ApiProvider::Moonshot => Ok("moonshot"),
         ApiProvider::Sglang => Ok("sglang"),
         ApiProvider::Vllm => Ok("vllm"),
@@ -250,6 +251,15 @@ fn provider_base_url_table_key(provider: ApiProvider) -> anyhow::Result<&'static
         ApiProvider::Zai => Ok("zai"),
         ApiProvider::Stepfun => Ok("stepfun"),
         ApiProvider::Minimax => Ok("minimax"),
+        ApiProvider::DeepseekAnthropic => Ok("deepseek_anthropic"),
+        ApiProvider::Qianfan => Ok("qianfan"),
+        ApiProvider::Openmodel => Ok("openmodel"),
+        ApiProvider::MinimaxAnthropic => Ok("minimax_anthropic"),
+        ApiProvider::Sakana => Ok("sakana"),
+        ApiProvider::LongCat => Ok("longcat"),
+        ApiProvider::Meta => Ok("meta"),
+        ApiProvider::Xai => Ok("xai"),
+        ApiProvider::Custom => Ok("custom"),
     }
 }
 
@@ -301,6 +311,74 @@ fn save_toml_preserving_comments(
     std::fs::write(path, body)
         .with_context(|| format!("failed to write config at {}", path.display()))?;
     Ok(())
+}
+
+pub(crate) fn persist_memory_config(
+    config_path: Option<&Path>,
+    enabled: bool,
+    max_size_kb: usize,
+    memory_path: Option<&str>,
+) -> anyhow::Result<PathBuf> {
+    use anyhow::Context;
+    use std::fs;
+
+    let path = config_toml_path(config_path)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create config directory {}", parent.display()))?;
+    }
+
+    let (mut doc, original_raw) = if path.exists() {
+        let raw = fs::read_to_string(&path)
+            .with_context(|| format!("failed to read config at {}", path.display()))?;
+        let doc: toml::Value = toml::from_str(&raw)
+            .with_context(|| format!("failed to parse config at {}", path.display()))?;
+        (doc, Some(raw))
+    } else {
+        (toml::Value::Table(toml::value::Table::new()), None)
+    };
+
+    let table = doc
+        .as_table_mut()
+        .context("config.toml root must be a table")?;
+
+    // 1. Root-level key: memory_path
+    if let Some(mp) = memory_path {
+        let trimmed = mp.trim();
+        if trimmed.is_empty() {
+            table.remove("memory_path");
+        } else {
+            table.insert(
+                "memory_path".to_string(),
+                toml::Value::String(trimmed.to_string()),
+            );
+        }
+    } else {
+        table.remove("memory_path");
+    }
+
+    // 2. [memory] table
+    let memory_entry = table
+        .entry("memory".to_string())
+        .or_insert_with(|| toml::Value::Table(toml::value::Table::new()));
+    let memory_table = memory_entry
+        .as_table_mut()
+        .context("`memory` section in config.toml must be a table")?;
+
+    memory_table.insert("enabled".to_string(), toml::Value::Boolean(enabled));
+    memory_table.insert(
+        "max_size_kb".to_string(),
+        toml::Value::Integer(max_size_kb as i64),
+    );
+
+    if let Some(raw) = original_raw {
+        save_toml_preserving_comments(&path, &doc, &raw)?;
+    } else {
+        let body = toml::to_string_pretty(&doc).context("failed to serialize config.toml")?;
+        fs::write(&path, body)
+            .with_context(|| format!("failed to write config at {}", path.display()))?;
+    }
+    Ok(path)
 }
 
 #[cfg(test)]

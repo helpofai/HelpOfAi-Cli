@@ -432,6 +432,17 @@ impl HistoryCell {
             HistoryCell::User { .. } | HistoryCell::Assistant { .. } | HistoryCell::Thinking { .. }
         )
     }
+
+    #[must_use]
+    pub fn raw_content(&self) -> Option<&str> {
+        match self {
+            HistoryCell::User { content }
+            | HistoryCell::Assistant { content, .. }
+            | HistoryCell::System { content }
+            | HistoryCell::Thinking { content, .. } => Some(content.as_str()),
+            _ => None,
+        }
+    }
 }
 
 /// Parse an `<archived_context>` block from an assistant Text block.

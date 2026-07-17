@@ -10,3 +10,5 @@ description = "MCP server lifecycle and tool proxy compatibility for DeepSeek wo
 anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+

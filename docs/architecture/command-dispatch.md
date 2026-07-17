@@ -1,6 +1,6 @@
 # Command Dispatch Architecture
 
-**Target branch:** `hunter/0.8.62-glm-subagents`
+**Target branch:** `hunter/0.8.65-glm-subagents`
 **Related EPIC:** [#2870](https://github.com/helpofai/HelpOfAi-Cli/issues/2870)
 **Related issue:** [#2791](https://github.com/helpofai/HelpOfAi-Cli/issues/2791)
 

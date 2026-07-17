@@ -6361,6 +6361,12 @@ async fn run_exec_agent(
         prefer_bwrap: execution_config.prefer_bwrap.unwrap_or(false),
         memory_enabled: execution_config.memory_enabled(),
         memory_path: execution_config.memory_path(),
+        project_memory_path: if execution_config.memory_enabled() {
+            Some(execution_config.project_memory_path(&workspace))
+        } else {
+            None
+        },
+        memory_max_size_kb: execution_config.memory_max_size_kb(),
         speech_output_dir: execution_config.speech_output_dir(),
         vision_config: execution_config.vision_model_config(),
         strict_tool_mode: execution_config.strict_tool_mode.unwrap_or(false),

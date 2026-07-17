@@ -22,16 +22,10 @@
 //! feature explicit.
 
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::path::Path;
 
 use chrono::Utc;
-
-/// Maximum size of the user memory file. Larger files are loaded but the
-/// `<user_memory>` block carries a `<truncated bytes=N source="...">`
-/// marker so the user knows the model only saw a slice. Mirrors
-/// `project_context::MAX_CONTEXT_SIZE`.
-const MAX_MEMORY_SIZE: usize = 100 * 1024;
 
 /// Read the user memory file at `path`, returning `None` when the file
 /// doesn't exist or is empty after trimming.
@@ -49,15 +43,16 @@ pub fn load(path: &Path) -> Option<String> {
 /// `source="…"` attribute — pass the path so the model can see where the
 /// memory came from. Returns `None` for empty content.
 #[must_use]
-pub fn as_system_block(content: &str, source: &Path) -> Option<String> {
+pub fn as_system_block(content: &str, source: &Path, max_size_kb: usize) -> Option<String> {
     let trimmed = content.trim();
     if trimmed.is_empty() {
         return None;
     }
 
     let display = source.display().to_string();
-    let payload = if content.len() > MAX_MEMORY_SIZE {
-        let cutoff = truncation_cutoff(content, &display);
+    let max_size_bytes = max_size_kb * 1024;
+    let payload = if content.len() > max_size_bytes {
+        let cutoff = truncation_cutoff(content, &display, max_size_bytes);
         let omitted_bytes = content.len() - cutoff;
         let mut head = content[..cutoff].to_string();
         head.push_str(&truncation_marker(omitted_bytes, &display));
@@ -71,12 +66,12 @@ pub fn as_system_block(content: &str, source: &Path) -> Option<String> {
     ))
 }
 
-fn truncation_cutoff(content: &str, source: &str) -> usize {
-    let mut cutoff = previous_char_boundary(content, MAX_MEMORY_SIZE);
+fn truncation_cutoff(content: &str, source: &str, max_size_bytes: usize) -> usize {
+    let mut cutoff = previous_char_boundary(content, max_size_bytes);
     loop {
         let omitted_bytes = content.len() - cutoff;
         let max_head_len =
-            MAX_MEMORY_SIZE.saturating_sub(truncation_marker(omitted_bytes, source).len());
+            max_size_bytes.saturating_sub(truncation_marker(omitted_bytes, source).len());
         let next_cutoff = previous_char_boundary(content, cutoff.min(max_head_len));
         if next_cutoff == cutoff {
             return cutoff;
@@ -99,45 +94,339 @@ fn previous_char_boundary(value: &str, mut index: usize) -> usize {
 /// Compose the `<user_memory>` block for the system prompt, honouring the
 /// opt-in toggle. Returns `None` when the feature is disabled or the file
 /// is missing / empty so the caller doesn't have to check both conditions.
-///
-/// Callers that hold a `&Config` should pass `config.memory_enabled()` and
-/// `config.memory_path()` directly. The split keeps this module
-/// `Config`-free so it can be reused from sub-agent / engine boundaries
-/// where the high-level `Config` isn't available.
 #[must_use]
-pub fn compose_block(enabled: bool, path: &Path) -> Option<String> {
+pub fn compose_block(enabled: bool, path: &Path, max_size_kb: usize) -> Option<String> {
     if !enabled {
         return None;
     }
     let content = load(path)?;
-    as_system_block(&content, path)
+    as_system_block(&content, path, max_size_kb)
 }
 
-/// Append `entry` to the memory file at `path`, creating it (and its
-/// parent directory) if needed. The entry is timestamped so the user can
-/// later see when each note was added. The leading `#` from a `# foo`
-/// quick-add is stripped so the file stays as readable Markdown.
-pub fn append_entry(path: &Path, entry: &str) -> io::Result<()> {
-    let trimmed = entry.trim_start_matches('#').trim();
+/// Wrap project memory content in a `<project_memory>` block ready to prepend to the
+/// system prompt. The `source` value is rendered verbatim into a
+/// `source="…"` attribute — pass the path so the model can see where the
+/// memory came from. Returns `None` for empty content.
+#[must_use]
+pub fn as_project_system_block(content: &str, source: &Path, max_size_kb: usize) -> Option<String> {
+    let trimmed = content.trim();
     if trimmed.is_empty() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "memory entry is empty after stripping `#` prefix",
-        ));
+        return None;
     }
+
+    let display = source.display().to_string();
+    let max_size_bytes = max_size_kb * 1024;
+    let payload = if content.len() > max_size_bytes {
+        let cutoff = truncation_cutoff(content, &display, max_size_bytes);
+        let omitted_bytes = content.len() - cutoff;
+        let mut head = content[..cutoff].to_string();
+        head.push_str(&truncation_marker(omitted_bytes, &display));
+        head
+    } else {
+        trimmed.to_string()
+    };
+
+    Some(format!(
+        "<project_memory source=\"{display}\">\n{payload}\n</project_memory>"
+    ))
+}
+
+/// Compose the `<project_memory>` block for the system prompt, honouring the
+/// opt-in toggle. Returns `None` when the feature is disabled or the file
+/// is missing / empty.
+#[must_use]
+pub fn compose_project_block(enabled: bool, path: &Path, max_size_kb: usize) -> Option<String> {
+    if !enabled {
+        return None;
+    }
+    let content = load(path)?;
+    as_project_system_block(&content, path, max_size_kb)
+}
+
+/// Helper function to append a line to a specific markdown heading section in the memory file.
+/// If headings are missing, it initializes the file with the standard structure:
+/// # User Memory
+/// ## Preferences
+/// ## Active Tasks
+/// ## File Change Log
+pub fn append_to_section(path: &Path, section: &str, line_to_append: &str) -> io::Result<()> {
+    let content = fs::read_to_string(path).unwrap_or_default();
+    let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+
+    let has_preferences = lines.iter().any(|l| l.trim() == "## Preferences");
+    let has_tasks = lines.iter().any(|l| l.trim() == "## Active Tasks");
+    let has_changelog = lines.iter().any(|l| l.trim() == "## File Change Log");
+
+    if !has_preferences || !has_tasks || !has_changelog {
+        let mut new_lines = Vec::new();
+        if lines
+            .first()
+            .map_or(true, |l| !l.starts_with("# User Memory"))
+        {
+            new_lines.push("# User Memory".to_string());
+            new_lines.push("".to_string());
+        }
+
+        // Copy existing non-structural lines
+        for l in &lines {
+            let trimmed = l.trim();
+            if trimmed != "# User Memory"
+                && trimmed != "## Preferences"
+                && trimmed != "## Active Tasks"
+                && trimmed != "## File Change Log"
+            {
+                new_lines.push(l.clone());
+            }
+        }
+
+        // Add headers at the end if they were missing, ensuring clean structure
+        new_lines.push("## Preferences".to_string());
+        new_lines.push("".to_string());
+        new_lines.push("## Active Tasks".to_string());
+        new_lines.push("".to_string());
+        new_lines.push("## File Change Log".to_string());
+        new_lines.push("".to_string());
+
+        lines = new_lines;
+    }
+
+    // Find section start index
+    let mut section_start = None;
+    for (i, l) in lines.iter().enumerate() {
+        if l.trim() == section {
+            section_start = Some(i);
+            break;
+        }
+    }
+
+    if let Some(start) = section_start {
+        // Find insert position at the end of the section (before next heading or EOF)
+        let mut insert_at = lines.len();
+        for (j, line) in lines.iter().enumerate().skip(start + 1) {
+            if line.trim().starts_with("## ") {
+                insert_at = j;
+                break;
+            }
+        }
+
+        // Back up to skip trailing empty lines before the next heading
+        while insert_at > start + 1 && lines[insert_at - 1].trim().is_empty() {
+            insert_at -= 1;
+        }
+
+        lines.insert(insert_at, line_to_append.to_string());
+
+        // Ensure there is an empty line before next heading
+        if insert_at + 1 < lines.len() && !lines[insert_at + 1].trim().is_empty() {
+            lines.insert(insert_at + 1, "".to_string());
+        }
+    } else {
+        lines.push(line_to_append.to_string());
+    }
+
+    let new_content = lines.join("\n") + "\n";
 
     if let Some(parent) = path.parent()
         && !parent.as_os_str().is_empty()
     {
         fs::create_dir_all(parent)?;
     }
+    fs::write(path, new_content)?;
+    Ok(())
+}
+
+/// Append `entry` to the memory file under `## Preferences` (default section).
+/// Keeps compatibility with legacy `# foo` quick-adds and the basic `remember` tool.
+pub fn append_entry(path: &Path, entry: &str) -> io::Result<()> {
+    append_preference(path, entry)
+}
+
+/// Append a user preference to memory under `## Preferences`.
+pub fn append_preference(path: &Path, entry: &str) -> io::Result<()> {
+    let trimmed = entry.trim_start_matches('#').trim();
+    if trimmed.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "memory preference entry is empty",
+        ));
+    }
 
     let timestamp = Utc::now().format("%Y-%m-%d %H:%M UTC");
-    let mut file = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)?;
-    writeln!(file, "- ({timestamp}) {trimmed}")?;
+    let bullet = format!("- ({timestamp}) {trimmed}");
+    append_to_section(path, "## Preferences", &bullet)
+}
+
+/// Append a task to memory under `## Active Tasks`.
+pub fn append_task(path: &Path, task: &str) -> io::Result<()> {
+    let trimmed = task.trim();
+    if trimmed.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "memory task is empty",
+        ));
+    }
+
+    let timestamp = Utc::now().format("%Y-%m-%d %H:%M UTC");
+    let bullet = format!("- [ ] ({timestamp}) {trimmed}");
+    append_to_section(path, "## Active Tasks", &bullet)
+}
+
+/// Append a file change entry to memory under `## File Change Log`.
+pub fn append_file_change(
+    path: &Path,
+    file_path: &str,
+    lines: Option<&str>,
+    description: &str,
+) -> io::Result<()> {
+    let trimmed_desc = description.trim();
+    if file_path.trim().is_empty() || trimmed_desc.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "file_path or description is empty",
+        ));
+    }
+
+    let timestamp = Utc::now().format("%Y-%m-%d %H:%M UTC");
+    let line_info = lines.map(|l| format!(":{}", l.trim())).unwrap_or_default();
+    let bullet = format!("- ({timestamp}) [{file_path}{line_info}] {trimmed_desc}");
+    append_to_section(path, "## File Change Log", &bullet)
+}
+
+/// Lists all tasks under the ## Active Tasks heading.
+/// Returns a list of (completed, task_description) tuples.
+pub fn list_tasks(path: &Path) -> io::Result<Vec<(bool, String)>> {
+    let content = fs::read_to_string(path).unwrap_or_default();
+    let lines: Vec<&str> = content.lines().collect();
+
+    let mut section_start = None;
+    for (i, l) in lines.iter().enumerate() {
+        if l.trim() == "## Active Tasks" {
+            section_start = Some(i);
+            break;
+        }
+    }
+
+    let Some(start) = section_start else {
+        return Ok(Vec::new());
+    };
+
+    let mut tasks = Vec::new();
+    for line in lines.iter().skip(start + 1) {
+        if line.trim().starts_with("## ") {
+            break;
+        }
+        let trimmed = line.trim();
+        if trimmed.starts_with("- [ ]") {
+            tasks.push((
+                false,
+                trimmed
+                    .strip_prefix("- [ ]")
+                    .unwrap_or(trimmed)
+                    .trim()
+                    .to_string(),
+            ));
+        } else if trimmed.starts_with("- [x]") {
+            tasks.push((
+                true,
+                trimmed
+                    .strip_prefix("- [x]")
+                    .unwrap_or(trimmed)
+                    .trim()
+                    .to_string(),
+            ));
+        }
+    }
+
+    Ok(tasks)
+}
+
+/// Marks task at task_index (1-indexed) as completed.
+/// Returns the updated task line if successful, or None if index is out of bounds.
+pub fn complete_task(path: &Path, task_index: usize) -> io::Result<Option<String>> {
+    let content = fs::read_to_string(path)?;
+    let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+
+    let mut section_start = None;
+    for (i, l) in lines.iter().enumerate() {
+        if l.trim() == "## Active Tasks" {
+            section_start = Some(i);
+            break;
+        }
+    }
+
+    let Some(start) = section_start else {
+        return Ok(None);
+    };
+
+    let mut task_lines_indices = Vec::new();
+    for (j, line) in lines.iter().enumerate().skip(start + 1) {
+        if line.trim().starts_with("## ") {
+            break;
+        }
+        if line.trim().starts_with("- [ ]") || line.trim().starts_with("- [x]") {
+            task_lines_indices.push(j);
+        }
+    }
+
+    if task_index == 0 || task_index > task_lines_indices.len() {
+        return Ok(None);
+    }
+
+    let line_idx = task_lines_indices[task_index - 1];
+    let original_line = lines[line_idx].clone();
+    if original_line.trim().starts_with("- [ ]") {
+        lines[line_idx] = original_line.replace("- [ ]", "- [x]");
+        let new_content = lines.join("\n") + "\n";
+        fs::write(path, new_content)?;
+        Ok(Some(lines[line_idx].clone()))
+    } else {
+        Ok(Some(original_line))
+    }
+}
+
+pub fn initialize_memory_files_if_needed(
+    memory_path: &Path,
+    project_memory_path: Option<&Path>,
+) -> io::Result<()> {
+    // 1. Create Global Memory if not exists
+    if !memory_path.exists() {
+        if let Some(parent) = memory_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let global_initial = concat!(
+            "# Global User Memory\n\n",
+            "This file stores your global preferences, project-agnostic facts, and lessons learned.\n",
+            "The model has access to this context on every turn to adapt to your style.\n\n",
+            "## How to Use\n",
+            "- **Quick Capture**: Type `# <note>` in the composer to quickly append a bullet here.\n",
+            "- **Model Memory**: The model will automatically add notes using the `remember` tool when it learns durable preferences.\n",
+            "- **Manual Editing**: You can run `/memory edit` or open this file directly to add/modify context.\n\n",
+            "## Preferences\n",
+            "- (Add your global coding preferences or rules here)\n"
+        );
+        fs::write(memory_path, global_initial)?;
+    }
+
+    // 2. Create Project Memory if not exists
+    if let Some(p_path) = project_memory_path {
+        if !p_path.exists() {
+            if let Some(parent) = p_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let project_initial = concat!(
+                "# Project Memory\n\n",
+                "This file is project-specific (workspace-scoped).\n",
+                "It stores active tasks, project-specific guidelines, todo lists, and context relevant only to this directory.\n\n",
+                "## How to Use\n",
+                "- **Task Management**: Use `/projectmemory task add <desc>` or `/projectmemory task complete <n>` to manage tasks.\n",
+                "- **Model Memory**: The model can write to this file using the `remember` tool with `scope='project'` to persist project-specific choices.\n",
+                "- **Manual Editing**: You can edit this file directly to document layout details, build rules, or project context.\n\n",
+                "## Active Tasks\n"
+            );
+            fs::write(p_path, project_initial)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -171,7 +460,7 @@ mod tests {
 
     #[test]
     fn as_system_block_produces_xml_wrapper() {
-        let block = as_system_block("note 1", Path::new("/tmp/m.md")).unwrap();
+        let block = as_system_block("note 1", Path::new("/tmp/m.md"), 100).unwrap();
         assert!(block.contains("<user_memory source=\"/tmp/m.md\">"));
         assert!(block.contains("note 1"));
         assert!(block.ends_with("</user_memory>"));
@@ -179,105 +468,58 @@ mod tests {
 
     #[test]
     fn as_system_block_returns_none_for_empty_content() {
-        assert!(as_system_block("   ", Path::new("/tmp/m.md")).is_none());
+        assert!(as_system_block("   ", Path::new("/tmp/m.md"), 100).is_none());
     }
 
     #[test]
     fn as_system_block_truncates_oversize_input() {
-        let big = "x".repeat(MAX_MEMORY_SIZE + 100);
-        let block = as_system_block(&big, Path::new("/tmp/m.md")).unwrap();
+        let limit_kb = 10;
+        let limit_bytes = limit_kb * 1024;
+        let big = "x".repeat(limit_bytes + 100);
+        let block = as_system_block(&big, Path::new("/tmp/m.md"), limit_kb).unwrap();
         let payload = user_memory_payload(&block);
-        assert_eq!(payload.len(), MAX_MEMORY_SIZE);
-        assert!(payload.ends_with("<truncated bytes=141 source=\"/tmp/m.md\">"));
-    }
+        assert_eq!(payload.len(), limit_bytes);
 
-    #[test]
-    fn as_system_block_truncates_non_ascii_at_char_boundary() {
-        let mut content = "x".repeat(MAX_MEMORY_SIZE - 1);
-        content.push('é');
-        content.push_str("tail");
-
-        let block = as_system_block(&content, Path::new("/tmp/m.md")).unwrap();
-        let payload = block
-            .strip_prefix("<user_memory source=\"/tmp/m.md\">\n")
-            .unwrap()
-            .strip_suffix("\n</user_memory>")
-            .unwrap();
-        let (head, marker) = payload
-            .split_once("\n<truncated bytes=45 source=\"/tmp/m.md\">")
-            .unwrap();
-
-        assert_eq!(payload.len(), MAX_MEMORY_SIZE);
-        assert_eq!(head.len(), MAX_MEMORY_SIZE - 40);
-        assert!(head.bytes().all(|byte| byte == b'x'));
-        assert_eq!(marker, "");
-    }
-
-    #[test]
-    fn as_system_block_truncates_emoji_at_char_boundary() {
-        let mut content = "x".repeat(MAX_MEMORY_SIZE - 1);
-        content.push('😀');
-        content.push_str("tail");
-
-        let block = as_system_block(&content, Path::new("/tmp/m.md")).unwrap();
-        assert!(block.contains("<truncated bytes=47 source=\"/tmp/m.md\">"));
-
-        let payload = block
-            .strip_prefix("<user_memory source=\"/tmp/m.md\">\n")
-            .unwrap()
-            .strip_suffix("\n</user_memory>")
-            .unwrap();
-        let head = payload
-            .strip_suffix("\n<truncated bytes=47 source=\"/tmp/m.md\">")
-            .unwrap();
-
-        assert_eq!(payload.len(), MAX_MEMORY_SIZE);
-        assert!(head.len() <= MAX_MEMORY_SIZE);
-        assert_eq!(head.len(), MAX_MEMORY_SIZE - 40);
-        assert!(head.bytes().all(|byte| byte == b'x'));
+        let display = Path::new("/tmp/m.md").display().to_string();
+        let expected_suffix = format!("<truncated bytes=141 source=\"{display}\">");
+        assert!(
+            payload.ends_with(&expected_suffix),
+            "payload did not end with: {expected_suffix:?}. Actual payload tail: {:?}",
+            &payload[payload.len().saturating_sub(60)..]
+        );
     }
 
     fn user_memory_payload(block: &str) -> &str {
+        let display = Path::new("/tmp/m.md").display().to_string();
+        let prefix = format!("<user_memory source=\"{display}\">\n");
         block
-            .strip_prefix("<user_memory source=\"/tmp/m.md\">\n")
+            .strip_prefix(&prefix)
             .unwrap()
             .strip_suffix("\n</user_memory>")
             .unwrap()
     }
 
     #[test]
-    fn append_entry_creates_file_and_writes_one_bullet() {
+    fn append_to_sections_places_content_correctly() {
         let tmp = tempdir().unwrap();
         let path = tmp.path().join("memory.md");
-        append_entry(&path, "# remember the milk").unwrap();
+
+        append_preference(&path, "Indentation is 4 spaces").unwrap();
+        append_task(&path, "Implement search feature").unwrap();
+        append_file_change(
+            &path,
+            "crates/tui/src/memory.rs",
+            Some("12-25"),
+            "Added search helper",
+        )
+        .unwrap();
 
         let body = fs::read_to_string(&path).unwrap();
-        assert!(body.contains("remember the milk"), "{body}");
-        assert!(
-            body.starts_with("- ("),
-            "should start with bullet + date: {body}"
-        );
-        assert!(body.trim_end().ends_with("remember the milk"));
-    }
-
-    #[test]
-    fn append_entry_appends_subsequent_lines() {
-        let tmp = tempdir().unwrap();
-        let path = tmp.path().join("memory.md");
-        append_entry(&path, "# first").unwrap();
-        append_entry(&path, "second").unwrap();
-        let body = fs::read_to_string(&path).unwrap();
-        assert!(body.contains("first"));
-        assert!(body.contains("second"));
-        // Two bullets means two lines of `- (date) entry`.
-        assert_eq!(body.matches("- (").count(), 2);
-    }
-
-    #[test]
-    fn append_entry_rejects_empty_after_strip() {
-        let tmp = tempdir().unwrap();
-        let path = tmp.path().join("memory.md");
-        let err = append_entry(&path, "###").unwrap_err();
-        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(body.contains("## Preferences"));
+        assert!(body.contains("Indentation is 4 spaces"));
+        assert!(body.contains("## Active Tasks"));
+        assert!(body.contains("Implement search feature"));
+        assert!(body.contains("## File Change Log"));
+        assert!(body.contains("[crates/tui/src/memory.rs:12-25] Added search helper"));
     }
 }

@@ -31,11 +31,11 @@ jobs:
         if: runner.os == 'Linux' && matrix.target != 'x86_64-unknown-linux-musl'
         run: |
           for i in 1 2 3 4 5; do
-            sudo apt-get update && break
+            sudo apt-get update -o Acquire::ForceIPv4=true && break
             echo "apt-get update failed (attempt $i); retrying in 15s"
             sleep 15
           done
-          sudo apt-get install -y libdbus-1-dev pkg-config
+          sudo apt-get install -o Acquire::ForceIPv4=true -y libdbus-1-dev pkg-config
       - uses: Swatinem/rust-cache@v2
         with:
           cache-bin: false
@@ -180,54 +180,111 @@ jobs:
         if: runner.os == 'Linux' && matrix.target != 'x86_64-unknown-linux-musl'
         run: |
           for i in 1 2 3 4 5; do
-            sudo apt-get update && break
+            sudo apt-get update -o Acquire::ForceIPv4=true && break
             echo "apt-get update failed (attempt $i); retrying in 15s"
             sleep 15
           done
-          sudo apt-get install -y libdbus-1-dev pkg-config
+          sudo apt-get install -o Acquire::ForceIPv4=true -y libdbus-1-dev pkg-config
       - name: Build static Linux x64 binary (musl)
         if: matrix.target == 'x86_64-unknown-linux-musl'
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
+          for i in 1 2 3 4 5; do
+            sudo apt-get update -o Acquire::ForceIPv4=true && break
+            echo "apt-get update failed (attempt $i); retrying in 15s"
+            sleep 15
+          done
+          sudo apt-get install -o Acquire::ForceIPv4=true -y musl-tools
           rustup target add x86_64-unknown-linux-musl
           cargo build --release --locked --target x86_64-unknown-linux-musl
       - name: Install RISC-V cross-compilation toolchain
         if: matrix.target == 'riscv64gc-unknown-linux-gnu'
         run: |
           # Install cross-compiler (available in standard repos)
-          sudo apt-get update
-          sudo apt-get install -y gcc-riscv64-linux-gnu libc6-dev-riscv64-cross
+          sudo apt-get install -o Acquire::ForceIPv4=true -y gcc-riscv64-linux-gnu libc6-dev-riscv64-cross
 
           # Add Ubuntu ports for riscv64 packages
           . /etc/os-release
-          sudo tee /etc/apt/sources.list.d/riscv64.sources <<SRC
+          sudo dpkg --add-architecture riscv64
+          
+          mirrors=(
+            "http://ports.ubuntu.com/ubuntu-ports/"
+            "https://mirror.csclub.uwaterloo.ca/ubuntu-ports/"
+            "https://mirrors.ustc.edu.cn/ubuntu-ports/"
+          )
+          
+          success=false
+          for mirror in "${mirrors[@]}"; do
+            echo "Attempting apt-get update for riscv64 using mirror: $mirror"
+            sudo tee /etc/apt/sources.list.d/riscv64.sources <<SRC
           Types: deb
-          URIs: http://ports.ubuntu.com/
+          URIs: $mirror
           Suites: ${UBUNTU_CODENAME} ${UBUNTU_CODENAME}-updates
           Components: main universe
           Architectures: riscv64
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           SRC
-          sudo dpkg --add-architecture riscv64
-          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/riscv64.sources -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0
-          sudo apt-get install -y libdbus-1-dev:riscv64
+            
+            if sudo apt-get update \
+              -o Acquire::ForceIPv4=true \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/riscv64.sources \
+              -o Dir::Etc::sourceparts=- \
+              -o APT::Get::List-Cleanup=0; then
+              success=true
+              break
+            fi
+            echo "apt-get update failed with $mirror, trying next..."
+            sleep 5
+          done
+          
+          if [ "$success" = false ]; then
+            echo "All riscv64 mirrors failed!"
+            exit 1
+          fi
+          
+          sudo apt-get install -o Acquire::ForceIPv4=true -y libdbus-1-dev:riscv64
       - name: Install AArch64 cross-compilation toolchain
         if: matrix.target == 'aarch64-unknown-linux-gnu' && runner.os == 'Linux'
         run: |
           . /etc/os-release
-          sudo tee /etc/apt/sources.list.d/arm64.sources <<SRC
+          sudo dpkg --add-architecture arm64
+          
+          mirrors=(
+            "http://ports.ubuntu.com/ubuntu-ports/"
+            "https://mirror.csclub.uwaterloo.ca/ubuntu-ports/"
+            "https://mirrors.ustc.edu.cn/ubuntu-ports/"
+          )
+          
+          success=false
+          for mirror in "${mirrors[@]}"; do
+            echo "Attempting apt-get update for arm64 using mirror: $mirror"
+            sudo tee /etc/apt/sources.list.d/arm64.sources <<SRC
           Types: deb
-          URIs: http://ports.ubuntu.com/ubuntu-ports/
+          URIs: $mirror
           Suites: ${UBUNTU_CODENAME} ${UBUNTU_CODENAME}-updates ${UBUNTU_CODENAME}-security
           Components: main universe
           Architectures: arm64
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           SRC
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/arm64.sources -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0
-          sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross libdbus-1-dev:arm64 pkg-config
+            
+            if sudo apt-get update \
+              -o Acquire::ForceIPv4=true \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/arm64.sources \
+              -o Dir::Etc::sourceparts=- \
+              -o APT::Get::List-Cleanup=0; then
+              success=true
+              break
+            fi
+            echo "apt-get update failed with $mirror, trying next..."
+            sleep 5
+          done
+          
+          if [ "$success" = false ]; then
+            echo "All arm64 mirrors failed!"
+            exit 1
+          fi
+          
+          sudo apt-get install -o Acquire::ForceIPv4=true -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross libdbus-1-dev:arm64 pkg-config
       - name: Build
         if: matrix.target != 'x86_64-unknown-linux-musl'
         shell: bash

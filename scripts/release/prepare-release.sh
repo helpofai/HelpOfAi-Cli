@@ -75,6 +75,12 @@ bump(
     rf"\g<1>{new}\g<2>",
     2,
 )
+bump(
+    "npm/runtime-sdk/package.json",
+    rf'("(?:version)": "){old_re}(")',
+    rf"\g<1>{new}\g<2>",
+    1,
+)
 
 # 4) README install-tag examples (all translations).
 for readme in ["README.md", "README.zh-CN.md", "README.ja-JP.md", "README.vi.md"]:

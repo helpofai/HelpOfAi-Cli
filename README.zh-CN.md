@@ -49,8 +49,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # 或使用 GitHub Releases 中的 NSIS 安装包
 
 # CNB 镜像：适合无法稳定访问 GitHub 的用户
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.62 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.62 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.88 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.88 helpofai-tui --locked --force
 
 # 旧 Homebrew 兼容路径：formula 改名期间仍沿用 deepseek-tui
 brew tap helpofai/HelpOfAi-Cli
@@ -244,3 +244,5 @@ HelpOfAi 收到很多高质量的报告和 PR。维护者的姿态是把这扇�
 ## Star 历史
 
 [![Star History Chart](https://api.star-history.com/chart?repos=helpofai/HelpOfAi-Cli&type=date&legend=top-left)](https://www.star-history.com/?repos=helpofai%2FHelpOfAi&type=date&logscale=&legend=top-left)
+
+

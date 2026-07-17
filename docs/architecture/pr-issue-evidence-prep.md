@@ -1,6 +1,6 @@
 # EPIC-001 Hunter Replay Evidence
 
-**Target branch:** `hunter/0.8.62-glm-subagents`
+**Target branch:** `hunter/0.8.65-glm-subagents`
 **Replay branch:** `feat/replay-epic-001-on-hunter`
 **Related EPIC:** [#2870](https://github.com/helpofai/HelpOfAi-Cli/issues/2870)
 **Related issue:** [#2791](https://github.com/helpofai/HelpOfAi-Cli/issues/2791)
@@ -22,7 +22,7 @@ FEAT-001, FEAT-002, and FEAT-003 onto the Hunter branch.
 ## Summary
 
 Replays the completed EPIC-001 command-boundary work onto
-`hunter/0.8.62-glm-subagents`.
+`hunter/0.8.65-glm-subagents`.
 
 ## Changes
 

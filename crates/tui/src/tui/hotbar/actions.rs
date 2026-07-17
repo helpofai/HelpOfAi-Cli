@@ -559,6 +559,10 @@ mod tests {
         let mut app = test_app();
         app.api_provider = ApiProvider::Deepseek;
         app.reasoning_effort = ReasoningEffort::Off;
+        // Pin a concrete (non-auto) model so the reasoning cycle is enabled.
+        // `test_app` inherits `auto_model` from local settings; this makes the
+        // test independent of the developer's `default_model`/`provider_models`.
+        app.auto_model = false;
 
         assert!(!reasoning.is_active(&app));
         assert!(matches!(

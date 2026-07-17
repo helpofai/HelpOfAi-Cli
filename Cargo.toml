@@ -20,7 +20,7 @@ default-members = ["crates/cli", "crates/app-server", "crates/tui"]
 resolver = "2"
 
 [workspace.package]
-version = "0.8.62"
+version = "0.8.88"
 edition = "2024"
 # Rust 1.88 stabilized `let_chains` in `if`/`while` conditions, which the
 # codebase relies on extensively. Cargo enforces this so users on older
@@ -55,3 +55,16 @@ tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 uuid = { version = "1.11", features = ["v4"] }
+
+[profile.release]
+# lto = false: starlark 0.13.0 ships pre-compiled LLVM bitcode (.bc) in its
+# rlib. When the linker attempts LTO (even implicitly on musl targets), it
+# encounters an LLVM version banner mismatch between the pre-built bitcode and
+# the host linker, producing:
+#   "failed to parse bitcode for LTO module: Invalid record"
+# Disabling LTO avoids the starlark bitcode entirely and is safe — our binary
+# size budget is not LTO-dependent. Strip + codegen-units=1 still give us
+# good release performance.
+lto = false
+strip = true
+codegen-units = 16

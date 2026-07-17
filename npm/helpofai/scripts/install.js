@@ -80,7 +80,7 @@ class DownloadTimeoutError extends Error {
 
 function resolvePackageVersion() {
   const configuredVersion =
-    process.env.DEEPSEEK_TUI_VERSION ||
+    process.env.HELPOFAI_VERSION ||
     process.env.DEEPSEEK_VERSION ||
     pkg.deepseekBinaryVersion ||
     pkg.version;
@@ -88,13 +88,13 @@ function resolvePackageVersion() {
 }
 
 function resolveRepo() {
-  return process.env.DEEPSEEK_TUI_GITHUB_REPO || process.env.DEEPSEEK_GITHUB_REPO || "helpofai/HelpOfAi-Cli";
+  return process.env.HELPOFAI_GITHUB_REPO || process.env.DEEPSEEK_GITHUB_REPO || "helpofai/HelpOfAi-Cli";
 }
 
 function isOptionalInstall(argv = process.argv.slice(2), env = process.env) {
   return (
     argv.includes("--optional") ||
-    env.DEEPSEEK_TUI_OPTIONAL_INSTALL === "1" ||
+    env.HELPOFAI_OPTIONAL_INSTALL === "1" ||
     env.DEEPSEEK_OPTIONAL_INSTALL === "1"
   );
 }
@@ -155,7 +155,7 @@ function binaryPaths() {
 // ────────────────────────────────────────────────────────────────────────────
 
 function isQuietInstall() {
-  if (process.env.DEEPSEEK_TUI_QUIET_INSTALL === "1") {
+  if (process.env.HELPOFAI_QUIET_INSTALL === "1") {
     return true;
   }
   const level = (process.env.npm_config_loglevel || "").toLowerCase();
@@ -173,7 +173,7 @@ function installFailureHint(error) {
   const message = error && error.message ? String(error.message) : "";
   const code = error && error.code ? String(error.code) : "";
   const releaseBase =
-    process.env.DEEPSEEK_TUI_RELEASE_BASE_URL ||
+    process.env.HELPOFAI_RELEASE_BASE_URL ||
     process.env.DEEPSEEK_RELEASE_BASE_URL;
   const networkMarkers = [
     "github.com",
@@ -195,7 +195,7 @@ function installFailureHint(error) {
   if (releaseBase) {
     return [
       "helpofai install hint:",
-      `  DEEPSEEK_TUI_RELEASE_BASE_URL is set to ${releaseBase}`,
+      `  HELPOFAI_RELEASE_BASE_URL is set to ${releaseBase}`,
       "  Verify that this directory contains helpofai-artifacts-sha256.txt",
       "  plus the helpofai/helpofai-tui binary assets for your platform.",
     ].join("\n");
@@ -205,7 +205,7 @@ function installFailureHint(error) {
     "helpofai install hint:",
     "  The npm package downloads prebuilt binaries from GitHub Releases.",
     "  If GitHub is unavailable on this network, mirror the release assets and set:",
-    "    DEEPSEEK_TUI_RELEASE_BASE_URL=https://<mirror>/<release-asset-directory>/",
+    "    HELPOFAI_RELEASE_BASE_URL=https://<mirror>/<release-asset-directory>/",
     "  The directory must contain helpofai-artifacts-sha256.txt and the platform binaries.",
     "  See docs/INSTALL.md#npm-binary-download-times-out.",
   ].join("\n");
@@ -225,14 +225,14 @@ function envInt(name, fallback) {
 
 function downloadTimeoutMs(context = "runtime") {
   return envInt(
-    "DEEPSEEK_TUI_DOWNLOAD_TIMEOUT_MS",
+    "HELPOFAI_DOWNLOAD_TIMEOUT_MS",
     envInt("DEEPSEEK_DOWNLOAD_TIMEOUT_MS", defaultTimeoutMs(context)),
   );
 }
 
 function downloadStallMs(context = "runtime") {
   return envInt(
-    "DEEPSEEK_TUI_DOWNLOAD_STALL_MS",
+    "HELPOFAI_DOWNLOAD_STALL_MS",
     envInt("DEEPSEEK_DOWNLOAD_STALL_MS", defaultStallMs(context)),
   );
 }
@@ -531,7 +531,7 @@ function httpRequest(rawUrl, opts = {}) {
       totalTimer = setTimeout(() => {
         fail(new DownloadTimeoutError(
           `download exceeded total timeout of ${totalTimeoutMs} ms ` +
-          `(set DEEPSEEK_TUI_DOWNLOAD_TIMEOUT_MS to raise it; current stall budget is ${stallMs} ms)`,
+          `(set HELPOFAI_DOWNLOAD_TIMEOUT_MS to raise it; current stall budget is ${stallMs} ms)`,
         ));
       }, totalTimeoutMs);
     }
@@ -542,7 +542,7 @@ function httpRequest(rawUrl, opts = {}) {
       stallTimer = setTimeout(() => {
         fail(new DownloadTimeoutError(
           `download stalled — no bytes received for ${stallMs} ms ` +
-          `(set DEEPSEEK_TUI_DOWNLOAD_STALL_MS to raise it; total budget is ${totalTimeoutMs} ms)`,
+          `(set HELPOFAI_DOWNLOAD_STALL_MS to raise it; total budget is ${totalTimeoutMs} ms)`,
         ));
       }, stallMs);
     };
@@ -1055,7 +1055,7 @@ async function adoptExistingBinaryIfValid(targetPath, assetName, version, getChe
 async function ensureBinary(targetPath, assetName, version, repo, getChecksums, options = {}) {
   const marker = `${targetPath}.version`;
   const downloadIfNeeded =
-    process.env.DEEPSEEK_TUI_FORCE_DOWNLOAD === "1" || process.env.DEEPSEEK_FORCE_DOWNLOAD === "1";
+    process.env.HELPOFAI_FORCE_DOWNLOAD === "1" || process.env.DEEPSEEK_FORCE_DOWNLOAD === "1";
   if (!downloadIfNeeded) {
     const existing = await fileExists(targetPath);
     if (existing) {
@@ -1106,7 +1106,7 @@ function shouldIgnoreInstallFailure(
 async function run(options = {}) {
   const context =
     options.context === undefined || options.context === null ? "runtime" : options.context;
-  if (process.env.DEEPSEEK_TUI_DISABLE_INSTALL === "1" || process.env.DEEPSEEK_DISABLE_INSTALL === "1") {
+  if (process.env.HELPOFAI_DISABLE_INSTALL === "1" || process.env.DEEPSEEK_DISABLE_INSTALL === "1") {
     return;
   }
   if (shouldSkipOptionalPostinstall(context)) {

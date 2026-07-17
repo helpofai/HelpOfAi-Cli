@@ -220,13 +220,22 @@ impl From<LlmError> for ErrorEnvelope {
                 format!("llm_server_{status}"),
                 message,
             ),
-            LlmError::NetworkError(message) => Self::new(
-                ErrorCategory::Network,
-                ErrorSeverity::Error,
-                true,
-                "llm_network_error",
-                message,
-            ),
+            LlmError::NetworkError(message) => {
+                let mut display_msg = message.clone();
+                if message.contains("localhost:20128") || message.contains("127.0.0.1:20128") {
+                    display_msg = "Connection failed: The local OmniRoute gateway (http://localhost:20128) is not running.\n\n\
+                        💡 How to resolve:\n\
+                        1. Start your OmniRoute gateway server locally.\n\
+                        2. Or switch the active provider by typing `/provider deepseek` or `/provider openai` in the TUI input bar.".to_string();
+                }
+                Self::new(
+                    ErrorCategory::Network,
+                    ErrorSeverity::Error,
+                    true,
+                    "llm_network_error",
+                    display_msg,
+                )
+            }
             LlmError::Timeout(duration) => Self::new(
                 ErrorCategory::Timeout,
                 ErrorSeverity::Warning,

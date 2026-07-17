@@ -2,7 +2,6 @@
   "private": true,
   "workspaces": [
     "npm/helpofai",
-    "npm/deepseek-tui",
     "npm/runtime-sdk"
   ],
 

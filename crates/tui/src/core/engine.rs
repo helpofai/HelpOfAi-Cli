@@ -318,6 +318,10 @@ pub struct EngineConfig {
     /// Path to the user memory file (#489). Always populated; only
     /// consulted when `memory_enabled` is `true`.
     pub memory_path: PathBuf,
+    /// Path to the project memory file.
+    pub project_memory_path: Option<PathBuf>,
+    /// Maximum size of user memory file in KiB.
+    pub memory_max_size_kb: usize,
     /// Default directory for Xiaomi MiMo speech/TTS tool outputs.
     pub speech_output_dir: Option<PathBuf>,
     pub vision_config: Option<crate::config::VisionModelConfig>,
@@ -418,6 +422,8 @@ impl Default for EngineConfig {
             subagent_model_overrides: HashMap::new(),
             memory_enabled: false,
             memory_path: PathBuf::from("./memory.md"),
+            project_memory_path: None,
+            memory_max_size_kb: 512,
             speech_output_dir: None,
             vision_config: None,
             strict_tool_mode: false,
@@ -778,8 +784,18 @@ impl Engine {
         // Set up stable system prompt with project context (default to agent mode).
         // Per-turn working-set metadata is injected into the latest user
         // message at request time so file churn does not rewrite this prefix.
-        let user_memory_block =
-            crate::memory::compose_block(config.memory_enabled, &config.memory_path);
+        let user_memory_block = crate::memory::compose_block(
+            config.memory_enabled,
+            &config.memory_path,
+            config.memory_max_size_kb,
+        );
+        let project_memory_block = config.project_memory_path.as_ref().and_then(|path| {
+            crate::memory::compose_project_block(
+                config.memory_enabled,
+                path,
+                config.memory_max_size_kb,
+            )
+        });
         let prompt_goal_objective =
             goal_objective_for_prompt(config.goal_objective.as_deref(), &config.goal_state);
         let system_prompt =
@@ -790,6 +806,7 @@ impl Engine {
                 Some(&config.instructions),
                 prompts::PromptSessionContext {
                     user_memory_block: user_memory_block.as_deref(),
+                    project_memory_block: project_memory_block.as_deref(),
                     goal_objective: prompt_goal_objective.as_deref(),
                     project_context_pack_enabled: config.project_context_pack_enabled,
                     locale_tag: &config.locale_tag,
@@ -1444,6 +1461,20 @@ impl Engine {
                             .send(Event::status(format!(
                                 "Stream chunk timeout set to {timeout_secs}s"
                             )))
+                            .await;
+                    }
+                    Op::SetMemoryConfig {
+                        enabled,
+                        path,
+                        max_size_kb,
+                    } => {
+                        self.config.memory_enabled = enabled;
+                        self.config.memory_path = path;
+                        self.config.memory_max_size_kb = max_size_kb;
+                        self.refresh_system_prompt();
+                        let _ = self
+                            .tx_event
+                            .send(Event::status("Persistent memory updated".to_string()))
                             .await;
                     }
                     Op::SyncSession {
@@ -2664,6 +2695,7 @@ impl Engine {
         // feature is disabled — tools short-circuit on that.
         if self.config.memory_enabled {
             ctx.memory_path = Some(self.config.memory_path.clone());
+            ctx.project_memory_path = self.config.project_memory_path.clone();
         }
 
         if let Some(decider) = self.config.network_policy.as_ref() {
@@ -2854,8 +2886,18 @@ impl Engine {
     }
     /// Refresh the stable system prompt based on current non-mode context.
     fn refresh_system_prompt(&mut self) {
-        let user_memory_block =
-            crate::memory::compose_block(self.config.memory_enabled, &self.config.memory_path);
+        let user_memory_block = crate::memory::compose_block(
+            self.config.memory_enabled,
+            &self.config.memory_path,
+            self.config.memory_max_size_kb,
+        );
+        let project_memory_block = self.config.project_memory_path.as_ref().and_then(|path| {
+            crate::memory::compose_project_block(
+                self.config.memory_enabled,
+                path,
+                self.config.memory_max_size_kb,
+            )
+        });
         let prompt_goal_objective = goal_objective_for_prompt(
             self.config.goal_objective.as_deref(),
             &self.config.goal_state,
@@ -2867,6 +2909,7 @@ impl Engine {
             Some(&self.config.instructions),
             prompts::PromptSessionContext {
                 user_memory_block: user_memory_block.as_deref(),
+                project_memory_block: project_memory_block.as_deref(),
                 goal_objective: prompt_goal_objective.as_deref(),
                 project_context_pack_enabled: self.config.project_context_pack_enabled,
                 locale_tag: &self.config.locale_tag,

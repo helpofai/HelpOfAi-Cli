@@ -39,6 +39,7 @@ pub enum ModalKind {
     FeedbackPicker,
     ThemePicker,
     ContextMenu,
+    MemorySettings,
 }
 
 #[derive(Debug, Clone)]
@@ -211,6 +212,11 @@ pub enum ViewEvent {
     CopyToClipboard {
         text: String,
         label: String,
+    },
+    MemorySettingsApplied {
+        enabled: bool,
+        max_size_kb: usize,
+        memory_path: Option<String>,
     },
 }
 

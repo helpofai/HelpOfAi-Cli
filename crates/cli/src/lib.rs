@@ -57,6 +57,8 @@ enum ProviderArg {
     Minimax,
     #[value(alias = "deep-infra", alias = "deep_infra")]
     Deepinfra,
+    #[value(alias = "omni-route", alias = "omniroute")]
+    Omniroute,
 }
 
 impl From<ProviderArg> for ProviderKind {
@@ -87,6 +89,7 @@ impl From<ProviderArg> for ProviderKind {
             ProviderArg::Stepfun => ProviderKind::Stepfun,
             ProviderArg::Minimax => ProviderKind::Minimax,
             ProviderArg::Deepinfra => ProviderKind::Deepinfra,
+            ProviderArg::Omniroute => ProviderKind::Omniroute,
         }
     }
 }
@@ -2828,6 +2831,8 @@ mod tests {
             ("minimax", ProviderArg::Minimax),
             ("deepinfra", ProviderArg::Deepinfra),
             ("deep-infra", ProviderArg::Deepinfra),
+            ("omniroute", ProviderArg::Omniroute),
+            ("omni-route", ProviderArg::Omniroute),
             ("siliconflow-cn", ProviderArg::SiliconflowCn),
             ("siliconflow-CN", ProviderArg::SiliconflowCn),
             ("siliconflow_china", ProviderArg::SiliconflowCn),

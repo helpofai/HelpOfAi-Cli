@@ -86,7 +86,6 @@ function buildFromSourceHint() {
 function skipGlibcCheck() {
   return (
     process.env.HELPOFAI_SKIP_GLIBC_CHECK === "1" ||
-    process.env.DEEPSEEK_TUI_SKIP_GLIBC_CHECK === "1" ||
     process.env.DEEPSEEK_SKIP_GLIBC_CHECK === "1"
   );
 }
@@ -145,3 +144,5 @@ module.exports = {
     skipGlibcCheck,
   },
 };
+
+

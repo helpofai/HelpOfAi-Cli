@@ -70,6 +70,13 @@ impl Default for ModelRegistry {
     fn default() -> Self {
         let models = vec![
             ModelInfo {
+                id: "auto".to_string(),
+                provider: ProviderKind::Omniroute,
+                aliases: vec![],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
                 id: "deepseek-v4-pro".to_string(),
                 provider: ProviderKind::Deepseek,
                 aliases: vec![],
@@ -900,6 +907,20 @@ impl ModelRegistry {
                         aliases: Vec::new(),
                         supports_tools: true,
                         supports_reasoning: false,
+                    },
+                    used_fallback: false,
+                    fallback_chain,
+                };
+            }
+            if provider_hint == Some(ProviderKind::Omniroute) {
+                return ModelResolution {
+                    requested: Some(name.to_string()),
+                    resolved: ModelInfo {
+                        id: name.trim().to_string(),
+                        provider: ProviderKind::Omniroute,
+                        aliases: Vec::new(),
+                        supports_tools: true,
+                        supports_reasoning: true,
                     },
                     used_fallback: false,
                     fallback_chain,

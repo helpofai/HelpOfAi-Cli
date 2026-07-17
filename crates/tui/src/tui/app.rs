@@ -1439,6 +1439,8 @@ pub struct App {
     /// Persisted model selections by provider name. Loaded from settings so
     /// `/model` and the picker can surface saved provider-specific choices.
     pub provider_models: HashMap<String, String>,
+    /// Dynamically fetched models for gateway providers like OmniRoute.
+    pub fetched_gateway_models: std::sync::Arc<std::sync::Mutex<Option<Vec<String>>>>,
     /// When true, the model is auto-selected based on request complexity
     /// rather than using a fixed model. The `/model auto` command sets this.
     /// `dispatch_user_message` calls `auto_model_heuristic` to resolve the
@@ -1474,11 +1476,15 @@ pub struct App {
     /// Path to the user-memory file (#489). Always populated; only
     /// consulted when `use_memory` is `true`.
     pub memory_path: PathBuf,
+    /// Path to the project-specific workspace memory file.
+    pub project_memory_path: Option<PathBuf>,
     /// Whether the user-memory feature is enabled (#489). Mirrors
     /// `Config::memory_enabled()` at app boot. Used by the `# foo`
     /// composer interception, the `/memory` slash command, and tool
     /// registration for `remember`.
     pub use_memory: bool,
+    /// Maximum size of memory in KiB.
+    pub memory_max_size_kb: usize,
     pub use_alt_screen: bool,
     pub use_mouse_capture: bool,
     /// When true, plain Up/Down on an empty composer scroll the transcript
@@ -1640,6 +1646,7 @@ pub struct App {
     pub theme_id: palette::ThemeId,
     // Onboarding
     pub onboarding: OnboardingState,
+    pub skip_onboarding: bool,
     pub onboarding_needs_api_key: bool,
     pub onboarding_workspace_trust_gate: bool,
     pub api_key_env_only: bool,
@@ -2304,7 +2311,7 @@ impl App {
             crate::mcp::load_config_with_workspace(&mcp_config_path, &workspace)
                 .map(|cfg| cfg.servers.len())
                 .unwrap_or(0);
-        Self {
+        let app = Self {
             mode: initial_mode,
             hotbar_actions: HotbarActionRegistry::with_builtins(),
             composer: ComposerState {
@@ -2357,6 +2364,7 @@ impl App {
             last_status_message_seen: None,
             model,
             provider_models,
+            fetched_gateway_models: std::sync::Arc::new(std::sync::Mutex::new(None)),
             auto_model,
             last_effective_model: None,
             api_provider: provider,
@@ -2366,14 +2374,20 @@ impl App {
             pending_provider_switch: None,
             reasoning_effort,
             last_effective_reasoning_effort: None,
-            workspace,
+            workspace: workspace.clone(),
             config_path,
             config_profile,
             mcp_config_path: mcp_config_path.clone(),
             skills_dir,
             skills_scan_helpofai_only,
             memory_path,
+            project_memory_path: if use_memory {
+                Some(workspace.join(".helpofai").join("memory.md"))
+            } else {
+                None
+            },
             use_memory,
+            memory_max_size_kb: config.memory_max_size_kb(),
             use_alt_screen,
             use_mouse_capture,
             use_bracketed_paste,
@@ -2439,6 +2453,7 @@ impl App {
             ui_theme,
             theme_id,
             onboarding,
+            skip_onboarding,
             onboarding_needs_api_key: needs_api_key,
             onboarding_workspace_trust_gate,
             api_key_env_only,
@@ -2568,7 +2583,14 @@ impl App {
             receipt_text: None,
             receipt_started_at: None,
             tool_evidence: Vec::new(),
+        };
+        if use_memory {
+            let _ = crate::memory::initialize_memory_files_if_needed(
+                &app.memory_path,
+                Some(&app.workspace.join(".helpofai").join("memory.md")),
+            );
         }
+        app
     }
 
     fn discover_cached_skills(
@@ -5540,6 +5562,8 @@ pub enum AppAction {
     OpenStatusPicker,
     /// Open the `/feedback` picker for GitHub issue/security destinations.
     OpenFeedbackPicker,
+    /// Open the memory config modal.
+    OpenMemorySettings,
     /// Open the `/theme` picker modal with live preview of every preset.
     OpenThemePicker,
     /// Open an external URL in the system browser.
@@ -5558,6 +5582,9 @@ pub enum AppAction {
     },
     ListSubAgents,
     FetchModels,
+    FetchGateway {
+        subcommand: String,
+    },
     CacheWarmup,
     /// Switch the active LLM backend (DeepSeek vs NVIDIA NIM) without
     /// restarting the process. The runtime rebuilds its API client from

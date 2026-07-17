@@ -61,7 +61,9 @@ impl ModelInventory {
             }
             if provider == active_provider {
                 let active_model = config.default_model();
-                if !active_model.trim().eq_ignore_ascii_case("auto") {
+                if provider == ApiProvider::Omniroute
+                    || !active_model.trim().eq_ignore_ascii_case("auto")
+                {
                     push_model(&mut models, provider, &active_model);
                 }
             }
@@ -107,11 +109,18 @@ impl ModelInventory {
             }
         }
 
+        let router_provider = match active_provider {
+            ApiProvider::Omniroute => ApiProvider::Omniroute,
+            ApiProvider::DeepseekCN => ApiProvider::DeepseekCN,
+            _ => ApiProvider::Deepseek,
+        };
+        let router_available = has_api_key_for(config, router_provider);
+
         Self {
             active_provider,
-            router_provider: ApiProvider::Deepseek,
+            router_provider,
             router_model: "deepseek-v4-flash",
-            router_available: has_api_key_for(config, ApiProvider::Deepseek),
+            router_available,
             candidates,
         }
     }
@@ -170,7 +179,7 @@ fn configured_model_for_provider(config: &Config, provider: ApiProvider) -> Opti
 fn provider_default_model(config: &Config, provider: ApiProvider) -> String {
     if provider == config.api_provider() {
         let model = config.default_model();
-        if !model.trim().eq_ignore_ascii_case("auto") {
+        if provider == ApiProvider::Omniroute || !model.trim().eq_ignore_ascii_case("auto") {
             return model;
         }
     }
@@ -181,6 +190,7 @@ fn provider_default_model(config: &Config, provider: ApiProvider) -> String {
             ApiProvider::Ollama => crate::config::DEFAULT_OLLAMA_MODEL,
             ApiProvider::Sglang => crate::config::DEFAULT_SGLANG_MODEL,
             ApiProvider::Vllm => crate::config::DEFAULT_VLLM_MODEL,
+            ApiProvider::Omniroute => crate::config::DEFAULT_OMNIROUTE_MODEL,
             _ => crate::config::DEFAULT_TEXT_MODEL,
         })
         .to_string()

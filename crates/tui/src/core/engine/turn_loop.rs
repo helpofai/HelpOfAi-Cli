@@ -929,7 +929,12 @@ impl Engine {
                 && current_text_visible.trim().is_empty()
                 && current_thinking.trim().is_empty()
                 && !pending_message_complete;
-            if stream_died_with_nothing || sleep_resume_pending {
+            let reasoning_only_no_output = stream_errors == 0
+                && tool_uses.is_empty()
+                && current_text_visible.trim().is_empty()
+                && !current_thinking.trim().is_empty()
+                && !self.cancel_token.is_cancelled();
+            if stream_died_with_nothing || sleep_resume_pending || reasoning_only_no_output {
                 if stream_retry_attempts < MAX_STREAM_RETRIES {
                     stream_retry_attempts = stream_retry_attempts.saturating_add(1);
                     if sleep_resume_pending {
@@ -949,6 +954,16 @@ impl Engine {
                             let index = last_text_index.unwrap_or(0);
                             let _ = self.tx_event.send(Event::MessageComplete { index }).await;
                         }
+                    } else if reasoning_only_no_output {
+                        crate::logging::warn(format!(
+                            "Model returned only reasoning with no answer (attempt {stream_retry_attempts}/{MAX_STREAM_RETRIES}); retrying request"
+                        ));
+                        let _ = self
+                            .tx_event
+                            .send(Event::status(format!(
+                                "Model returned only reasoning; retrying ({stream_retry_attempts}/{MAX_STREAM_RETRIES})"
+                            )))
+                            .await;
                     } else {
                         crate::logging::warn(format!(
                             "Stream died with no content (attempt {stream_retry_attempts}/{MAX_STREAM_RETRIES}); retrying request"

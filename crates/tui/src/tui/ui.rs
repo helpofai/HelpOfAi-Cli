@@ -161,7 +161,7 @@ const CONTEXT_WARNING_THRESHOLD_PERCENT: f64 = 85.0;
 const CONTEXT_CRITICAL_THRESHOLD_PERCENT: f64 = 95.0;
 const CONTEXT_SUGGEST_COMPACT_THRESHOLD_PERCENT: f64 = 60.0;
 const UI_IDLE_POLL_MS: u64 = 48;
-const UI_ACTIVE_POLL_MS: u64 = 24;
+const UI_ACTIVE_POLL_MS: u64 = 16;
 const SUBAGENT_HOOK_PREVIEW_LIMIT: usize = 2_048;
 const WEB_CONFIG_POLL_MS: u64 = 16;
 const DISPATCH_WATCHDOG_TIMEOUT: Duration = Duration::from_secs(30);
@@ -177,7 +177,7 @@ const TOOL_HANG_WATCHDOG_TIMEOUT: Duration = Duration::from_secs(900);
 // sub-agents running). Drives the footer water-spout animation as well as
 // the per-tool spinner pulse — keep this fast enough that the spout reads as
 // motion (~12 fps) instead of teleport-frames.
-const UI_STATUS_ANIMATION_MS: u64 = 80;
+const UI_STATUS_ANIMATION_MS: u64 = 50;
 const SIDEBAR_VISIBLE_MIN_WIDTH: u16 = 100;
 const DEFAULT_TERMINAL_PROBE_TIMEOUT_MS: u64 = 500;
 const PERIODIC_FULL_REPAINT_EVERY_N: u64 = 50;
@@ -1121,6 +1121,8 @@ fn build_engine_config(app: &App, config: &Config) -> EngineConfig {
         prefer_bwrap: config.prefer_bwrap.unwrap_or(false),
         memory_enabled: config.memory_enabled(),
         memory_path: config.memory_path(),
+        project_memory_path: app.project_memory_path.clone(),
+        memory_max_size_kb: app.memory_max_size_kb,
         speech_output_dir: config.speech_output_dir(),
         vision_config: config.vision_model_config(),
         strict_tool_mode: config.strict_tool_mode.unwrap_or(false),
@@ -4956,6 +4958,134 @@ async fn fetch_available_models(config: &Config) -> Result<Vec<String>> {
     Ok(ids)
 }
 
+async fn run_gateway_command(config: &Config, subcommand: &str) -> Result<String> {
+    use crate::config::ApiProvider;
+    use std::time::Instant;
+
+    let active_provider = config.api_provider();
+    if active_provider != ApiProvider::Omniroute {
+        return Ok(format!(
+            "Gateway commands are only available when the active provider is OmniRoute. \
+             Current active provider: {}",
+            active_provider.display_name()
+        ));
+    }
+
+    let base_url = config.deepseek_base_url();
+    let api_key = config
+        .provider_config_for(ApiProvider::Omniroute)
+        .and_then(|e| e.api_key.clone())
+        .or_else(|| std::env::var("OMNIROUTE_API_KEY").ok())
+        .unwrap_or_default();
+
+    let client = reqwest::Client::new();
+    let url = if base_url.ends_with("/v1") || base_url.ends_with("/v1/") {
+        format!("{}/models", base_url.trim_end_matches('/'))
+    } else {
+        format!("{}/v1/models", base_url.trim_end_matches('/'))
+    };
+
+    match subcommand {
+        "ping" => {
+            let start = Instant::now();
+            let response = client.get(&url).bearer_auth(&api_key).send().await?;
+            let latency = start.elapsed();
+
+            let status = response.status();
+            if status.is_success() {
+                Ok(format!(
+                    "✓ OmniRoute Gateway Ping: **{} ms** (HTTP {})",
+                    latency.as_millis(),
+                    status.as_u16()
+                ))
+            } else {
+                Ok(format!(
+                    "✗ OmniRoute Gateway Ping: HTTP Error {} (took {} ms)",
+                    status.as_u16(),
+                    latency.as_millis()
+                ))
+            }
+        }
+        "models" => {
+            let response = client
+                .get(&url)
+                .bearer_auth(&api_key)
+                .send()
+                .await?
+                .json::<serde_json::Value>()
+                .await?;
+
+            let mut model_ids = Vec::new();
+            if let Some(data) = response.get("data").and_then(|d| d.as_array()) {
+                for item in data {
+                    if let Some(id) = item.get("id").and_then(|id| id.as_str()) {
+                        model_ids.push(id.to_string());
+                    }
+                }
+            }
+
+            if model_ids.is_empty() {
+                Ok("No models returned by OmniRoute gateway.".to_string())
+            } else {
+                model_ids.sort();
+                let list = model_ids
+                    .iter()
+                    .map(|id| format!("  - {}", id))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                Ok(format!(
+                    "OmniRoute Gateway Models ({} available):\n{}",
+                    model_ids.len(),
+                    list
+                ))
+            }
+        }
+        "status" => {
+            let start = Instant::now();
+            let response = client.get(&url).bearer_auth(&api_key).send().await?;
+            let latency = start.elapsed().as_millis();
+            let headers = response.headers().clone();
+
+            let status = response.status();
+            if !status.is_success() {
+                return Ok(format!(
+                    "✗ OmniRoute Offline\nGateway Endpoint: {}\nHTTP status: {}",
+                    base_url,
+                    status.as_u16()
+                ));
+            }
+
+            let data = response.json::<serde_json::Value>().await?;
+            let model_count = data
+                .get("data")
+                .and_then(|d| d.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
+
+            let version = headers
+                .get("x-omniroute-version")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("3.8.x");
+            let cache_hit = headers
+                .get("x-omniroute-cache-hit")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("false");
+
+            Ok(format!(
+                "✓ OmniRoute Online\n\
+                 ──────────────────────────────\n\
+                 **Gateway URL:** {}\n\
+                 **Version:** {}\n\
+                 **Models:** {} Available\n\
+                 **Last Latency:** {} ms\n\
+                 **Cache State:** hit={}",
+                base_url, version, model_count, latency, cache_hit
+            ))
+        }
+        _ => unreachable!(),
+    }
+}
+
 async fn run_cache_warmup(app: &App, config: &Config) -> Result<(Usage, String, PromptInspection)> {
     let client = DeepSeekClient::new(config)?;
     let base_url = client.base_url().to_string();
@@ -5367,6 +5497,7 @@ pub(crate) fn apply_engine_error_to_app(
         envelope.category,
         crate::error_taxonomy::ErrorCategory::Authentication
     ) && app.api_key_env_only
+        && !app.skip_onboarding
     {
         app.offline_mode = true;
         app.onboarding_needs_api_key = true;
@@ -6088,6 +6219,7 @@ async fn dispatch_user_message(
                 ),
                 show_thinking: app.show_thinking,
                 verbosity: app.verbosity.as_deref(),
+                project_memory_block: None,
                 skills_scan_helpofai_only: app.skills_scan_helpofai_only,
             },
         ),
@@ -7049,6 +7181,22 @@ async fn apply_command_result(
                     }
                 }
             }
+            AppAction::FetchGateway { subcommand } => {
+                app.status_message = Some(format!("Querying gateway {}...", subcommand));
+                match run_gateway_command(config, &subcommand).await {
+                    Ok(result) => {
+                        app.add_message(HistoryCell::System { content: result });
+                        app.status_message =
+                            Some(format!("Gateway query {} completed", subcommand));
+                    }
+                    Err(error) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!("Gateway command failed: {error}"),
+                        });
+                        app.status_message = Some("Gateway command failed".to_string());
+                    }
+                }
+            }
             AppAction::CacheWarmup => {
                 app.status_message = Some("Warming DeepSeek cache...".to_string());
                 match run_cache_warmup(app, config).await {
@@ -7200,6 +7348,31 @@ async fn apply_command_result(
             }
             AppAction::OpenModelPicker => {
                 if app.view_stack.top_kind() != Some(ModalKind::ModelPicker) {
+                    if app.api_provider == ApiProvider::Omniroute {
+                        let is_manual = config
+                            .provider_config_for(ApiProvider::Omniroute)
+                            .and_then(|c| c.mode.as_deref())
+                            == Some("manual");
+                        if is_manual {
+                            let cell = app.fetched_gateway_models.clone();
+                            let need_fetch = {
+                                let guard = cell.lock().unwrap();
+                                guard.is_none()
+                            };
+                            if need_fetch {
+                                let config_clone = config.clone();
+                                app.status_message = Some("Fetching gateway models...".to_string());
+                                tokio::spawn(async move {
+                                    if let Ok(models) = fetch_available_models(&config_clone).await
+                                    {
+                                        if let Ok(mut guard) = cell.lock() {
+                                            *guard = Some(models);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
                     app.view_stack
                         .push(crate::tui::model_picker::ModelPickerView::new(app));
                 }
@@ -7235,6 +7408,12 @@ async fn apply_command_result(
                 if app.view_stack.top_kind() != Some(ModalKind::FeedbackPicker) {
                     app.view_stack
                         .push(crate::tui::feedback_picker::FeedbackPickerView::new());
+                }
+            }
+            AppAction::OpenMemorySettings => {
+                if app.view_stack.top_kind() != Some(ModalKind::MemorySettings) {
+                    app.view_stack
+                        .push(crate::tui::memory_settings::MemorySettingsView::new(app));
                 }
             }
             AppAction::OpenThemePicker => {
@@ -8203,11 +8382,21 @@ fn render(f: &mut Frame, app: &mut App) {
             crate::config::ApiProvider::Ollama => Some("Ollama"),
             crate::config::ApiProvider::Huggingface => Some("HF"),
             crate::config::ApiProvider::Deepinfra => Some("DeepInfra"),
+            crate::config::ApiProvider::Omniroute => Some("OmniRoute"),
             crate::config::ApiProvider::Together => Some("Together"),
             crate::config::ApiProvider::OpenaiCodex => Some("Codex"),
             crate::config::ApiProvider::Zai => Some("Z.ai"),
             crate::config::ApiProvider::Stepfun => Some("StepFun"),
             crate::config::ApiProvider::Minimax => Some("MiniMax"),
+            crate::config::ApiProvider::DeepseekAnthropic => Some("DeepSeek (Anthropic)"),
+            crate::config::ApiProvider::Qianfan => Some("Qianfan"),
+            crate::config::ApiProvider::Openmodel => Some("OpenModel"),
+            crate::config::ApiProvider::MinimaxAnthropic => Some("MiniMax (Anthropic)"),
+            crate::config::ApiProvider::Sakana => Some("Sakana"),
+            crate::config::ApiProvider::LongCat => Some("LongCat"),
+            crate::config::ApiProvider::Meta => Some("Meta"),
+            crate::config::ApiProvider::Xai => Some("xAI"),
+            crate::config::ApiProvider::Custom => Some("Custom"),
         };
         let status_indicator_started_at = if app.low_motion {
             None
@@ -8844,6 +9033,59 @@ async fn handle_view_events(
                     app.view_stack.push(ConfigView::new_for_app(app));
                 }
             }
+            ViewEvent::MemorySettingsApplied {
+                enabled,
+                max_size_kb,
+                memory_path,
+            } => {
+                app.use_memory = enabled;
+                app.memory_max_size_kb = max_size_kb;
+                let resolved_path = if let Some(ref mp) = memory_path {
+                    crate::config::expand_path(mp)
+                } else {
+                    let home = crate::config::effective_home_dir()
+                        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+                    home.join(".helpofai").join("memory.md")
+                };
+                app.memory_path = resolved_path.clone();
+                app.needs_redraw = true;
+
+                if enabled {
+                    let _ = crate::memory::initialize_memory_files_if_needed(
+                        &resolved_path,
+                        Some(&app.workspace.join(".helpofai").join("memory.md")),
+                    );
+                }
+
+                match crate::config_persistence::persist_memory_config(
+                    app.config_path.as_deref(),
+                    enabled,
+                    max_size_kb,
+                    memory_path.as_deref(),
+                ) {
+                    Ok(path) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!(
+                                "Memory config updated and saved to {}. Enabled: {enabled}",
+                                path.display()
+                            ),
+                        });
+                    }
+                    Err(err) => {
+                        app.add_message(HistoryCell::System {
+                            content: format!("Failed to save memory settings to config: {err}"),
+                        });
+                    }
+                }
+
+                let _ = engine_handle
+                    .send(Op::SetMemoryConfig {
+                        enabled,
+                        path: resolved_path,
+                        max_size_kb,
+                    })
+                    .await;
+            }
             ViewEvent::StatusItemsUpdated { items, final_save } => {
                 // Apply to the live App immediately so the footer reflects
                 // every keystroke (live preview).
@@ -9272,12 +9514,22 @@ async fn apply_provider_picker_api_key(
             ApiProvider::Ollama => &mut providers.ollama,
             ApiProvider::Huggingface => &mut providers.huggingface,
             ApiProvider::Deepinfra => &mut providers.deepinfra,
+            ApiProvider::Omniroute => &mut providers.omniroute,
             ApiProvider::Together => &mut providers.together,
             ApiProvider::OpenaiCodex => &mut providers.openai_codex,
             ApiProvider::Anthropic => &mut providers.anthropic,
             ApiProvider::Zai => &mut providers.zai,
             ApiProvider::Stepfun => &mut providers.stepfun,
             ApiProvider::Minimax => &mut providers.minimax,
+            ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+            ApiProvider::Qianfan => &mut providers.qianfan,
+            ApiProvider::Openmodel => &mut providers.openmodel,
+            ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+            ApiProvider::Sakana => &mut providers.sakana,
+            ApiProvider::LongCat => &mut providers.longcat,
+            ApiProvider::Meta => &mut providers.meta,
+            ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Custom => &mut providers.custom,
         };
         entry.api_key = Some(api_key);
     }
@@ -9336,12 +9588,22 @@ fn set_provider_auth_mode_in_memory(config: &mut Config, provider: ApiProvider, 
         ApiProvider::Ollama => &mut providers.ollama,
         ApiProvider::Huggingface => &mut providers.huggingface,
         ApiProvider::Deepinfra => &mut providers.deepinfra,
+        ApiProvider::Omniroute => &mut providers.omniroute,
         ApiProvider::Together => &mut providers.together,
         ApiProvider::OpenaiCodex => &mut providers.openai_codex,
         ApiProvider::Anthropic => &mut providers.anthropic,
         ApiProvider::Zai => &mut providers.zai,
         ApiProvider::Stepfun => &mut providers.stepfun,
         ApiProvider::Minimax => &mut providers.minimax,
+        ApiProvider::DeepseekAnthropic => &mut providers.deepseek_anthropic,
+        ApiProvider::Qianfan => &mut providers.qianfan,
+        ApiProvider::Openmodel => &mut providers.openmodel,
+        ApiProvider::MinimaxAnthropic => &mut providers.minimax_anthropic,
+        ApiProvider::Sakana => &mut providers.sakana,
+        ApiProvider::LongCat => &mut providers.longcat,
+        ApiProvider::Meta => &mut providers.meta,
+        ApiProvider::Xai => &mut providers.xai,
+        ApiProvider::Custom => &mut providers.custom,
     };
     entry.auth_mode = Some(auth_mode);
 }
@@ -10961,13 +11223,25 @@ async fn version_hint_from_startup_source(
                 return version_hint_from_release_mirror_env(current).await;
             }
 
-            let body = helpofai_release::fetch_release_json_async(
+            let body = match helpofai_release::fetch_release_json_async(
                 helpofai_release::LATEST_RELEASE_URL,
                 "latest release",
             )
             .await
-            .ok()?;
-            let json: serde_json::Value = serde_json::from_str(&body).ok()?;
+            {
+                Ok(b) => b,
+                Err(err) => {
+                    tracing::warn!("startup version check failed to fetch latest release: {err}");
+                    return None;
+                }
+            };
+            let json: serde_json::Value = match serde_json::from_str(&body) {
+                Ok(j) => j,
+                Err(err) => {
+                    tracing::warn!("startup version check failed to parse release JSON: {err}");
+                    return None;
+                }
+            };
             version_hint_from_release_json(&json, current)
         }
     }
@@ -11031,7 +11305,7 @@ fn version_hint_from_latest_tag(tag: &str, current: &str) -> Option<String> {
     }
 
     Some(format!(
-        "v{latest} available - run `helpofai update` and restart"
+        "v{latest} available (current: v{current}) - run `helpofai update` or `npm install -g helpofai` and restart"
     ))
 }
 

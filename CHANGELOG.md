@@ -5,7 +5,149 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+### [Unreleased]
+
+## [0.8.88] - 2026-07-17
+
+### Added
+
+- **9 New Providers**: Added support for `DeepseekAnthropic`, `Qianfan`, `Openmodel`, `MinimaxAnthropic`, `Sakana`, `LongCat`, `Meta`, `Xai`, and `Custom` across registry, capability configurations, header mapping, and picker views.
+- **Dynamic Status & Spinner Engine**: Composer box title now displays active statuses (`Generating response...`, `Compacting context...`, `Running <tool_name>...`) with smooth rotating braille spinners.
+- **Optimized Render Loop Pacing**: Boosted visual frame rates by reducing active poll rates to 16ms and active animation intervals to 50ms.
+
+### Fixed
+
+- **OmniRoute default auto model**: Prevent root-level `default_text_model` overrides from forcing DeepSeek models on OmniRoute, ensuring it uses `"auto"` by default.
+- **OmniRoute ModelRegistry resolution**: Added default `"auto"` model registry entry and passthrough resolving for OmniRoute, preventing fallback to DeepSeek when querying the registry or resolving models.
+- **Transparent Reasoning-Only Retry**: Automatically retry when a reasoning model returns thinking but fails to yield a final answer or tool calls.
+- **Hermetic Unit Testing**: Hardened environment isolation in DeepSeek defaults test to prevent host configuration leakage.
+
+## [0.8.78] - 2026-07-15
+
+### Added
+
+- Support for dynamically fetching and selecting models from the OmniRoute gateway in the Model Picker.
+
+### Fixed
+
+- Friendly network error connection message when the local OmniRoute server is offline.
+
+## [0.8.77] - 2026-07-15
+
+### Added
+
+- OmniRoute provider integration is now fully functional and passes all tests.
+
+### Fixed
+
+- Adjusted DeepSeek base URL logic to avoid env overrides when base_url is not set (fixes test).
+
+## [0.8.76] - 2026-07-15
+
+### Fixed
+
+- **OmniRoute auto-router bypass**: Completely bypass the local classification router when OmniRoute is the active provider. This prevents out-of-band requests to `deepseek-v4-flash` and avoids DeepSeek credential requirements altogether for OmniRoute setups.
+
+## [0.8.75] - 2026-07-15
+
+### Fixed
+
+- **OmniRoute auto-router authentication**: Dynamically resolve the auto-routing classifier provider to OmniRoute (or DeepSeek China) when it is active, avoiding missing DeepSeek credential errors.
+
+## [0.8.74] - 2026-07-14
+
+### Fixed
+
+- **OmniRoute stream reasoning**: Treat OmniRoute as always-reasoning in the SSE stream parser to correctly capture and render thinking/reasoning blocks when using the `auto` routing model.
+
+## [0.8.73] - 2026-07-14
+
+### Fixed
+
+- Provider logic issues and aligned with CodeWhale structure.
+
+## [0.8.72] - 2026-07-14
+
+### Fixed
+
+- **qa_pty cursor-read reliability**: The PTY test harness now answers
+  every cursor-position (DSR `ESC[6n`) query from the headless terminal,
+  including queries split across PTY reads or duplicated within a single
+  read. A missed query previously left crossterm blocking until it
+  surfaced "The cursor position could not be read within a normal
+  duration" onto the screen, which corrupted the viewport and broke
+  `viewport_origin_stays_row_zero_after_failed_turn`. The query is also
+  now stripped from the parsed terminal stream.
+
+## [0.8.71] - 2026-07-13
+
+### Fixed
+
+- **OmniRoute localhost auth**: The CLI was sending an empty API key to
+  `http://localhost:20128` because the localhost shortcut in
+  `deepseek_api_key()` applied to every provider. OmniRoute is a gateway
+  that requires its own token even on localhost; the shortcut now skips
+  `ApiProvider::Omniroute` so the configured gateway key reaches the
+  server.
+- **qa_pty failed-turn flakiness**: The viewport-origin test used
+  `http://invalid.test`, whose DNS timeout exceeded the wait window on
+  Windows. Replaced with `127.0.0.1:1`, an unlistening local port that
+  refuses instantly with no DNS wait.
+
+## [0.8.70] - 2026-07-13
+
+### Added
+
+- **OmniRoute provider**: Registered the OmniRoute free AI gateway
+  (`http://localhost:20128/v1`) as a first-class provider so
+  HelpOfAi/cli can route through its 237-provider catalog from one
+  endpoint. Defaults to the local gateway and the smart `auto` router.
+- **Gateway model passthrough**: OmniRoute is a model-passthrough
+  provider, so routing instructions reach the gateway verbatim —
+  `auto`, `auto/coding`, `auto/cheap`, `cc/claude-opus-4-7`,
+  `glm/glm-5.1`, etc. The `/model` picker is populated from
+  OmniRoute's own `/v1/models` catalog via the existing discovery path.
+- **Reasoning + chat-completions dialect**: OmniRoute speaks
+  OpenAI chat completions and transcodes upstream, so HelpOfAi
+  always uses the chat-completions dialect while the gateway resolves
+  the real upstream model and its thinking/reasoning support.
+
+### Fixed
+
+- **OmniRoute build + test stabilization**: Completed the `ApiProvider::Omniroute`
+  wiring (default model/base-url constants, `ProvidersConfig` merge, and
+  reasoning-effort match arms) so the provider compiles, and stabilized four TUI
+  tests against environment-specific state (Windows `\\?\` path prefix, CRLF
+  prompt line endings, and `auto_model` isolation from local settings).
+
+## [0.8.69] - 2026-07-08
+
+### Changed
+
+- **Clean Up**: Completely removed legacy `deepseek-tui` npm package and environment variable shims in favor of the canonical `helpofai` equivalents.
+
+## [0.8.68] - 2026-07-07
+
+### Fixed
+
+- **Memory Auto-Init**: Auto-create `~/.helpofai/memory.md` and `.helpofai/memory.md` with usage instructions when memory is enabled for the first time.
+- **Update Notification**: Show current version, latest version, and upgrade commands at startup when a newer release is available.
+- **Borrow Checker**: Fixed move-after-use compile error in `App::new` by reading `memory_path` and `workspace` from the constructed `app` instance.
+
+## [0.8.67] - 2026-07-07
+
+### Added
+
+- **Memory Settings Modal**: Added interactive sub-TUI popup to enable/disable user memory, configure max size, and set custom file paths via `/memory config`.
+
+## [0.8.66] - 2026-06-23
+
+### Fixed
+
+- **Context Freeze**: Persist generated context instructions to `.helpofai/instructions.md` to prevent repeated filesystem scans on startup.
+- **Starlark Compatibility**: Pinned `starlark` to `0.13.0` across workspace (including `helpflow` and `tui`) to fix trait bound compilation errors (`allocative`) on Rust 1.88.
+
+## [0.8.64] - 2026-06-22
 
 ## [0.8.62] - 2026-06-17
 
@@ -2194,7 +2336,11 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.62...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.73...HEAD
+[0.8.73]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.72...v0.8.73
+[0.8.72]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.71...v0.8.72
+[0.8.71]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.70...v0.8.71
+[0.8.70]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.69...v0.8.70
 [0.8.62]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.61...v0.8.62
 [0.8.61]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.60...v0.8.61
 [0.8.60]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.59...v0.8.60
@@ -2218,3 +2364,6 @@ Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md]
 [0.8.42]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.41...v0.8.42
 [0.8.41]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.40...v0.8.41
 [0.8.40]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.39...v0.8.40
+
+
+

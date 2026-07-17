@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
     child: Box<dyn Child + Send + Sync>,
-    writer: Box<dyn Write + Send>,
+    writer: Arc<Mutex<Box<dyn Write + Send>>>,
     buffer: Arc<Mutex<Vec<u8>>>,
     reader_handle: Option<JoinHandle<()>>,
     rows: u16,
@@ -124,20 +124,75 @@ impl<'a> PtySessionBuilder<'a> {
         drop(pair.slave);
 
         let mut reader = pair.master.try_clone_reader().context("clone reader")?;
-        let writer = pair.master.take_writer().context("take writer")?;
+        let writer = Arc::new(Mutex::new(
+            pair.master.take_writer().context("take writer")?,
+        ));
+        let reader_writer = Arc::clone(&writer);
 
         let buffer: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let buf_thread = Arc::clone(&buffer);
+        let (rows, cols) = (self.rows, self.cols);
         let reader_handle = thread::Builder::new()
             .name("qa-pty-reader".into())
             .spawn(move || {
+                // crossterm queries the cursor position (ESC[6n, a Device Status
+                // Report request) during startup and at other points (e.g. terminal
+                // mode recovery / re-probes while the TUI is live). A real terminal
+                // answers with a Cursor Position Report (CPR, ESC[r;cR); the vt100
+                // *parser* we use for assertions does not, so we answer on its
+                // behalf with the configured PTY size.
+                //
+                // If a query is ever left unanswered, crossterm blocks for ~2s
+                // waiting for a CPR that never arrives and then surfaces
+                // "The cursor position could not be read within a normal duration"
+                // onto the screen — which is exactly the failure this harness is
+                // meant to prevent. So we must answer *every* query, and tolerate
+                // the 4-byte query being split across PTY reads.
+                let cpr_response = format!("\x1b[{};{}R", rows, cols);
+                // Bytes left over from a previous read that might be the head of a
+                // split DSR query (`ESC` or `ESC[6`).
+                let mut pending: Vec<u8> = Vec::new();
                 let mut chunk = [0u8; 8192];
                 loop {
                     match reader.read(&mut chunk) {
                         Ok(0) => break,
                         Ok(n) => {
+                            let mut data = std::mem::take(&mut pending);
+                            data.extend_from_slice(&chunk[..n]);
+                            // Answer + strip every DSR cursor-position query in this
+                            // buffer. Scanning byte-by-byte (rather than only when all
+                            // four bytes share one read) means a query straddling a
+                            // read boundary — carried in `pending` — is still handled.
+                            let mut i = 0;
+                            while i < data.len() {
+                                if data[i..].starts_with(b"\x1b[6n") {
+                                    if let Ok(mut w) = reader_writer.lock() {
+                                        let _ = w.write_all(cpr_response.as_bytes());
+                                        let _ = w.flush();
+                                    }
+                                    data.drain(i..i + 4);
+                                    continue;
+                                }
+                                i += 1;
+                            }
+                            // Carry any trailing bytes that could be the head of a
+                            // split DSR into the next read so we don't miss it.
+                            pending.clear();
+                            let tail = if data.ends_with(b"\x1b[6") {
+                                3
+                            } else if data.ends_with(b"\x1b[") {
+                                2
+                            } else if data.ends_with(b"\x1b") {
+                                1
+                            } else {
+                                0
+                            };
+                            if tail > 0 {
+                                pending.extend_from_slice(&data[data.len() - tail..]);
+                                data.truncate(data.len() - tail);
+                            }
                             if let Ok(mut b) = buf_thread.lock() {
-                                b.extend_from_slice(&chunk[..n]);
+                                b.extend_from_slice(&data);
                             }
                         }
                         Err(_) => break,
@@ -164,8 +219,9 @@ impl PtySession {
     }
 
     pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<()> {
-        self.writer.write_all(bytes).context("pty write")?;
-        self.writer.flush().context("pty flush")?;
+        let mut w = self.writer.lock().map_err(|_| anyhow!("mutex poisoned"))?;
+        w.write_all(bytes).context("pty write")?;
+        w.flush().context("pty flush")?;
         Ok(())
     }
 

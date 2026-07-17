@@ -2040,6 +2040,10 @@ fn should_replay_reasoning_content_for_provider(
         return true;
     }
 
+    if matches!(provider, ApiProvider::Omniroute) {
+        return true;
+    }
+
     if !provider_accepts_reasoning_content(provider) {
         // Generic non-DeepSeek model on a provider that rejects the field:
         // keep stripping it (preserves the #1542 fix). But a known DeepSeek
@@ -2062,6 +2066,16 @@ fn should_replay_reasoning_content_for_provider(
 /// deltas become Thinking cells instead of leaking as normal answer text.
 fn is_reasoning_model_for_stream(provider: ApiProvider, model: &str) -> bool {
     if requires_reasoning_content(model) {
+        return true;
+    }
+    // OmniRoute is a routing gateway that normalizes `reasoning_content` from
+    // all upstream providers into the standard delta field. When the model is
+    // "auto" or an auto-combo like "auto/coding", `model_supports_reasoning`
+    // returns false and reasoning deltas are silently dropped, producing the
+    // "Model returned reasoning but no answer" error. Treat OmniRoute as
+    // always-reasoning so delta.reasoning_content is rendered as a thinking
+    // block regardless of the selected model name.
+    if matches!(provider, ApiProvider::Omniroute) {
         return true;
     }
     provider_accepts_reasoning_content(provider) && model_supports_reasoning(model)
@@ -2097,6 +2111,7 @@ fn provider_accepts_reasoning_content(provider: ApiProvider) -> bool {
             | ApiProvider::Sglang
             | ApiProvider::Zai
             | ApiProvider::Moonshot // #3016: Kimi thinking traces use reasoning_content
+            | ApiProvider::Omniroute
     )
 }
 
@@ -4185,7 +4200,11 @@ mod alias_thinking_detection_tests {
         // about where reasoning tokens live. Effort=None isolates the
         // model/provider dimension shared by both.
         for model in ["deepseek-v4-pro", "deepseek-reasoner", "qwen3-coder"] {
-            for provider in [ApiProvider::Openai, ApiProvider::Deepseek] {
+            for provider in [
+                ApiProvider::Openai,
+                ApiProvider::Deepseek,
+                ApiProvider::Omniroute,
+            ] {
                 assert_eq!(
                     is_reasoning_model_for_stream(provider, model),
                     should_replay_reasoning_content_for_provider(provider, model, None),

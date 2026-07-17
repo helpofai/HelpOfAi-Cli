@@ -7,20 +7,25 @@
 use super::{
     DEFAULT_ARCEE_BASE_URL, DEFAULT_ARCEE_MODEL, DEFAULT_ATLASCLOUD_BASE_URL,
     DEFAULT_ATLASCLOUD_MODEL, DEFAULT_DEEPINFRA_BASE_URL, DEFAULT_DEEPINFRA_MODEL,
+    DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL, DEFAULT_DEEPSEEK_ANTHROPIC_MODEL,
     DEFAULT_DEEPSEEK_BASE_URL, DEFAULT_DEEPSEEK_MODEL, DEFAULT_FIREWORKS_BASE_URL,
     DEFAULT_FIREWORKS_MODEL, DEFAULT_HUGGINGFACE_BASE_URL, DEFAULT_HUGGINGFACE_MODEL,
-    DEFAULT_MINIMAX_BASE_URL, DEFAULT_MINIMAX_MODEL, DEFAULT_MOONSHOT_BASE_URL,
-    DEFAULT_MOONSHOT_MODEL, DEFAULT_NOVITA_BASE_URL, DEFAULT_NOVITA_MODEL,
-    DEFAULT_NVIDIA_NIM_BASE_URL, DEFAULT_NVIDIA_NIM_MODEL, DEFAULT_OLLAMA_BASE_URL,
-    DEFAULT_OLLAMA_MODEL, DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_CODEX_BASE_URL,
-    DEFAULT_OPENAI_CODEX_MODEL, DEFAULT_OPENAI_MODEL, DEFAULT_OPENROUTER_BASE_URL,
-    DEFAULT_OPENROUTER_MODEL, DEFAULT_SGLANG_BASE_URL, DEFAULT_SGLANG_MODEL,
-    DEFAULT_SILICONFLOW_BASE_URL, DEFAULT_SILICONFLOW_CN_BASE_URL, DEFAULT_SILICONFLOW_MODEL,
-    DEFAULT_STEPFUN_BASE_URL, DEFAULT_STEPFUN_MODEL, DEFAULT_TOGETHER_BASE_URL,
-    DEFAULT_TOGETHER_MODEL, DEFAULT_VLLM_BASE_URL, DEFAULT_VLLM_MODEL, DEFAULT_VOLCENGINE_BASE_URL,
+    DEFAULT_LONGCAT_BASE_URL, DEFAULT_LONGCAT_MODEL, DEFAULT_META_BASE_URL, DEFAULT_META_MODEL,
+    DEFAULT_MINIMAX_ANTHROPIC_BASE_URL, DEFAULT_MINIMAX_BASE_URL, DEFAULT_MINIMAX_MODEL,
+    DEFAULT_MOONSHOT_BASE_URL, DEFAULT_MOONSHOT_MODEL, DEFAULT_NOVITA_BASE_URL,
+    DEFAULT_NOVITA_MODEL, DEFAULT_NVIDIA_NIM_BASE_URL, DEFAULT_NVIDIA_NIM_MODEL,
+    DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_OMNIROUTE_BASE_URL,
+    DEFAULT_OMNIROUTE_MODEL, DEFAULT_OPENAI_BASE_URL, DEFAULT_OPENAI_CODEX_BASE_URL,
+    DEFAULT_OPENAI_CODEX_MODEL, DEFAULT_OPENAI_MODEL, DEFAULT_OPENMODEL_BASE_URL,
+    DEFAULT_OPENMODEL_MODEL, DEFAULT_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_MODEL,
+    DEFAULT_QIANFAN_BASE_URL, DEFAULT_QIANFAN_MODEL, DEFAULT_SAKANA_BASE_URL, DEFAULT_SAKANA_MODEL,
+    DEFAULT_SGLANG_BASE_URL, DEFAULT_SGLANG_MODEL, DEFAULT_SILICONFLOW_BASE_URL,
+    DEFAULT_SILICONFLOW_CN_BASE_URL, DEFAULT_SILICONFLOW_MODEL, DEFAULT_STEPFUN_BASE_URL,
+    DEFAULT_STEPFUN_MODEL, DEFAULT_TOGETHER_BASE_URL, DEFAULT_TOGETHER_MODEL,
+    DEFAULT_VLLM_BASE_URL, DEFAULT_VLLM_MODEL, DEFAULT_VOLCENGINE_BASE_URL,
     DEFAULT_VOLCENGINE_MODEL, DEFAULT_WANJIE_ARK_BASE_URL, DEFAULT_WANJIE_ARK_MODEL,
-    DEFAULT_XIAOMI_MIMO_BASE_URL, DEFAULT_XIAOMI_MIMO_MODEL, DEFAULT_ZAI_BASE_URL,
-    DEFAULT_ZAI_MODEL, ProviderKind,
+    DEFAULT_XAI_BASE_URL, DEFAULT_XAI_MODEL, DEFAULT_XIAOMI_MIMO_BASE_URL,
+    DEFAULT_XIAOMI_MIMO_MODEL, DEFAULT_ZAI_BASE_URL, DEFAULT_ZAI_MODEL, ProviderKind,
 };
 
 /// Wire protocol spoken by a provider.
@@ -485,6 +490,249 @@ provider!(
     aliases: ["deep-infra", "deep_infra"]
 );
 
+provider!(
+    Omniroute,
+    Omniroute,
+    "omniroute",
+    "OmniRoute",
+    DEFAULT_OMNIROUTE_BASE_URL,
+    DEFAULT_OMNIROUTE_MODEL,
+    ["OMNIROUTE_API_KEY"],
+    "omniroute",
+    aliases: ["omni-route", "omni_route", "omnirouteroute", "omnirouter"]
+);
+
+/// Opt-in DeepSeek route that speaks the Anthropic Messages wire protocol.
+pub struct DeepseekAnthropic;
+
+impl Provider for DeepseekAnthropic {
+    fn id(&self) -> &'static str {
+        "deepseek-anthropic"
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::DeepseekAnthropic
+    }
+
+    fn display_name(&self) -> &'static str {
+        "DeepSeek (Anthropic-compatible)"
+    }
+
+    fn default_base_url(&self) -> &'static str {
+        DEFAULT_DEEPSEEK_ANTHROPIC_BASE_URL
+    }
+
+    fn default_model(&self) -> &'static str {
+        DEFAULT_DEEPSEEK_ANTHROPIC_MODEL
+    }
+
+    fn env_vars(&self) -> &'static [&'static str] {
+        &["DEEPSEEK_API_KEY"]
+    }
+
+    fn provider_config_key(&self) -> &'static str {
+        "deepseek_anthropic"
+    }
+
+    fn aliases(&self) -> &'static [&'static str] {
+        &["deepseek_anthropic", "deepseek-claude", "deepseek_claude"]
+    }
+
+    fn wire(&self) -> WireFormat {
+        WireFormat::AnthropicMessages
+    }
+}
+
+provider!(
+    Qianfan,
+    Qianfan,
+    "qianfan",
+    "Baidu Qianfan",
+    DEFAULT_QIANFAN_BASE_URL,
+    DEFAULT_QIANFAN_MODEL,
+    ["QIANFAN_API_KEY", "BAIDU_QIANFAN_API_KEY"],
+    "qianfan",
+    aliases: ["baidu-qianfan", "baidu_qianfan", "baidu"]
+);
+
+/// OpenModel Anthropic-compatible Messages API provider.
+pub struct Openmodel;
+
+impl Provider for Openmodel {
+    fn id(&self) -> &'static str {
+        "openmodel"
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Openmodel
+    }
+
+    fn display_name(&self) -> &'static str {
+        "OpenModel"
+    }
+
+    fn default_base_url(&self) -> &'static str {
+        DEFAULT_OPENMODEL_BASE_URL
+    }
+
+    fn default_model(&self) -> &'static str {
+        DEFAULT_OPENMODEL_MODEL
+    }
+
+    fn env_vars(&self) -> &'static [&'static str] {
+        &["OPENMODEL_API_KEY"]
+    }
+
+    fn provider_config_key(&self) -> &'static str {
+        "openmodel"
+    }
+
+    fn aliases(&self) -> &'static [&'static str] {
+        &["open-model", "open_model"]
+    }
+
+    fn wire(&self) -> WireFormat {
+        WireFormat::AnthropicMessages
+    }
+}
+
+/// MiniMax route that speaks the Anthropic Messages wire protocol.
+pub struct MinimaxAnthropic;
+
+impl Provider for MinimaxAnthropic {
+    fn id(&self) -> &'static str {
+        "minimax-anthropic"
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::MinimaxAnthropic
+    }
+
+    fn display_name(&self) -> &'static str {
+        "MiniMax (Anthropic-compatible)"
+    }
+
+    fn default_base_url(&self) -> &'static str {
+        DEFAULT_MINIMAX_ANTHROPIC_BASE_URL
+    }
+
+    fn default_model(&self) -> &'static str {
+        DEFAULT_MINIMAX_MODEL
+    }
+
+    fn env_vars(&self) -> &'static [&'static str] {
+        &["MINIMAX_API_KEY"]
+    }
+
+    fn provider_config_key(&self) -> &'static str {
+        "minimax_anthropic"
+    }
+
+    fn aliases(&self) -> &'static [&'static str] {
+        &[
+            "minimax_anthropic",
+            "mini-max-anthropic",
+            "mini_max_anthropic",
+        ]
+    }
+
+    fn wire(&self) -> WireFormat {
+        WireFormat::AnthropicMessages
+    }
+}
+
+provider!(
+    Sakana,
+    Sakana,
+    "sakana",
+    "Sakana AI (Fugu)",
+    DEFAULT_SAKANA_BASE_URL,
+    DEFAULT_SAKANA_MODEL,
+    ["FUGU_API_KEY", "SAKANA_API_KEY"],
+    "sakana",
+    aliases: ["sakana-ai", "sakana_ai", "fugu"]
+);
+
+provider!(
+    LongCat,
+    LongCat,
+    "longcat",
+    "Meituan LongCat",
+    DEFAULT_LONGCAT_BASE_URL,
+    DEFAULT_LONGCAT_MODEL,
+    ["LONGCAT_API_KEY"],
+    "longcat",
+    aliases: ["long-cat", "meituan-longcat", "meituan"]
+);
+
+provider!(
+    Meta,
+    Meta,
+    "meta",
+    "Meta Model API",
+    DEFAULT_META_BASE_URL,
+    DEFAULT_META_MODEL,
+    ["META_MODEL_API_KEY", "MODEL_API_KEY"],
+    "meta",
+    aliases: [
+        "meta-ai",
+        "meta_ai",
+        "meta-model-api",
+        "meta_model_api",
+        "muse",
+        "muse-spark"
+    ]
+);
+
+provider!(
+    Xai,
+    Xai,
+    "xai",
+    "xAI",
+    DEFAULT_XAI_BASE_URL,
+    DEFAULT_XAI_MODEL,
+    ["XAI_API_KEY"],
+    "xai",
+    aliases: ["x-ai", "x_ai", "grok"]
+);
+
+/// User-defined OpenAI-compatible endpoint (#1519).
+pub struct Custom;
+
+impl Provider for Custom {
+    fn id(&self) -> &'static str {
+        "custom"
+    }
+
+    fn kind(&self) -> ProviderKind {
+        ProviderKind::Custom
+    }
+
+    fn display_name(&self) -> &'static str {
+        "Custom (OpenAI-compatible)"
+    }
+
+    fn default_base_url(&self) -> &'static str {
+        "http://localhost/v1"
+    }
+
+    fn default_model(&self) -> &'static str {
+        "custom-model"
+    }
+
+    fn env_vars(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    fn provider_config_key(&self) -> &'static str {
+        "custom"
+    }
+
+    fn wire(&self) -> WireFormat {
+        WireFormat::ChatCompletions
+    }
+}
+
 static DEEPSEEK: Deepseek = Deepseek;
 static NVIDIA_NIM: NvidiaNim = NvidiaNim;
 static OPENAI: Openai = Openai;
@@ -510,8 +758,18 @@ static ZAI: Zai = Zai;
 static STEPFUN: Stepfun = Stepfun;
 static MINIMAX: Minimax = Minimax;
 static DEEPINFRA: Deepinfra = Deepinfra;
+static OMNIROUTE: Omniroute = Omniroute;
+static DEEPSEEK_ANTHROPIC: DeepseekAnthropic = DeepseekAnthropic;
+static QIANFAN: Qianfan = Qianfan;
+static OPENMODEL: Openmodel = Openmodel;
+static MINIMAX_ANTHROPIC: MinimaxAnthropic = MinimaxAnthropic;
+static SAKANA: Sakana = Sakana;
+static LONGCAT: LongCat = LongCat;
+static META: Meta = Meta;
+static XAI: Xai = Xai;
+static CUSTOM: Custom = Custom;
 
-static PROVIDER_REGISTRY: [&dyn Provider; 25] = [
+static PROVIDER_REGISTRY: [&dyn Provider; 35] = [
     &DEEPSEEK,
     &NVIDIA_NIM,
     &OPENAI,
@@ -537,6 +795,16 @@ static PROVIDER_REGISTRY: [&dyn Provider; 25] = [
     &STEPFUN,
     &MINIMAX,
     &DEEPINFRA,
+    &OMNIROUTE,
+    &DEEPSEEK_ANTHROPIC,
+    &QIANFAN,
+    &OPENMODEL,
+    &MINIMAX_ANTHROPIC,
+    &SAKANA,
+    &LONGCAT,
+    &META,
+    &XAI,
+    &CUSTOM,
 ];
 
 /// Return all built-in provider metadata entries in `ProviderKind::ALL` order.
@@ -681,5 +949,36 @@ mod tests {
             "Anthropic",
             "alphabetical display order should lead with Anthropic"
         );
+    }
+
+    #[test]
+    fn omniroute_is_registered_and_parseable() {
+        // OmniRoute is registered in the registry and resolves from its
+        // canonical id and documented aliases.
+        let provider = provider_for_kind(ProviderKind::Omniroute);
+        assert_eq!(provider.id(), "omniroute");
+        assert_eq!(provider.display_name(), "OmniRoute");
+        assert_eq!(provider.default_base_url(), "http://localhost:20128/v1");
+        assert_eq!(provider.default_model(), "auto");
+        assert_eq!(provider.wire(), WireFormat::ChatCompletions);
+        assert!(provider.env_vars().contains(&"OMNIROUTE_API_KEY"));
+
+        // Parse by id and aliases.
+        for id in ["omniroute", "omni-route", "omni_route", "omnirouteroute"] {
+            let parsed = ProviderKind::parse(id).expect("omniroute should parse");
+            assert_eq!(parsed, ProviderKind::Omniroute);
+        }
+        // resolve_provider walks the registry by id/alias.
+        assert!(resolve_provider("omniroute").is_some());
+    }
+
+    #[test]
+    fn omniroute_appears_in_display_and_registry_counts() {
+        // No provider dropped/duplicated by the sort, and the registry
+        // length stays in lockstep with ProviderKind::ALL.
+        let display = providers_sorted_for_display();
+        assert_eq!(display.len(), all_providers().len());
+        assert!(display.iter().any(|p| p.kind() == ProviderKind::Omniroute));
+        assert_eq!(ProviderKind::ALL.len(), all_providers().len());
     }
 }
