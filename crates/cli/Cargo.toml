@@ -19,14 +19,14 @@ path = "src/bin/hoa_legacy_shim.rs"
 anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true
-helpofai-agent = { path = "../agent", version = "0.8.78" }
-helpofai-app-server = { path = "../app-server", version = "0.8.78" }
-helpofai-config = { path = "../config", version = "0.8.78" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.8.78" }
-helpofai-mcp = { path = "../mcp", version = "0.8.78" }
-helpofai-release = { path = "../release", version = "0.8.78" }
-helpofai-secrets = { path = "../secrets", version = "0.8.78" }
-helpofai-state = { path = "../state", version = "0.8.78" }
+helpofai-agent = { path = "../agent", version = "0.8.88" }
+helpofai-app-server = { path = "../app-server", version = "0.8.88" }
+helpofai-config = { path = "../config", version = "0.8.88" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.88" }
+helpofai-mcp = { path = "../mcp", version = "0.8.88" }
+helpofai-release = { path = "../release", version = "0.8.88" }
+helpofai-secrets = { path = "../secrets", version = "0.8.88" }
+helpofai-state = { path = "../state", version = "0.8.88" }
 chrono.workspace = true
 dirs.workspace = true
 serde.workspace = true

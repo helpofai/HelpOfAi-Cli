@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
-## [0.8.79] - 2026-07-16
+## [0.8.88] - 2026-07-17
 
 ### Added
 
@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **OmniRoute default auto model**: Prevent root-level `default_text_model` overrides from forcing DeepSeek models on OmniRoute, ensuring it uses `"auto"` by default.
+- **OmniRoute ModelRegistry resolution**: Added default `"auto"` model registry entry and passthrough resolving for OmniRoute, preventing fallback to DeepSeek when querying the registry or resolving models.
 - **Transparent Reasoning-Only Retry**: Automatically retry when a reasoning model returns thinking but fails to yield a final answer or tool calls.
 - **Hermetic Unit Testing**: Hardened environment isolation in DeepSeek defaults test to prevent host configuration leakage.
 

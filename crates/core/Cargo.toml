@@ -9,14 +9,14 @@ description = "Core runtime boundaries for DeepSeek workspace architecture"
 [dependencies]
 anyhow.workspace = true
 chrono.workspace = true
-helpofai-agent = { path = "../agent", version = "0.8.78" }
-helpofai-config = { path = "../config", version = "0.8.78" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.8.78" }
-helpofai-hooks = { path = "../hooks", version = "0.8.78" }
-helpofai-mcp = { path = "../mcp", version = "0.8.78" }
-helpofai-protocol = { path = "../protocol", version = "0.8.78" }
-helpofai-state = { path = "../state", version = "0.8.78" }
-helpofai-tools = { path = "../tools", version = "0.8.78" }
+helpofai-agent = { path = "../agent", version = "0.8.88" }
+helpofai-config = { path = "../config", version = "0.8.88" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.88" }
+helpofai-hooks = { path = "../hooks", version = "0.8.88" }
+helpofai-mcp = { path = "../mcp", version = "0.8.88" }
+helpofai-protocol = { path = "../protocol", version = "0.8.88" }
+helpofai-state = { path = "../state", version = "0.8.88" }
+helpofai-tools = { path = "../tools", version = "0.8.88" }
 serde_json.workspace = true
 tracing.workspace = true
 uuid.workspace = true

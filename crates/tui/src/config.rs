@@ -2902,12 +2902,14 @@ impl Config {
             return DEFAULT_XIAOMI_MIMO_MODEL.to_string();
         }
         if let Some(model) = self.default_text_model.as_deref()
+            && provider != ApiProvider::Omniroute
             && (provider_passes_model_through(provider)
                 || self.active_provider_preserves_custom_base_url_model())
         {
             return model.trim().to_string();
         }
         if let Some(model) = self.default_text_model.as_deref()
+            && provider != ApiProvider::Omniroute
             && !root_deepseek_model_is_foreign_to_direct_provider(provider, model)
             && let Some(normalized) = normalize_model_name_for_provider(provider, model)
         {

@@ -50,8 +50,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # hoặc trình cài NSIS từ GitHub Releases
 
 # CNB mirror cho người dùng khó truy cập GitHub ổn định
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.78 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.78 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.88 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.8.88 helpofai-tui --locked --force
 
 # Homebrew legacy trong lúc formula đang được đổi tên
 brew tap helpofai/HelpOfAi-Cli
