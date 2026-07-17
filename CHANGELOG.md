@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.89] - 2026-07-17
+
+### Fixed
+
+- **Retry for clean empty streams**: Ensure the CLI automatically retries up to 3 times if a gateway stream completes normally but yields no text or thinking content (e.g. from local unauthenticated OmniRoute providers).
+- **Clearer empty response warnings**: Updated the default empty response status message to guide users to check their provider/gateway configuration rather than outputting a misleading reasoning-only warning.
+
 ## [0.8.88] - 2026-07-17
 
 ### Added
