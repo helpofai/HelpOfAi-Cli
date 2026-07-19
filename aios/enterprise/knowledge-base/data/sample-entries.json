@@ -1,0 +1,20 @@
+{
+  "entries": [
+    {
+      "id": "KB-000001",
+      "topic": "State management convention",
+      "content": "Use Zustand for client state, React Query for server state. No Redux in new code.",
+      "source": "operator",
+      "confidence": 1.0,
+      "applies_to": ["**/*.tsx", "**/*.jsx"]
+    },
+    {
+      "id": "KB-000002",
+      "topic": "API error format",
+      "content": "All API errors use format: { error: { code: string, message: string, details?: object } }",
+      "source": "detected",
+      "confidence": 0.9,
+      "applies_to": ["**/api/**", "**/controllers/**"]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "analysis": {
+    "sample_report": {
+      "module": "AIOS-MODULE-000002",
+      "architecture_score": 72,
+      "security_score": 85,
+      "dimensions": {
+        "cohesion": {"score": 68, "finding": "Auth module has mixed concerns"},
+        "coupling": {"score": 82, "finding": "Acceptable dependency count"},
+        "layer_separation": {"score": 65, "finding": "Controller calls DB directly in 3 places"},
+        "testability": {"score": 78, "finding": "AuthService has good coverage"},
+        "documentation": {"score": 55, "finding": "API docs missing for /api/v2"}
+      },
+      "risks": ["3 layer violations in auth module"],
+      "recommendations": ["Extract DB access to repository layer", "Add OpenAPI docs"]
+    }
+  }
+}

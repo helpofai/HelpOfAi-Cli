@@ -1,0 +1,16 @@
+{
+  "metrics": {
+    "architecture_health": {"score": 82, "trend": "+2", "status": "green"},
+    "security_posture": {"score": 75, "trend": "-5", "status": "yellow"},
+    "performance": {"score": 90, "trend": "0", "status": "green"},
+    "test_coverage": {"score": 85, "trend": "+8", "status": "green"},
+    "documentation": {"score": 60, "trend": "+10", "status": "yellow"},
+    "technical_debt": {"score": 70, "trend": "-3", "status": "yellow"}
+  },
+  "overall_health": 78,
+  "blocking_issues": [
+    {"metric": "security_posture", "issue": "2 high CVE findings unfixed"},
+    {"metric": "documentation", "issue": "API docs missing for /api/v2/*"}
+  ],
+  "last_updated": "2026-07-18T12:00:00Z"
+}

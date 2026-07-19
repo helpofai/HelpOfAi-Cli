@@ -1,0 +1,20 @@
+{
+  "integration_tests": {
+    "loader": [
+      {"test": "full_load", "input": {}, "expected": {"loaded_count": 28, "failed_count": 0}},
+      {"test": "deps_missing", "input": {"modules.json": {"modules": {"test": {"depends_on": ["MISSING"]}}}}, "expected": {"error": "MISSING not found", "status": "skipped_in_order"}},
+      {"test": "profile_minimal", "input": {"profile": "minimal"}, "expected": {"loaded_count": 3, "modules": ["kernel", "runtime", "planner"]}}
+    ],
+    "registry_reader": [
+      {"test": "resolve_capability", "input": {"capability_id": "AIOS-CAPABILITY-000010"}, "expected": {"module_id": "AIOS-MODULE-000002", "capability_name": "request_routing"}},
+      {"test": "resolve_unknown", "input": {"capability_id": "AIOS-CAPABILITY-999999"}, "expected": {"error": "CAPABILITY_NOT_FOUND"}}
+    ],
+    "workflow_builder": [
+      {"test": "intent_build", "input": {"request": "build auth feature"}, "expected": {"workflow": "build-feature"}},
+      {"test": "intent_fix", "input": {"request": "fix login bug"}, "expected": {"workflow": "fix-bug"}}
+    ],
+    "prompt_assembler": [
+      {"test": "basic_assembly", "input": {"agent": "AIOS-AGENT-000003", "plan_context": {"description": "add auth"}}, "expected": {"prompt_contains": ["Constitution", "Verification"]}}
+    ]
+  }
+}

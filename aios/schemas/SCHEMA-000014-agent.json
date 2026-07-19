@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "AIOS-SCHEMA-000014",
+  "title": "AIOS Agent Definition Schema",
+  "description": "Schema for specialist agent definitions",
+  "type": "object",
+  "required": ["id", "name", "role", "version"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "role": {
+      "type": "string",
+      "enum": ["master", "architect", "backend", "frontend", "android", "ios", "flutter", "laravel", "react", "database", "api", "qa", "security", "devops", "documentation", "reviewer", "custom"]
+    },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "domain": { "type": "string" },
+    "frameworks": { "type": "array", "items": { "type": "string" } },
+    "languages": { "type": "array", "items": { "type": "string" } },
+    "required_capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sub_agents": {
+      "type": "array",
+      "description": "Child agents this agent can spawn",
+      "items": { "type": "string" }
+    },
+    "prompt_template": {
+      "type": "string",
+      "description": "Reference to prompt template ID"
+    },
+    "tool_permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": { "type": "string" },
+          "scope": { "type": "string" }
+        }
+      }
+    },
+    "thinking_budget": {
+      "type": "string",
+      "enum": ["off", "low", "medium", "high", "max"]
+    }
+  }
+}

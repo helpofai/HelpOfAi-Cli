@@ -1,0 +1,21 @@
+{
+  "dispatch_rules": {
+    "contains_keyword": [
+      { "keywords": ["build", "create", "add feature"], "agent_id": "AIOS-AGENT-000001", "type": "master" },
+      { "keywords": ["architecture", "design", "refactor structure"], "agent_id": "AIOS-AGENT-000002", "type": "architect" },
+      { "keywords": ["backend", "api", "server", "service"], "agent_id": "AIOS-AGENT-000003", "type": "backend" },
+      { "keywords": ["frontend", "ui", "component", "page"], "agent_id": "AIOS-AGENT-000004", "type": "frontend" },
+      { "keywords": ["database", "migration", "schema", "seed"], "agent_id": "AIOS-AGENT-000005", "type": "database" },
+      { "keywords": ["test", "qa", "coverage", "quality"], "agent_id": "AIOS-AGENT-000007", "type": "qa" },
+      { "keywords": ["deploy", "ci/cd", "pipeline"], "agent_id": "AIOS-AGENT-000008", "type": "devops" },
+      { "keywords": ["security", "vulnerability", "audit"], "agent_id": "AIOS-AGENT-000009", "type": "security" },
+      { "keywords": ["docs", "readme", "changelog"], "agent_id": "AIOS-AGENT-000010", "type": "documentation" },
+      { "keywords": ["android", "kotlin", "java android"], "agent_id": "AIOS-AGENT-000011", "type": "android" },
+      { "keywords": ["ios", "swift", "uikit"], "agent_id": "AIOS-AGENT-000012", "type": "ios" },
+      { "keywords": ["flutter", "dart"], "agent_id": "AIOS-AGENT-000013", "type": "flutter" },
+      { "keywords": ["laravel", "php"], "agent_id": "AIOS-AGENT-000014", "type": "laravel" },
+      { "keywords": ["react", "component", "hooks"], "agent_id": "AIOS-AGENT-000015", "type": "react" },
+      { "keywords": ["review", "inspect", "check code"], "agent_id": "AIOS-AGENT-000016", "type": "reviewer" }
+    ]
+  }
+}

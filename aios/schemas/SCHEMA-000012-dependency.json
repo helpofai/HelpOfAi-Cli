@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "AIOS-SCHEMA-000012",
+  "title": "AIOS Dependency Manifest Schema",
+  "description": "Schema for dependency declarations in any AIOS artifact",
+  "type": "object",
+  "required": ["depends_on"],
+  "properties": {
+    "depends_on": {
+      "type": "array",
+      "description": "Required dependencies",
+      "items": {
+        "type": "object",
+        "required": ["id", "version_constraint"],
+        "properties": {
+          "id": { "type": "string", "description": "AIOS Universal ID" },
+          "name": { "type": "string", "description": "Human-readable name for error messages" },
+          "version_constraint": { "type": "string", "description": "Semver range e.g. '>=1.0.0 <2.0.0'" },
+          "reason": { "type": "string", "description": "Why this dependency is needed" },
+          "optional": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "conflicts_with": {
+      "type": "array",
+      "description": "Incompatible modules",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      },
+      "default": []
+    },
+    "provides": {
+      "type": "array",
+      "description": "Capabilities this artifact provides to others",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "resolved_at": { "type": "string", "format": "date-time" }
+  }
+}

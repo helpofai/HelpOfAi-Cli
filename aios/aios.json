@@ -1,0 +1,57 @@
+{
+  "$schema": "./schemas/aios-manifest.schema.json",
+  "id": "AIOS-ROOT-000000",
+  "name": "HelpOfAi AIOS",
+  "version": "1.0.0",
+  "codename": "Enterprise",
+  "description": "HelpOfAi AIOS v1.x Enterprise — AI Software Engineering Operating System. A modular, offline-first, deterministic, enterprise-grade platform that plugs into HelpOfAi CLI to provide capability-based software engineering intelligence.",
+  "constitution_version": "1.0.0",
+  "schema_version": "1.0.0",
+  "compatibility": {
+    "cli_min_version": "0.8.0",
+    "aios_api_version": "1.0.0"
+  },
+  "architecture": {
+    "principle": "AIOS loads only the capabilities needed for each request. The CLI is the shell; AIOS is the OS that shell runs on.",
+    "loading_model": "capability-based",
+    "core_layers": [
+      { "layer": 0, "name": "constitution", "description": "Immutable engineering laws and design principles" },
+      { "layer": 1, "name": "registry", "description": "Module, capability, dependency, feature, and prompt registries" },
+      { "layer": 2, "name": "kernel", "description": "Execution lifecycle, state machine, capability router, request parser" },
+      { "layer": 3, "name": "runtime", "description": "Job queue, scheduler, cache, event bus, resource manager, logging" },
+      { "layer": 4, "name": "intelligence", "description": "Planner, Project Brain, Memory, Knowledge Graph, Digital Twin" },
+      { "layer": 5, "name": "engines", "description": "Analysis, Feature, Code, Testing, Review, Security, DevOps engines" },
+      { "layer": 6, "name": "agents", "description": "Master agent, specialist agents, communication bus, orchestrator" },
+      { "layer": 7, "name": "knowledge", "description": "Framework packs, language packs, domain packs, architecture patterns" },
+      { "layer": 8, "name": "ecosystem", "description": "Plugin SDK, workflows, templates, studio, documentation" }
+    ]
+  },
+  "subsystems": {
+    "kernel": { "id": "AIOS-SUBSYS-000001", "path": "kernel/", "load_order": 1, "required": true },
+    "runtime": { "id": "AIOS-SUBSYS-000002", "path": "runtime/", "load_order": 2, "required": true },
+    "planner": { "id": "AIOS-SUBSYS-000003", "path": "planner/", "load_order": 3, "required": true },
+    "brain": { "id": "AIOS-SUBSYS-000004", "path": "brain/", "load_order": 4, "required": true },
+    "memory": { "id": "AIOS-SUBSYS-000005", "path": "memory/", "load_order": 5, "required": true },
+    "analysis": { "id": "AIOS-SUBSYS-000006", "path": "analysis/", "load_order": 10, "required": false },
+    "feature_intelligence": { "id": "AIOS-SUBSYS-000007", "path": "feature/", "load_order": 11, "required": false },
+    "code_engine": { "id": "AIOS-SUBSYS-000008", "path": "code/", "load_order": 20, "required": false },
+    "testing": { "id": "AIOS-SUBSYS-000009", "path": "testing/", "load_order": 21, "required": false },
+    "review": { "id": "AIOS-SUBSYS-000010", "path": "review/", "load_order": 22, "required": false },
+    "security": { "id": "AIOS-SUBSYS-000011", "path": "security/", "load_order": 23, "required": false },
+    "devops": { "id": "AIOS-SUBSYS-000012", "path": "devops/", "load_order": 24, "required": false },
+    "agents": { "id": "AIOS-SUBSYS-000013", "path": "agents/", "load_order": 30, "required": false },
+    "frameworks": { "id": "AIOS-SUBSYS-000014", "path": "frameworks/", "load_order": 40, "required": false },
+    "languages": { "id": "AIOS-SUBSYS-000015", "path": "languages/", "load_order": 41, "required": false },
+    "domains": { "id": "AIOS-SUBSYS-000016", "path": "domains/", "load_order": 42, "required": false },
+    "patterns": { "id": "AIOS-SUBSYS-000017", "path": "patterns/", "load_order": 43, "required": false },
+    "workflows": { "id": "AIOS-SUBSYS-000018", "path": "workflows/", "load_order": 50, "required": false },
+    "plugins": { "id": "AIOS-SUBSYS-000019", "path": "plugins/", "load_order": 60, "required": false },
+    "templates": { "id": "AIOS-SUBSYS-000020", "path": "templates/", "load_order": 70, "required": false },
+    "Engine": { "id": "AIOS-SUBSYS-000021", "path": "Engine/", "load_order": 80, "required": false },
+    "docs": { "id": "AIOS-SUBSYS-000022", "path": "docs/", "load_order": 90, "required": false }
+  },
+  "design_principle": "HelpOfAi AIOS is a modular, offline-first, deterministic, enterprise-grade AI Software Engineering Operating System. It builds maintainable, secure, production-ready software through transparent reasoning, versioned knowledge, reusable workflows, and independently loadable modules.",
+  "golden_rule": "AIOS exists to help engineers build maintainable, secure, production-ready software through deterministic workflows, transparent reasoning, and modular architecture. AIOS must optimize for correctness, maintainability, and long-term value over speed alone.",
+  "created": "2026-07-18T00:00:00Z",
+  "updated": "2026-07-18T00:00:00Z"
+}

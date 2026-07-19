@@ -1,0 +1,7 @@
+[
+  {"query": "who calls AuthService", "intent": "CALL_GRAPH", "tokens": 3, "results": 5, "latency_ms": 45, "timestamp": "2026-07-18T09:00:00Z"},
+  {"query": "what imports User model", "intent": "DEPENDENCY", "tokens": 4, "results": 3, "latency_ms": 32, "timestamp": "2026-07-18T09:05:00Z"},
+  {"query": "features using auth", "intent": "FEATURE_QUERY", "tokens": 3, "results": 4, "latency_ms": 28, "timestamp": "2026-07-18T09:10:00Z"},
+  {"query": "files changed since v1.0", "intent": "CHANGE_QUERY", "tokens": 5, "results": 12, "latency_ms": 88, "timestamp": "2026-07-18T09:15:00Z"},
+  {"query": "similar files to AuthController", "intent": "SIMILARITY", "tokens": 5, "results": 2, "latency_ms": 156, "timestamp": "2026-07-18T09:20:00Z"}
+]

@@ -1,0 +1,11 @@
+{
+  "profile": "audit",
+  "description": "Load analysis + security + review modules for security audits",
+  "includes": [
+    "AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000004",
+    "AIOS-MODULE-000005", "AIOS-MODULE-000006", "AIOS-MODULE-000007",
+    "AIOS-MODULE-000011", "AIOS-MODULE-000012"
+  ],
+  "excludes": ["AIOS-MODULE-000009", "AIOS-MODULE-000010"],
+  "load_timeout_ms": 3000
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "AIOS-SCHEMA-000015",
+  "title": "AIOS Contract Schema",
+  "description": "Schema for capability contracts between AIOS modules",
+  "type": "object",
+  "required": ["id", "name", "version", "inputs", "outputs"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "required": { "type": "boolean", "default": false },
+          "description": { "type": "string" },
+          "validation": { "type": "string" },
+          "default": {}
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "side_effects": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "error_codes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "recovery": { "type": "string" }
+        }
+      }
+    },
+    "performance_guarantees": {
+      "type": "object",
+      "properties": {
+        "max_latency_ms": { "type": "integer" },
+        "max_memory_mb": { "type": "integer" }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

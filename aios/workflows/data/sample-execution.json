@@ -1,0 +1,14 @@
+{
+  "workflow_id": "AIOS-WORKFLOW-000001",
+  "workflow_name": "build-feature",
+  "started_at": "2026-07-19T09:00:00Z",
+  "phases": [
+    {"phase": "design", "status": "completed", "duration_ms": 3200, "gate": "pass"},
+    {"phase": "implement", "status": "completed", "duration_ms": 18500, "gate": "pass"},
+    {"phase": "test", "status": "completed", "duration_ms": 8900, "gate": "pass"},
+    {"phase": "review", "status": "completed", "duration_ms": 2400, "gate": "pass"}
+  ],
+  "total_duration_ms": 33000,
+  "result": "completed",
+  "files": {"created": 6, "modified": 2, "deleted": 0}
+}

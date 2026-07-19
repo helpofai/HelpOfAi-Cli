@@ -1,0 +1,4 @@
+[
+  {"file_path": "src/auth/AuthController.ts", "operation": "create", "summary": "Auth controller with register, login, logout, refresh endpoints", "lines": 85, "trace_back": {"step_id": "step-003", "capability_id": "AIOS-CAPABILITY-000060"}},
+  {"file_path": "src/auth/AuthService.ts", "operation": "create", "summary": "Auth service with JWT generation, validation, password hashing", "lines": 120, "trace_back": {"step_id": "step-003", "capability_id": "AIOS-CAPABILITY-000060"}}
+]

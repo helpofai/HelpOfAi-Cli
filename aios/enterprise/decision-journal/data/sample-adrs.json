@@ -1,0 +1,5 @@
+[
+  {"id": "ADR-000001", "title": "Architecture Pattern: Clean Architecture", "status": "accepted", "tags": ["architecture", "core"], "date": "2026-07-01", "summary": "Adopt Clean Architecture with Event-Driven transitions"},
+  {"id": "ADR-000002", "title": "Database: PostgreSQL as primary store", "status": "accepted", "tags": ["database", "infrastructure"], "date": "2026-07-02", "summary": "PostgreSQL for transactional data, Redis for cache"},
+  {"id": "ADR-000003", "title": "Auth: JWT with refresh rotation", "status": "proposed", "tags": ["security", "auth"], "date": "2026-07-05", "summary": "JWT access tokens with rotating refresh tokens"}
+]

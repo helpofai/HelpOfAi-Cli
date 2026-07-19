@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "AIOS-SCHEMA-000013",
+  "title": "AIOS Workflow Definition Schema",
+  "description": "Schema for defining an engineering workflow in AIOS",
+  "type": "object",
+  "required": ["id", "name", "version", "lifecycle"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "AIOS universal ID, e.g. AIOS-WORKFLOW-000032"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human readable name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^d+.d+.d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "triggers": {
+      "type": "array",
+      "description": "User commands or events that trigger this workflow",
+      "items": { "type": "string" }
+    },
+    "lifecycle": {
+      "type": "array",
+      "description": "Ordered lifecycle phases",
+      "items": {
+        "type": "object",
+        "required": ["phase", "order", "engine"],
+        "properties": {
+          "phase": { "type": "string" },
+          "order": { "type": "integer", "minimum": 0 },
+          "engine": { "type": "string", "description": "AIOS engine ID that runs this phase" },
+          "optional": { "type": "boolean", "default": false },
+          "gate": { "type": "string", "description": "Approval/validation gate" },
+          "output_template": { "type": "string", "description": "Template to render results" }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "provides": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rollback_workflow": {
+      "type": "string",
+      "description": "Workflow ID to run on failure"
+    },
+    "estimated_duration": {
+      "type": "object",
+      "properties": {
+        "min_minutes": { "type": "integer" },
+        "max_minutes": { "type": "integer" }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "intents": {
+    "CALL_GRAPH": {
+      "keywords": ["who calls", "who uses", "callers of", "what calls", "call graph"],
+      "target_type": "symbol",
+      "default_depth": 2,
+      "response_template": "callers"
+    },
+    "DEPENDENCY": {
+      "keywords": ["what imports", "depends on", "dependency of", "what does", "imports"],
+      "target_type": "symbol_or_file",
+      "default_depth": 1,
+      "response_template": "dependencies"
+    },
+    "FEATURE_QUERY": {
+      "keywords": ["what features", "features using", "features that", "feature map"],
+      "target_type": "keyword",
+      "default_depth": null,
+      "response_template": "features"
+    },
+    "CHANGE_QUERY": {
+      "keywords": ["changed since", "modified since", "files changed", "new files", "recent changes"],
+      "target_type": "timeframe",
+      "default_depth": null,
+      "response_template": "changes"
+    },
+    "SIMILARITY": {
+      "keywords": ["similar to", "duplicate of", "same as", "find similar", "like"],
+      "target_type": "file_or_symbol",
+      "default_depth": null,
+      "response_template": "similar"
+    }
+  }
+}

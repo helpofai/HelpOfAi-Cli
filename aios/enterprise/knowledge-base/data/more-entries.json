@@ -1,0 +1,6 @@
+[
+  {"id": "KB-000003", "topic": "Branch naming convention", "content": "Format: type/issue-number-description. Types: feat, fix, chore, docs, refactor, test.", "source": "operator", "confidence": 1.0, "applies_to": [".git/**"]},
+  {"id": "KB-000004", "topic": "Commit message format", "content": "Conventional Commits: type(scope): description. Types: feat, fix, chore, docs, refactor, test, perf.", "source": "operator", "confidence": 1.0, "applies_to": [""]},
+  {"id": "KB-000005", "topic": "Logging library preference", "content": "Use winston for Node.js backends, loguru for Python. Do NOT use console.log in production code.", "source": "detected", "confidence": 0.8, "applies_to": ["**/*.ts", "**/*.py"]},
+  {"id": "KB-000006", "topic": "Null handling pattern", "content": "Use Maybe/Option pattern instead of null checks. In TypeScript: ?? and ?. operators preferred.", "source": "detected", "confidence": 0.75, "applies_to": ["**/*.ts", "**/*.tsx"]}
+]

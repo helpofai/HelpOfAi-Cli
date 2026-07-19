@@ -1,0 +1,21 @@
+{
+  "graph": {
+    "nodes": [
+      {"id": "request_routing", "type": "capability", "module": "kernel", "group": "routing"},
+      {"id": "goal_decomposition", "type": "capability", "module": "planner", "group": "planning"},
+      {"id": "code_generation", "type": "capability", "module": "code", "group": "implementation"},
+      {"id": "unit_testing", "type": "capability", "module": "testing", "group": "validation"},
+      {"id": "code_review", "type": "capability", "module": "review", "group": "validation"}
+    ],
+    "edges": [
+      {"from": "request_routing", "to": "goal_decomposition", "type": "routes_to"},
+      {"from": "goal_decomposition", "to": "code_generation", "type": "routes_to"},
+      {"from": "code_generation", "to": "unit_testing", "type": "routes_to"},
+      {"from": "unit_testing", "to": "code_review", "type": "routes_to"}
+    ]
+  },
+  "routing_example": {
+    "request": "build user auth feature",
+    "route": ["request_routing", "goal_decomposition", "code_generation", "unit_testing", "code_review"]
+  }
+}

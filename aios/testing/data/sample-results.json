@@ -1,0 +1,14 @@
+{
+  "test_results": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 2,
+    "errors": 0,
+    "coverage_percent": 87.3,
+    "coverage_delta": 2.3,
+    "duration_ms": 4520,
+    "failed_tests": [],
+    "framework": "vitest"
+  }
+}

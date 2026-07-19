@@ -1,0 +1,14 @@
+{
+  "load_summary": {
+    "total_modules": 28,
+    "loaded": 28,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 320,
+    "modules": [
+      {"id": "AIOS-MODULE-000002", "name": "kernel", "status": "loaded", "deps_loaded": [], "capabilities": ["request_routing", "capability_routing", "execution_lifecycle"]},
+      {"id": "AIOS-MODULE-000003", "name": "runtime", "status": "loaded", "deps_loaded": ["kernel"], "capabilities": ["event_bus", "task_management", "state_persistence"]},
+      {"id": "AIOS-MODULE-000004", "name": "planner", "status": "loaded", "deps_loaded": ["kernel", "runtime"], "capabilities": ["goal_decomposition", "plan_validation", "rollback_management"]}
+    ]
+  }
+}

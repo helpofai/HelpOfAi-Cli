@@ -1,0 +1,19 @@
+{
+  "export": {
+    "json": {
+      "format": ".json",
+      "schema": {"timestamp": "ISO8601", "type": "string", "summary": "string", "module_id": "string", "duration_ms": "number"},
+      "example": "hoa timeline --since 2026-01-01 --format json > timeline.json"
+    },
+    "markdown": {
+      "format": ".md",
+      "template": "| {{timestamp}} | {{type}} | {{summary}} | {{duration_ms}}ms |",
+      "example": "hoa timeline --since 2026-01-01 --format markdown > timeline.md"
+    },
+    "csv": {
+      "format": ".csv",
+      "columns": ["timestamp", "type", "summary", "module_id", "duration_ms"],
+      "example": "hoa timeline --since 2026-01-01 --format csv > timeline.csv"
+    }
+  }
+}

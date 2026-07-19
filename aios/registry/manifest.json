@@ -1,0 +1,25 @@
+{
+  "id": "AIOS-MODULE-000001",
+  "name": "Module Registry",
+  "version": "1.0.0",
+  "manifest_version": "1.1.0",
+  "description": "Central registry of all installed AIOS modules. The CLI reads this to discover what's available.",
+  "load_order": 1,
+  "required": true,
+  "depends_on": [],
+  "optional_depends_on": [],
+  "conflicts_with": [],
+  "provides": [
+    { "id": "AIOS-CAPABILITY-000001", "name": "module_discovery" },
+    { "id": "AIOS-CAPABILITY-000002", "name": "module_version_lookup" }
+  ],
+  "entry_point": "aios/registry/modules.json",
+  "maturity": "production",
+  "compatibility": {
+    "aios_min_version": "1.0.0",
+    "aios_max_version": "1.x",
+    "constitution_target": "1.0.0"
+  },
+  "created": "2026-07-18T00:00:00Z",
+  "updated": "2026-07-18T00:00:00Z"
+}

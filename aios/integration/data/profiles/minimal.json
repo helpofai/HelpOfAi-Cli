@@ -1,0 +1,9 @@
+{
+  "profile": "minimal",
+  "description": "Load only kernel + runtime modules for minimal AIOS",
+  "includes": [
+    "AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000004"
+  ],
+  "excludes": [],
+  "load_timeout_ms": 2000
+}

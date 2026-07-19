@@ -1,0 +1,10 @@
+{
+  "snapshots": [
+    {"date": "2026-07-12", "architecture": 80, "security": 80, "performance": 88, "coverage": 77, "docs": 50, "debt": 73},
+    {"date": "2026-07-13", "architecture": 80, "security": 80, "performance": 88, "coverage": 78, "docs": 50, "debt": 73},
+    {"date": "2026-07-14", "architecture": 81, "security": 78, "performance": 89, "coverage": 80, "docs": 52, "debt": 72},
+    {"date": "2026-07-15", "architecture": 81, "security": 77, "performance": 89, "coverage": 82, "docs": 55, "debt": 71},
+    {"date": "2026-07-16", "architecture": 82, "security": 76, "performance": 90, "coverage": 84, "docs": 58, "debt": 70},
+    {"date": "2026-07-17", "architecture": 82, "security": 75, "performance": 90, "coverage": 85, "docs": 60, "debt": 70}
+  ]
+}

@@ -1,0 +1,1 @@
+{"$schema": "../../schemas/SCHEMA-000015-contract.json", "id": "AIOS-CONTRACT-000104", "name": "performance_analysis", "version": "1.0.0", "description": "Analyzes code and resource usage for bottlenecks.", "inputs": [{"name": "target", "type": "string", "required": true}], "outputs": [{"name": "report", "type": "object", "description": "{ bottlenecks, score }"}]}

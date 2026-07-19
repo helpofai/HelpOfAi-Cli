@@ -1,0 +1,19 @@
+{
+  "perf": {
+    "index_time_ms": 45230,
+    "nodes_indexed": 12400,
+    "edges_indexed": 87500,
+    "symbols_found": 28300,
+    "files_skipped": 340,
+    "cache_hits": 892,
+    "cache_misses": 108,
+    "hit_rate": 0.89,
+    "avg_query_ms": 38,
+    "p99_query_ms": 156,
+    "memory_mb": 124
+  },
+  "breakdown": {
+    "by_language": {"typescript": 5200, "python": 3800, "rust": 2100, "go": 1300},
+    "by_symbol_type": {"function": 12400, "class": 3400, "interface": 1900, "type": 5600, "const": 5000}
+  }
+}

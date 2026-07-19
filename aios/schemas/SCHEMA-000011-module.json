@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "AIOS-SCHEMA-000011",
+  "title": "AIOS Module Manifest Schema",
+  "description": "Schema for every loadable AIOS module manifest file",
+  "type": "object",
+  "required": ["id", "name", "version", "type", "manifest_version"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^AIOS-(MODULE|ENGINE|AGENT|BRAIN)PACK|SUBSYS|PLUGIN)-d{6}$",
+      "description": "AIOS universal ID"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Human-readable module name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^d+.d+.d+$",
+      "description": "Semantic version"
+    },
+    "manifest_version": {
+      "type": "string",
+      "enum": ["1.1.0", "1.0.0"],
+      "description": "Manifest format version"
+    },
+    "codename": {
+      "type": "string",
+      "description": "Optional codename for this release"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this module does"
+    },
+    "load_order": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Boot sequence priority"
+    },
+    "required": {
+      "type": "boolean",
+      "description": "If true, AIOS cannot start without this module"
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Required dependencies — AIOS Universal IDs or subsystem names",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "optional_depends_on": {
+      "type": "array",
+      "description": "Optional dependencies — loaded if available",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "conflicts_with": {
+      "type": "array",
+      "description": "Incompatible modules",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "provides": {
+      "type": "array",
+      "description": "Capabilities this module provides",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "description": "AIOS capability ID" },
+          "name": { "type": "string" },
+          "version": { "type": "string" }
+        }
+      },
+      "default": []
+    },
+    "entry_point": {
+      "type": "string",
+      "description": "Primary specification or contract file path"
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Security permissions required",
+      "items": {
+        "type": "object",
+        "required": ["scope"],
+        "properties": {
+          "scope": { "type": "string", "enum": ["filesystem", "network", "shell", "model", "process"] },
+          "path": { "type": "string", "description": "Filesystem path constraint" },
+          "trust_level": { "type": "string", "enum": ["trusted", "sandboxed", "untrusted"] }
+        }
+      },
+      "default": []
+    },
+    "performance_budget": {
+      "type": "object",
+      "properties": {
+        "max_load_ms": { "type": "integer", "description": "Maximum load time in milliseconds" },
+        "max_memory_mb": { "type": "integer", "description": "Memory ceiling in MB" },
+        "max_cache_mb": { "type": "integer", "description": "Cache ceiling in MB" }
+      }
+    },
+    "maturity": {
+      "type": "string",
+      "enum": ["experimental", "beta", "production", "certified"],
+      "default": "production"
+    },
+    "architecture_patterns": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["MVC", "MVVM", "DDD", "CQRS", "Clean", "Hexagonal", "Microservices", "Monolith", "EventDriven"] }
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "aios_min_version": { "type": "string" },
+        "aios_max_version": { "type": "string" },
+        "constitution_target": { "type": "string" }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "created": { "type": "string", "format": "date-time" },
+    "updated": { "type": "string", "format": "date-time" }
+  }
+}

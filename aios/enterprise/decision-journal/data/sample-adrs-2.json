@@ -1,0 +1,6 @@
+[
+  {"id": "ADR-000008", "title": "Cache: Redis for session store", "status": "accepted", "tags": ["cache", "infrastructure"], "date": "2026-07-12", "summary": "Redis for session storage, rate limiting, and cache"},
+  {"id": "ADR-000009", "title": "Deploy: GitHub Actions", "status": "accepted", "tags": ["devops", "ci-cd"], "date": "2026-07-14", "summary": "GitHub Actions for CI/CD, Docker for containerization"},
+  {"id": "ADR-000010", "title": "Search: Elasticsearch for full-text", "status": "superseded", "tags": ["search", "infrastructure"], "date": "2026-07-15", "summary": "Superseded by Meilisearch for simpler deployment"},
+  {"id": "ADR-000011", "title": "Search: Meilisearch", "status": "accepted", "tags": ["search", "infrastructure"], "date": "2026-07-16", "summary": "Meilisearch for full-text search - simpler ops than ES"}
+]

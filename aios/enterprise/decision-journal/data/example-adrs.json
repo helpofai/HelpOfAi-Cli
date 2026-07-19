@@ -1,0 +1,6 @@
+[
+  {"id": "ADR-000004", "title": "Frontend: React with TypeScript", "status": "accepted", "tags": ["frontend", "architecture"], "date": "2026-07-06", "summary": "React 18 with strict TypeScript, no JavaScript in new code"},
+  {"id": "ADR-000005", "title": "Testing: Vitest over Jest", "status": "accepted", "tags": ["testing", "tooling"], "date": "2026-07-08", "summary": "Vitest for speed and ESM compatibility"},
+  {"id": "ADR-000006", "title": "Observability: OpenTelemetry", "status": "proposed", "tags": ["observability", "devops"], "date": "2026-07-10", "summary": "OpenTelemetry for traces, metrics, logs"},
+  {"id": "ADR-000007", "title": "Feature flags: LaunchDarkly", "status": "deprecated", "tags": ["devops", "deployment"], "date": "2026-07-02", "summary": "Deprecated in favor of in-house FF system"}
+]

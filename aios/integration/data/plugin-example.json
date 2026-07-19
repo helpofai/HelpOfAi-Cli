@@ -1,0 +1,19 @@
+{
+  "manifest": {
+    "id": "AIOS-PLUGIN-000001",
+    "name": "Example Plugin",
+    "version": "1.0.0",
+    "entry_point": "main.spec.md",
+    "depends_on": ["AIOS-MODULE-000002"],
+    "provides": [
+      {"id": "AIOS-CAPABILITY-000200", "name": "custom_analysis"}
+    ],
+    "permissions": [
+      {"scope": "filesystem", "trust_level": "sandboxed"}
+    ]
+  },
+  "files": {
+    "main.spec.md": "## Example Plugin\nA simple analysis plugin.",
+    "contracts/custom_analysis.json": "{\"id\": \"AIOS-CONTRACT-000200\"}"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "AIOS-CONST-000001",
+  "version": "1.1.0",
+  "name": "HelpOfAi AIOS Constitution",
+  "type": "constitution",
+  "description": "Machine-readable constitution for AIOS v1.1.x — defines immutable architecture rules for the operating system.",
+  "principles": [
+    { "id": "AIOS-PRINCIPLE-001", "name": "Capability-First Architecture", "category": "architecture", "description": "Load only the capabilities needed for each task. 90% routing, 10% generation.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-002", "name": "Offline-First", "category": "architecture", "description": "AIOS works without internet. Cloud is extension, not requirement.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-003", "name": "Modular & Decoupled", "category": "architecture", "description": "Every module independently loadable. Explicit dependency contracts.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-004", "name": "Deterministic Builds", "category": "quality", "description": "Same inputs = same engineering plan. Non-deterministic behavior marked explicitly.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-005", "name": "Machine-First Metadata", "category": "standards", "description": "Every human doc has machine-readable companion. CLI reads metadata; humans read Markdown.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-006", "name": "Read-Only Core", "category": "security", "description": "Core layers immutable to plugins. Only official updates may modify.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-007", "name": "Zero Hardcoded AI", "category": "architecture", "description": "Model-agnostic via LLM adapters. No provider lock-in.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-008", "name": "Single Source of Truth", "category": "quality", "description": "Every fact lives in exactly one canonical location.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-009", "name": "Backward Compatibility Forever", "category": "compatibility", "description": "Public contracts never silently break. Deprecate first, remove in major version.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-010", "name": "Extensibility by Default", "category": "architecture", "description": "Extend through plugins/packs/config. Never modify core.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-011", "name": "Test Before Ship", "category": "quality", "description": "Every module includes self-tests and validation. No production module without tests.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-012", "name": "Never Guess Unknown", "category": "ethics", "description": "When unable to proceed: explain, suggest, request. Never fabricate.", "enforcement": "strict" },
+    { "id": "AIOS-PRINCIPLE-013", "name": "Explain Every Decision", "category": "transparency", "description": "Why, alternatives, trade-offs, risks, long-term impact for every major recommendation.", "enforcement": "mandatory" },
+    { "id": "AIOS-PRINCIPLE-014", "name": "Trace Everything", "category": "transparency", "description": "Every output traceable to feature→workflow→prompt→template→rule chain.", "enforcement": "mandatory" },
+    { "id": "AIOS-PRINCIPLE-015", "name": "No Placeholders", "category": "quality", "description": "No empty dirs, no placeholder files, no TODOs in shipped modules. Production content only.", "enforcement": "strict" }
+  ],
+  "golden_rule": {
+    "id": "AIOS-GOLDEN-001",
+    "statement": "AIOS must optimize for correctness, quality, and long-term value over speed alone.",
+    "priority": "override-all"
+  },
+  "supremacy_order": [
+    "golden_rule",
+    "constitution",
+    "module_specifications",
+    "defaults"
+  ],
+  "compatibility": {
+    "aios_min_version": "1.0.0",
+    "constitution_target": "1.0.0"
+  },
+  "terms": {
+    "comments": "Global terms deactivation for production release."
+  },
+  "updated": "2026-07-18T00:00:00Z"
+}

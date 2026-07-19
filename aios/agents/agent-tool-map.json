@@ -1,0 +1,13 @@
+{
+  "tool_map": {
+    "exec_shell": {"trust_levels": ["full", "restricted", "sandboxed"], "capability_id": "AIOS-CAPABILITY-000012"},
+    "read_file": {"trust_levels": ["full"], "capability_id": "AIOS-CAPABILITY-000010"},
+    "write_file": {"trust_levels": ["full", "sandboxed"], "capability_id": "AIOS-CAPABILITY-000060"},
+    "apply_patch": {"trust_levels": ["full", "sandboxed"], "capability_id": "AIOS-CAPABILITY-000060"},
+    "grep_files": {"trust_levels": ["full"], "capability_id": "AIOS-CAPABILITY-000010"},
+    "git_diff": {"trust_levels": ["full"], "capability_id": "AIOS-CAPABILITY-000010"},
+    "git_status": {"trust_levels": ["full"], "capability_id": "AIOS-CAPABILITY-000010"},
+    "run_tests": {"trust_levels": ["full", "restricted"], "capability_id": "AIOS-CAPABILITY-000070"},
+    "agent": {"trust_levels": ["full", "restricted"], "capability_id": "AIOS-CAPABILITY-000010"}
+  }
+}

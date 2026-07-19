@@ -1,0 +1,6 @@
+[
+  {"timestamp": "2026-07-17T09:00:00Z", "type": "request", "summary": "Add email auth feature", "module_id": "AIOS-MODULE-000002", "duration_ms": 1200},
+  {"timestamp": "2026-07-17T09:05:00Z", "type": "decision", "summary": "ADR-0042: Choose bcrypt for password hashing", "module_id": "AIOS-MODULE-000005", "duration_ms": 300},
+  {"timestamp": "2026-07-17T09:15:00Z", "type": "phase_complete", "summary": "Implementation phase completed for email auth", "module_id": "AIOS-MODULE-000009", "duration_ms": 45000},
+  {"timestamp": "2026-07-17T09:45:00Z", "type": "rollback", "summary": "Rollback triggered: migration had breaking change", "module_id": "AIOS-WORKFLOW-000002", "duration_ms": 8000}
+]

@@ -1,0 +1,7 @@
+{
+  "features": [
+    {"id": "FEATURE-000042", "name": "User Authentication", "status": "implemented", "files": ["src/auth/AuthController.ts", "src/auth/AuthService.ts", "src/models/User.ts"], "deps": [], "spec_ref": "AIOS-FEATURE-000042"},
+    {"id": "FEATURE-000043", "name": "API Rate Limiting", "status": "planned", "files": ["src/middleware/RateLimiter.ts"], "deps": ["FEATURE-000042"], "spec_ref": "AIOS-FEATURE-000043"},
+    {"id": "FEATURE-000044", "name": "Email Notifications", "status": "in_progress", "files": ["src/notifications/EmailService.ts", "src/jobs/SendEmailJob.ts"], "deps": ["FEATURE-000042"], "spec_ref": "AIOS-FEATURE-000044"}
+  ]
+}

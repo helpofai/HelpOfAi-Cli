@@ -1,0 +1,19 @@
+{
+  "graph_version": 42,
+  "nodes": [
+    {"id": "file://src/auth/AuthController.ts", "type": "file", "kind": "source", "size": 2840, "content_hash": "a1b2c3", "lang": "typescript"},
+    {"id": "file://src/auth/AuthService.ts", "type": "file", "kind": "source", "size": 4521, "content_hash": "d4e5f6", "lang": "typescript"},
+    {"id": "file://src/models/User.ts", "type": "file", "kind": "source", "size": 1200, "content_hash": "g7h8i9", "lang": "typescript"},
+    {"id": "sym://AuthController.login", "type": "symbol", "kind": "function", "name": "login", "file": "file://src/auth/AuthController.ts", "line": 15},
+    {"id": "sym://AuthService.validateToken", "type": "symbol", "kind": "function", "name": "validateToken", "file": "file://src/auth/AuthService.ts", "line": 42},
+    {"id": "feat://FEATURE-000042", "type": "feature", "name": "User Authentication", "status": "implemented", "spec_ref": "AIOS-FEATURE-000042"}
+  ],
+  "edges": [
+    {"from": "file://src/auth/AuthController.ts", "to": "file://src/auth/AuthService.ts", "type": "imports"},
+    {"from": "file://src/auth/AuthService.ts", "to": "file://src/models/User.ts", "type": "imports"},
+    {"from": "file://src/auth/AuthController.ts", "to": "sym://AuthController.login", "type": "defines"},
+    {"from": "file://src/auth/AuthService.ts", "to": "sym://AuthService.validateToken", "type": "defines"},
+    {"from": "sym://AuthController.login", "to": "sym://AuthService.validateToken", "type": "calls"},
+    {"from": "file://src/auth/AuthController.ts", "to": "feat://FEATURE-000042", "type": "implements"}
+  ]
+}

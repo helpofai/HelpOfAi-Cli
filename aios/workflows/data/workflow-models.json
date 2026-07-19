@@ -1,0 +1,28 @@
+{
+  "workflow_definition": {
+    "id": "AIOS-WORKFLOW-000001",
+    "name": "build-feature",
+    "version": "1.0.0",
+    "phases": [
+      {"id": "design", "agent_id": "AIOS-AGENT-000002", "gate": "review", "timeout_s": 60, "retry": 1, "parallel": false},
+      {"id": "implement", "engine": "code", "gate": "quality", "timeout_s": 180, "retry": 1, "parallel": false},
+      {"id": "test", "agent_id": "AIOS-AGENT-000007", "gate": "test", "timeout_s": 60, "retry": 2, "parallel": false},
+      {"id": "review", "agent_id": "AIOS-AGENT-000016", "gate": "review", "timeout_s": 30, "retry": 0, "parallel": false}
+    ],
+    "rollback_policy": "full",
+    "capabilities_required": ["AIOS-CAPABILITY-000030", "AIOS-CAPABILITY-000060"]
+  },
+  "execution_example": {
+    "task_id": "WF-20260719-001",
+    "workflow_id": "AIOS-WORKFLOW-000001",
+    "status": "running",
+    "current_phase": "test",
+    "phases": [
+      {"id": "design", "status": "completed", "duration_ms": 3200, "gate_result": "pass"},
+      {"id": "implement", "status": "completed", "duration_ms": 18500, "gate_result": "pass"},
+      {"id": "test", "status": "running", "gate_result": null}
+    ],
+    "started_at": "2026-07-19T09:00:00Z",
+    "errors": []
+  }
+}

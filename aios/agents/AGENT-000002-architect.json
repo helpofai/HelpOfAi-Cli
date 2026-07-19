@@ -1,0 +1,1 @@
+{"$schema": "../../schemas/SCHEMA-000014-agent.json", "id": "AIOS-AGENT-000002", "name": "Architect Agent", "role": "architect", "version": "1.0.0", "description": "Architecture design and review. Analysis engine consumer.", "domain": "architecture", "frameworks": [], "languages": [], "required_capabilities": ["architecture_analysis"], "thinking_budget": "high"}

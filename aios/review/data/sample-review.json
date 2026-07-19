@@ -1,0 +1,11 @@
+{
+  "comments": [
+    {"file": "src/auth/AuthController.ts", "line": 23, "severity": "major", "category": "security", "issue": "Password field returned in response", "suggestion": "Remove password field from response DTO"},
+    {"file": "src/auth/AuthService.ts", "line": 45, "severity": "minor", "category": "style", "issue": "Function > 50 lines", "suggestion": "Extract JWT token generation to helper"}
+  ],
+  "critical_count": 0,
+  "major_count": 1,
+  "minor_count": 1,
+  "score": 87,
+  "pass": true
+}

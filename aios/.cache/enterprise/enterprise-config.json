@@ -1,0 +1,51 @@
+{
+  "enterprise": {
+    "digital_twin": {
+      "enabled": true,
+      "cache_dir": "aios/.cache/enterprise/digital-twin/",
+      "max_conflicts": 10,
+      "auto_merge_threshold": 0.4
+    },
+    "capability_graph": {
+      "enabled": true,
+      "export_formats": ["dot", "json", "mermaid"],
+      "cache_file": "aios/.cache/enterprise/capability-graph.json"
+    },
+    "timeline": {
+      "enabled": true,
+      "retention_days": 365,
+      "auto_prune": false
+    },
+    "decision_journal": {
+      "enabled": true,
+      "search_limit": 25
+    },
+    "project_health": {
+      "enabled": true,
+      "auto_refresh_hours": 4,
+      "weights": {
+        "architecture_health": 25,
+        "security_posture": 20,
+        "performance": 15,
+        "test_coverage": 15,
+        "documentation": 10,
+        "technical_debt": 15
+      }
+    },
+    "learning_engine": {
+      "enabled": true,
+      "min_confidence_to_surface": 0.5,
+      "decay_rate_per_week": 0.1
+    },
+    "knowledge_base": {
+      "enabled": true,
+      "max_results": 5,
+      "min_relevance_score": 0.15
+    },
+    "roadmap_generator": {
+      "enabled": true,
+      "default_capacity": 3,
+      "default_velocity": 5
+    }
+  }
+}

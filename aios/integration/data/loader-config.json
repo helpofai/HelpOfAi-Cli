@@ -1,0 +1,15 @@
+{
+  "loader": {
+    "base_path": "aios/",
+    "registry_path": "aios/registry/",
+    "load_order_file": "aios/registry/modules.json",
+    "cache_enabled": true,
+    "cache_dir": "aios/.cache/integration/",
+    "fail_on_missing_optional_dep": false,
+    "manifest_filename": "module.json",
+    "contracts_dir": "contracts/",
+    "prompts_dir": "prompts/",
+    "plugins_dir": "plugins/",
+    "max_parallel_loads": 2
+  }
+}

@@ -1,0 +1,1 @@
+{"$schema": "../../schemas/SCHEMA-000015-contract.json", "id": "AIOS-CONTRACT-000103", "name": "auto_fix", "version": "1.0.0", "description": "Produces code fix with diff and rollback plan.", "inputs": [{"name": "analysis", "type": "object", "required": true}], "outputs": [{"name": "fix", "type": "object", "description": "{ patch, rollback_ref, test_verify }"}]}

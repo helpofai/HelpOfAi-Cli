@@ -1,0 +1,13 @@
+{
+  "agents": {
+    "AIOS-AGENT-000001": {"model": "deepseek-v4-flash", "max_steps": 10, "tools": ["read_file", "grep_files", "agent"]},
+    "AIOS-AGENT-000003": {"model": "deepseek-v4-pro", "max_steps": 15, "tools": ["read_file", "write_file", "exec_shell", "grep_files"]},
+    "AIOS-AGENT-000004": {"model": "deepseek-v4-flash", "max_steps": 12, "tools": ["read_file", "write_file", "grep_files"]},
+    "AIOS-AGENT-000005": {"model": "deepseek-v4-flash", "max_steps": 8, "tools": ["read_file", "write_file", "exec_shell"]},
+    "AIOS-AGENT-000007": {"model": "deepseek-v4-flash", "max_steps": 10, "tools": ["read_file", "exec_shell", "run_tests"]},
+    "AIOS-AGENT-000008": {"model": "deepseek-v4-flash", "max_steps": 8, "tools": ["read_file", "exec_shell"]},
+    "AIOS-AGENT-000009": {"model": "deepseek-v4-pro", "max_steps": 12, "tools": ["read_file", "grep_files"]},
+    "AIOS-AGENT-000010": {"model": "deepseek-v4-flash", "max_steps": 6, "tools": ["read_file", "write_file"]},
+    "AIOS-AGENT-000016": {"model": "deepseek-v4-pro", "max_steps": 10, "tools": ["read_file", "grep_files"]}
+  }
+}

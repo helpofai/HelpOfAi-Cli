@@ -1,0 +1,14 @@
+{
+  "filters": [
+    {"field": "status", "type": "exact", "values": ["accepted", "proposed", "deprecated", "superseded"]},
+    {"field": "tags", "type": "contains", "values": ["architecture", "security", "performance", "database", "auth", "api", "devops"]},
+    {"field": "date", "type": "range", "format": "ISO8601"},
+    {"field": "text", "type": "fulltext", "fields": ["title", "summary", "context"]}
+  ],
+  "sort": {
+    "default": "date",
+    "order": "desc",
+    "options": ["date", "title", "status"]
+  },
+  "page_size": 25
+}

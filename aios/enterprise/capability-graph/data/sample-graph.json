@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"id": "AIOS-CAPABILITY-000010", "type": "capability", "module": "AIOS-MODULE-000002", "label": "request_routing"},
+    {"id": "AIOS-CAPABILITY-000030", "type": "capability", "module": "AIOS-MODULE-000004", "label": "goal_decomposition"},
+    {"id": "AIOS-CAPABILITY-000060", "type": "capability", "module": "AIOS-MODULE-000009", "label": "code_generation"},
+    {"id": "AIOS-MODULE-000002", "type": "module", "label": "kernel"},
+    {"id": "AIOS-MODULE-000004", "type": "module", "label": "planner"},
+    {"id": "AIOS-MODULE-000009", "type": "module", "label": "code"}
+  ],
+  "edges": [
+    {"from": "AIOS-CAPABILITY-000010", "to": "AIOS-MODULE-000002", "type": "provided_by"},
+    {"from": "AIOS-CAPABILITY-000030", "to": "AIOS-MODULE-000004", "type": "provided_by"},
+    {"from": "AIOS-CAPABILITY-000060", "to": "AIOS-MODULE-000009", "type": "provided_by"},
+    {"from": "AIOS-CAPABILITY-000010", "to": "AIOS-CAPABILITY-000030", "type": "routes_to"},
+    {"from": "AIOS-CAPABILITY-000030", "to": "AIOS-CAPABILITY-000060", "type": "routes_to"}
+  ]
+}

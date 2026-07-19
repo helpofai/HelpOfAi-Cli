@@ -1,0 +1,33 @@
+{
+  "description": "AIOS Dependency Registry — tracks which version of each module is installed and their dependency relationships. Updated automatically on install/upgrade/remove.",
+  "version": "1.0.0",
+  "dependencies": {
+    "AIOS-ROOT-000000": { "version": "1.0.0", "depends_on": [], "installed_at": "2026-07-18T00:00:00Z", "status": "installed" },
+    "AIOS-CONST-000001": { "version": "1.0.0", "depends_on": [], "installed_at": "2026-07-18T00:00:00Z", "status": "installed" },
+    "AIOS-MODULE-000001": { "version": "1.0.0", "depends_on": [], "installed_at": "2026-07-18T00:00:00Z", "status": "installed" },
+    "AIOS-MODULE-000002": { "version": "1.0.0", "depends_on": ["AIOS-ROOT-000000", "AIOS-CONST-000001"], "status": "planned" },
+    "AIOS-MODULE-000003": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002"], "status": "planned" },
+    "AIOS-MODULE-000004": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003"], "status": "planned" },
+    "AIOS-MODULE-000005": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000006"], "status": "planned" },
+    "AIOS-MODULE-000006": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003"], "status": "planned" },
+    "AIOS-MODULE-000007": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000005"] },
+    "AIOS-MODULE-000008": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000004", "AIOS-MODULE-000005"] },
+    "AIOS-MODULE-000009": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000004"] },
+    "AIOS-MODULE-000010": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000009"] },
+    "AIOS-MODULE-000011": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000005"] },
+    "AIOS-MODULE-000012": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000005"] },
+    "AIOS-MODULE-000013": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003"] },
+    "AIOS-MODULE-000014": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000004"] },
+    "AIOS-MODULE-000015": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003", "AIOS-MODULE-000004", "AIOS-MODULE-000006"] },
+    "AIOS-MODULE-000016": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002"], "optional": true },
+    "AIOS-MODULE-000017": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002"], "optional": true },
+    "AIOS-MODULE-000018": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000016", "AIOS-MODULE-000017"] },
+    "AIOS-MODULE-000019": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002"], "optional": true },
+    "AIOS-MODULE-000020": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002", "AIOS-MODULE-000003"] },
+    "AIOS-MODULE-000021": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000002"], "optional": true },
+    "AIOS-MODULE-000022": { "version": "1.0.0", "depends_on": ["AIOS-MODULE-000001"], "status": "planned" },
+    "AIOS-MODULE-000023": { "version": "1.0.0", "depends_on": [], "status": "planned" }
+  },
+  "resolver_version": "1.0.0",
+  "updated": "2026-07-18T00:00:00Z"
+}

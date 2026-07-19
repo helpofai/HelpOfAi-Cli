@@ -1,0 +1,10 @@
+{
+  "vulns": [
+    {"cve": "CVE-2023-44487", "severity": "high", "cvss_score": 7.5, "affected": "express < 4.18.2", "fixed_in": "4.18.2", "remediation": "npm update express"},
+    {"cve": "CVE-2024-1234", "severity": "medium", "cvss_score": 5.0, "affected": "lodash < 4.17.21", "fixed_in": "4.17.21", "remediation": "npm update lodash"}
+  ],
+  "critical_count": 0,
+  "high_count": 1,
+  "medium_count": 1,
+  "scan_time_ms": 2850
+}
