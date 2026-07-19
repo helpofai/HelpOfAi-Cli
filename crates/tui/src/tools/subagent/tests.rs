@@ -991,6 +991,7 @@ fn forked_subagent_messages_preserve_parent_prefix_then_append_task() {
         &assignment,
         &SubAgentType::General,
         Some(&fork_context),
+        std::path::Path::new("."),
     );
 
     assert_eq!(
@@ -1011,7 +1012,7 @@ fn forked_subagent_messages_preserve_parent_prefix_then_append_task() {
 fn fresh_subagent_messages_keep_existing_single_turn_shape() {
     let assignment = SubAgentAssignment::new("list files".to_string(), None);
     let messages =
-        build_initial_subagent_messages("list files", &assignment, &SubAgentType::Explore, None);
+        build_initial_subagent_messages("list files", &assignment, &SubAgentType::Explore, None, std::path::Path::new("."));
 
     assert_eq!(messages.len(), 1);
     assert_eq!(messages[0].role, "user");
@@ -2177,7 +2178,7 @@ fn parse_spawn_request_cwd_empty_string_yields_none() {
 #[test]
 fn build_subagent_system_prompt_appends_role_when_set() {
     let assignment = SubAgentAssignment::new("p".to_string(), Some("worker".to_string()));
-    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment);
+    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment, std::path::Path::new("."));
     assert!(
         prompt.contains("You are operating in the role of `worker`."),
         "expected role line present, got: {}",
@@ -2190,14 +2191,14 @@ fn build_subagent_system_prompt_appends_role_when_set() {
 #[test]
 fn build_subagent_system_prompt_skips_role_when_none() {
     let assignment = SubAgentAssignment::new("p".to_string(), None);
-    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment);
+    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment, std::path::Path::new("."));
     assert!(!prompt.contains("You are operating in the role of"));
 }
 
 #[test]
 fn build_subagent_system_prompt_skips_role_when_blank() {
     let assignment = SubAgentAssignment::new("p".to_string(), Some("   ".to_string()));
-    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment);
+    let prompt = build_subagent_system_prompt(&SubAgentType::General, &assignment, std::path::Path::new("."));
     assert!(!prompt.contains("You are operating in the role of"));
 }
 

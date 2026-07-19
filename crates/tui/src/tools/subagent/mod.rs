@@ -3270,14 +3270,35 @@ async fn spawn_subagent_from_input(
 fn build_subagent_system_prompt(
     agent_type: &SubAgentType,
     assignment: &SubAgentAssignment,
+    workspace: &Path,
 ) -> String {
     let base = agent_type.system_prompt();
     let mut prompt = match assignment.role.as_deref() {
         Some(role) if !role.trim().is_empty() => {
-            format!(
-                "{base}\n\nYou are operating in the role of `{}`.",
-                role.trim()
-            )
+            let aios_root = workspace.join("aios");
+            if aios_root.join("aios.json").exists() {
+                if let Ok(registry) = helpofai_aios::AiosAgentRegistry::load(&aios_root) {
+                    if let Some(agent) = registry.resolve(role.trim()) {
+                        let injection = helpofai_aios::AiosAgentRegistry::format_prompt_injection(agent);
+                        format!("{base}\n\n{injection}")
+                    } else {
+                        format!(
+                            "{base}\n\nYou are operating in the role of `{}`.",
+                            role.trim()
+                        )
+                    }
+                } else {
+                    format!(
+                        "{base}\n\nYou are operating in the role of `{}`.",
+                        role.trim()
+                    )
+                }
+            } else {
+                format!(
+                    "{base}\n\nYou are operating in the role of `{}`.",
+                    role.trim()
+                )
+            }
         }
         _ => base,
     };
@@ -3303,6 +3324,7 @@ fn build_initial_subagent_messages(
     assignment: &SubAgentAssignment,
     agent_type: &SubAgentType,
     fork_context: Option<&SubAgentForkContext>,
+    workspace: &Path,
 ) -> Vec<Message> {
     let mut messages = fork_context
         .map(|context| context.messages.clone())
@@ -3322,7 +3344,7 @@ fn build_initial_subagent_messages(
 
         messages.push(system_text_message(format!(
             "<helpofai:subagent_context>\n{}\n</helpofai:subagent_context>",
-            build_subagent_system_prompt(agent_type, assignment)
+            build_subagent_system_prompt(agent_type, assignment, workspace)
         )));
     }
 
@@ -3783,6 +3805,64 @@ and distinguish that from evidence you personally verified.\n",
     }
 }
 
+fn translate_tool(tui_name: &str) -> &str {
+    match tui_name {
+        "write_to_file" => "write_file",
+        "replace_file_content" | "multi_replace_file_content" => "apply_patch",
+        "grep_search" => "grep_files",
+        "run_command" => "exec_shell",
+        other => other,
+    }
+}
+
+fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>> {
+    let aios_root = workspace.join("aios");
+    if !aios_root.join("aios.json").exists() {
+        return None;
+    }
+
+    // Load agent registry and find agent
+    let registry = helpofai_aios::AiosAgentRegistry::load(&aios_root).ok()?;
+    let agent = registry.resolve(role)?;
+    let required_caps = &agent.spec.required_capabilities;
+
+    // Load agent-tool-map.json
+    let map_path = aios_root.join("agents").join("agent-tool-map.json");
+    let map_raw = std::fs::read_to_string(&map_path).ok()?;
+    
+    #[derive(serde::Deserialize)]
+    struct ToolMapEntry {
+        capability_id: String,
+    }
+    #[derive(serde::Deserialize)]
+    struct MapRoot {
+        tool_map: HashMap<String, ToolMapEntry>,
+    }
+    let map_root: MapRoot = serde_json::from_str(&map_raw).ok()?;
+
+    // Any tool mapping that is present in the map but whose capability_id is NOT in the
+    // required_capabilities list of the agent is disallowed!
+    let all_tui_tools = vec![
+        "read_file", "write_to_file", "replace_file_content", "multi_replace_file_content",
+        "grep_search", "run_command", "agent", "list_dir", "view_file", "list_permissions",
+        "ask_permission", "ask_question", "send_message", "read_url_content", "read_browser_page",
+        "search_web", "generate_image", "schedule", "manage_task", "define_subagent",
+        "invoke_subagent", "manage_subagents",
+    ];
+
+    let mut disallowed = Vec::new();
+    for t in all_tui_tools {
+        let trans = translate_tool(t);
+        if let Some(entry) = map_root.tool_map.get(trans) {
+            if !required_caps.contains(&entry.capability_id) {
+                disallowed.push(t.to_string());
+            }
+        }
+    }
+
+    Some(disallowed)
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 async fn run_subagent(
     runtime: &SubAgentRuntime,
@@ -3796,14 +3876,14 @@ async fn run_subagent(
     max_steps: u32,
     mut input_rx: mpsc::UnboundedReceiver<SubAgentInput>,
 ) -> Result<SubAgentResult> {
-    let system_prompt = build_subagent_system_prompt(&agent_type, &assignment);
+    let system_prompt = build_subagent_system_prompt(&agent_type, &assignment, &runtime.context.workspace);
     let fork_context_enabled = fork_context;
     let fork_context = fork_context_enabled
         .then_some(runtime.fork_context.as_ref())
         .flatten();
     let request_system = subagent_request_system_prompt(&system_prompt, fork_context);
     let mut messages =
-        build_initial_subagent_messages(&prompt, &assignment, &agent_type, fork_context);
+        build_initial_subagent_messages(&prompt, &assignment, &agent_type, fork_context, &runtime.context.workspace);
     let (runtime_for_tools, mut child_completion_rx) = runtime_for_nested_agent_tools(
         runtime,
         &agent_id,
@@ -3813,7 +3893,7 @@ async fn run_subagent(
             structured_state_block: None,
         },
     );
-    let tool_registry = SubAgentToolRegistry::new(
+    let mut tool_registry = SubAgentToolRegistry::new(
         runtime_for_tools,
         agent_type.clone(),
         allowed_tools.clone(),
@@ -3823,6 +3903,11 @@ async fn run_subagent(
         runtime.todos.clone(),
         Arc::new(Mutex::new(PlanState::default())),
     );
+    if let Some(ref role_str) = assignment.role {
+        if let Some(disallowed) = get_aios_disallowed_tools(role_str, &runtime.context.workspace) {
+            tool_registry.aios_disallowed_tools = Some(disallowed);
+        }
+    }
     let unavailable_tools = tool_registry.unavailable_allowed_tools();
     if !unavailable_tools.is_empty() {
         return Err(anyhow!(
@@ -5115,6 +5200,7 @@ struct SubAgentToolRegistry {
     /// `None` → full inheritance (no allowlist filter applied). `Some(list)` →
     /// only the listed tools are visible to the model and callable.
     allowed_tools: Option<Vec<String>>,
+    aios_disallowed_tools: Option<Vec<String>>,
     auto_approve: bool,
     /// The role/type of the sub-agent that this registry belongs to. Used to
     /// decide whether `Suggest`-level tools (write/edit/patch) may run inside
@@ -5156,6 +5242,7 @@ impl SubAgentToolRegistry {
 
         Self {
             allowed_tools: explicit_allowed_tools,
+            aios_disallowed_tools: None,
             auto_approve: runtime.context.auto_approve,
             agent_type,
             can_spawn_child,
@@ -5197,6 +5284,11 @@ impl SubAgentToolRegistry {
         if name == "agent" && !self.can_spawn_child {
             return false;
         }
+        if let Some(ref disallowed) = self.aios_disallowed_tools {
+            if disallowed.contains(&name.to_string()) {
+                return false;
+            }
+        }
         match &self.allowed_tools {
             None => true,
             Some(list) => list.iter().any(|t| t == name),
@@ -5216,6 +5308,14 @@ impl SubAgentToolRegistry {
         filtered
             .into_iter()
             .filter(|tool| tool.name != "agent" || self.can_spawn_child)
+            .filter(|tool| {
+                if let Some(ref disallowed) = self.aios_disallowed_tools {
+                    if disallowed.contains(&tool.name) {
+                        return false;
+                    }
+                }
+                true
+            })
             // #3217: hide tools the role posture forbids so the model never
             // even sees write/edit/patch (read-only roles) or shell (no-shell
             // roles). Defense-in-depth with the `execute` guard below.

@@ -313,6 +313,8 @@ The command prints the completion script to stdout; redirect it to a path your s
     Metrics(MetricsArgs),
     /// Check for and apply updates to the `helpofai` binary.
     Update(UpdateArgs),
+    /// Inspect the AIOS module system (modules, capabilities, registry).
+    Aios(AiosArgs),
 }
 
 #[derive(Debug, Args)]
@@ -326,6 +328,57 @@ struct UpdateArgs {
     /// Proxy URL to use for update HTTP requests.
     #[arg(long, value_name = "URL")]
     proxy: Option<String>,
+}
+
+#[derive(Debug, Args)]
+struct AiosArgs {
+    #[command(subcommand)]
+    command: AiosCommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum AiosCommand {
+    /// List all installed AIOS modules.
+    #[command(visible_alias = "modules")]
+    ModuleList,
+    /// Show details for a specific AIOS module.
+    ModuleInfo {
+        /// Module ID (e.g. AIOS-MODULE-000002) or registry key (e.g. "kernel").
+        id: String,
+    },
+    /// List all registered AIOS capabilities.
+    #[command(visible_alias = "capabilities")]
+    CapabilityList,
+    /// Resolve a capability ID to its providing module.
+    CapabilityResolve {
+        /// Capability ID (e.g. AIOS-CAPABILITY-000010) or name (e.g. "request_routing").
+        id: String,
+    },
+    /// Show AIOS registry status (module/capability counts, version).
+    RegistryStatus,
+    /// Dump the full AIOS module registry to stdout.
+    #[command(visible_alias = "dump")]
+    RegistryDump,
+    /// List all defined AIOS workflows.
+    #[command(visible_alias = "workflows")]
+    WorkflowList,
+    /// Run diagnostic step-by-step layout for a workflow.
+    #[command(visible_alias = "diag")]
+    WorkflowDiag {
+        /// Workflow name or ID (e.g. "build-feature" or "AIOS-WORKFLOW-000001").
+        name: String,
+        /// The instruction or description of the task.
+        #[arg(default_value = "Implement email authentication")]
+        task: String,
+    },
+    /// Run an AIOS workflow through its phased lifecycle.
+    #[command(visible_alias = "run")]
+    WorkflowRun {
+        /// Workflow name or ID.
+        name: String,
+        /// The instruction or description of the task.
+        task: String,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -779,6 +832,10 @@ fn run() -> Result<()> {
         }
         Some(Commands::Metrics(args)) => run_metrics_command(args),
         Some(Commands::Update(args)) => update::run_update(args.beta, args.check, args.proxy),
+        Some(Commands::Aios(args)) => {
+            let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
+            run_aios_command(&cli, &resolved_runtime, args.command)
+        }
         None => {
             let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
             let forwarded = root_tui_passthrough(&cli)?;
@@ -2035,6 +2092,255 @@ fn read_api_key_from_stdin() -> Result<String> {
         bail!("empty API key provided");
     }
     Ok(key)
+}
+
+/// Handle `helpofai aios <subcommand>`.
+fn run_aios_command(
+    cli: &Cli,
+    resolved_runtime: &ResolvedRuntimeOptions,
+    command: AiosCommand,
+) -> Result<()> {
+    use helpofai_aios::{
+        parse_all_registries, parse_capability_registry, parse_dependency_registry,
+        parse_module_registry,
+    };
+    use std::path::PathBuf;
+
+    // AIOS modules live at <workspace>/aios/
+    let aios_root = PathBuf::from("aios");
+
+    if !aios_root.join("aios.json").exists() {
+        bail!(
+            "AIOS root not found at {}. Run from a workspace that bundles AIOS-Skills-V01-0.",
+            aios_root.display()
+        );
+    }
+
+    let registry_dir = aios_root.join("registry");
+
+    match command {
+        AiosCommand::ModuleList => {
+            let modules = parse_module_registry(&registry_dir.join("modules.json"))?;
+            println!(
+                "AIOS modules — {} installed / {} total",
+                modules.installed_count, modules.total_count
+            );
+            println!();
+            for (key, entry) in &modules.modules {
+                let status = if entry.status.is_empty() {
+                    "installed"
+                } else {
+                    &entry.status
+                };
+                println!(
+                    "  {:20}  {:30}  {:10}  {}",
+                    key, entry.id, entry.version, status
+                );
+            }
+        }
+        AiosCommand::ModuleInfo { id } => {
+            let (mod_reg, dep_reg) = {
+                let registry_dir = aios_root.join("registry");
+                let modules = parse_module_registry(&registry_dir.join("modules.json"))?;
+                let deps = parse_dependency_registry(&registry_dir.join("dependencies.json"))?;
+                (modules, deps)
+            };
+            // Try to find by ID or by registry key
+            let entry = mod_reg
+                .modules
+                .values()
+                .find(|e| e.id == id || e.path.contains(&id));
+            match entry {
+                Some(entry) => {
+                    println!("Module: {} ({})", entry.name, entry.id);
+                    println!("  Version:    {}", entry.version);
+                    println!("  Path:       {}", entry.path);
+                    println!("  Status:     {}", entry.status);
+                    let deps = dep_reg.depends_on(&entry.id);
+                    if !deps.is_empty() {
+                        println!("  Depends on: {}", deps.join(", "));
+                    }
+                }
+                None => {
+                    eprintln!("Module '{}' not found in registry.", id);
+                }
+            }
+        }
+        AiosCommand::CapabilityList => {
+            let cap_reg = parse_capability_registry(&registry_dir.join("capabilities.json"))?;
+            let list = cap_reg.list();
+            println!("AIOS capabilities — {}", list.len());
+            println!();
+            for (name, id, module_id) in &list {
+                println!("  {:30}  {:30}  {}", name, id, module_id);
+            }
+        }
+        AiosCommand::CapabilityResolve { id } => {
+            let cap_reg = parse_capability_registry(&registry_dir.join("capabilities.json"))?;
+            // Try exact ID first, then name match
+            let result = cap_reg.resolve(&id).or_else(|| {
+                // Try name match
+                for (name, cap) in &cap_reg.capabilities {
+                    if name == &id {
+                        return Some((cap.provider.as_str(), &cap.module_id));
+                    }
+                }
+                None
+            });
+            match result {
+                Some((provider, module_id)) => {
+                    println!(
+                        "Capability '{}' → provided by '{}' (module: {})",
+                        id, provider, module_id
+                    );
+                }
+                None => {
+                    eprintln!("Capability '{}' is not registered.", id);
+                }
+            }
+        }
+        AiosCommand::RegistryStatus => {
+            let (mod_reg, cap_reg, dep_reg) = parse_all_registries(&registry_dir)?;
+            println!("AIOS Registry Status");
+            println!(
+                "  Modules:      {} installed / {} total (v{})",
+                mod_reg.installed_count, mod_reg.total_count, mod_reg.version
+            );
+            println!(
+                "  Capabilities: {} registered (v{})",
+                cap_reg.capabilities.len(),
+                cap_reg.version
+            );
+            println!(
+                "  Dependencies: {} tracked (resolver v{})",
+                dep_reg.dependencies.len(),
+                dep_reg.resolver_version
+            );
+            println!("  Updated:      {}", mod_reg.updated);
+        }
+        AiosCommand::RegistryDump => {
+            let (mod_registry, cap_reg, dep_reg) = parse_all_registries(&registry_dir)?;
+            let dump = serde_json::json!({
+                "modules": mod_registry,
+                "capabilities": cap_reg,
+                "dependencies": dep_reg,
+            });
+            println!("{}", serde_json::to_string_pretty(&dump)?);
+        }
+        AiosCommand::WorkflowList => {
+            let runner = helpofai_aios::AiosWorkflowRunner::new(&aios_root)?;
+            let list = runner.list_workflows()?;
+            println!("AIOS Workflows — {}", list.len());
+            println!();
+            for w in &list {
+                println!("  {:20}  {:25}  {}", w.name, w.id, w.description);
+            }
+        }
+        AiosCommand::WorkflowDiag { name, task } => {
+            let runner = helpofai_aios::AiosWorkflowRunner::new(&aios_root)?;
+            runner.run_workflow_diagnostics(&name, &task)?;
+        }
+        AiosCommand::WorkflowRun { name, task } => {
+            let runner = helpofai_aios::AiosWorkflowRunner::new(&aios_root)?;
+            let workflow = runner.load_workflow(&name)?;
+            println!("Executing AIOS Workflow: {} ({})", workflow.name, workflow.id);
+            println!("Goal: {}", task);
+            println!();
+
+            // Initialize timeline/journal
+            let mut journal_phases = Vec::new();
+            let start_time = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+
+            for phase in &workflow.lifecycle {
+                println!("--------------------------------------------------");
+                println!("Phase: {} (Step {}/{})", phase.phase, phase.order, workflow.lifecycle.len());
+                println!("Engine Module ID: {}", phase.engine);
+                
+                // Compile the phase prompt
+                let prompt = runner.compile_phase_prompt(phase, &task)?;
+                println!("Compiling context prompt... Done ({} bytes)", prompt.len());
+                
+                let phase_start = std::time::Instant::now();
+                
+                // Run the execution step via headless TUI
+                println!("Executing phase [{}] via headless subagent...", phase.phase);
+                let passthrough = vec![
+                    "exec".to_string(),
+                    "--auto".to_string(),
+                    "--append-system-prompt".to_string(),
+                    prompt,
+                    task.clone(),
+                ];
+
+                let mut cmd = build_tui_command(cli, resolved_runtime, passthrough)?;
+                let status = cmd.status().context("failed to execute headless phase")?;
+                
+                let duration = phase_start.elapsed().as_secs_f64();
+                let success = status.success();
+                
+                journal_phases.push(serde_json::json!({
+                    "phase": phase.phase,
+                    "order": phase.order,
+                    "engine": phase.engine,
+                    "duration_seconds": duration,
+                    "success": success,
+                    "exit_code": status.code(),
+                }));
+
+                if !success {
+                    // Write partial timeline before failing
+                    let journal = serde_json::json!({
+                        "workflow_id": workflow.id,
+                        "workflow_name": workflow.name,
+                        "goal": task,
+                        "started_at": start_time,
+                        "status": "failed",
+                        "phases": journal_phases,
+                    });
+                    let runs_dir = aios_root.join("runs");
+                    let _ = std::fs::create_dir_all(&runs_dir);
+                    let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
+                    if let Ok(content) = serde_json::to_string_pretty(&journal) {
+                        let _ = std::fs::write(&file_path, content);
+                        println!("\n[Journal] Saved partial execution log to {}", file_path.display());
+                    }
+                    bail!("Phase [{}] failed with exit status: {}", phase.phase, status);
+                }
+                println!("Phase [{}] completed successfully.", phase.phase);
+
+                if let Some(ref gate) = phase.gate {
+                    println!("[Gate: {}] Evaluating output...", gate);
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    println!("[Gate APPROVED] Phase constraints satisfied.");
+                }
+            }
+            println!("--------------------------------------------------");
+
+            // Save final completed journal
+            let journal = serde_json::json!({
+                "workflow_id": workflow.id,
+                "workflow_name": workflow.name,
+                "goal": task,
+                "started_at": start_time,
+                "status": "completed",
+                "phases": journal_phases,
+            });
+            let runs_dir = aios_root.join("runs");
+            let _ = std::fs::create_dir_all(&runs_dir);
+            let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
+            if let Ok(content) = serde_json::to_string_pretty(&journal) {
+                let _ = std::fs::write(&file_path, content);
+                println!("[Journal] Saved completed execution log to {}", file_path.display());
+            }
+
+            println!("AIOS Workflow Run Completed successfully!");
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

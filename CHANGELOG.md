@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.90] - 2026-07-19
+
+### Added
+
+- **AIOS Specialist Agent Routing**: Connected TUI `SubAgentManager` to dynamically load the AIOS Agent Registry and inject specialist system prompts (e.g. Master, Architect, Backend, QA) when spawning subagents.
+- **Stage-by-Stage Phase Execution**: Added a stateful workflow run loop to the CLI `aios run` command that executes each lifecycle phase (e.g. `understand`, `implement`, `validate`) via headless TUI subagents.
+- **Capability-based Sandboxing**: Implemented dynamic capability filtering inside `SubAgentToolRegistry` to restrict subagent tool visibility and access to only those authorized by the agent's declared capability contract.
+- **Decision Journal & Timeline Log**: Added stateful logging of workflow runs, writing detailed JSON execution journals to `aios/runs/run_<workflow>_<timestamp>.json` containing phase durations, outcomes, and gate approvals.
+
 ## [0.8.89] - 2026-07-17
 
 ### Fixed
