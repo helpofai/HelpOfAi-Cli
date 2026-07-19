@@ -4,8 +4,8 @@
 //! `aios/workflows/`, compiles prompts for each phase, checks agent capabilities,
 //! and runs sequential workflow phases with gating and rollback capability.
 
+use anyhow::{Context, Result, bail};
 use std::path::PathBuf;
-use anyhow::{bail, Context, Result};
 
 use crate::agents::{AiosAgent, AiosAgentRegistry};
 use crate::constitution::load_constitution_prompt;
@@ -34,10 +34,11 @@ impl AiosWorkflowRunner {
     /// Load a workflow definition from the workspace.
     pub fn load_workflow(&self, workflow_name: &str) -> Result<WorkflowDef> {
         let workflows_dir = self.aios_root.join("workflows");
-        
+
         // Match by filename pattern: WORKFLOW-*-<name>.json or exact id
-        let dir_entries = std::fs::read_dir(&workflows_dir)
-            .map_err(|e| anyhow::anyhow!("cannot read workflows dir {}: {e}", workflows_dir.display()))?;
+        let dir_entries = std::fs::read_dir(&workflows_dir).map_err(|e| {
+            anyhow::anyhow!("cannot read workflows dir {}: {e}", workflows_dir.display())
+        })?;
 
         for entry in dir_entries {
             let entry = entry?;
@@ -52,7 +53,10 @@ impl AiosWorkflowRunner {
             let w_def: WorkflowDef = serde_json::from_str(&raw)
                 .map_err(|e| anyhow::anyhow!("invalid workflow JSON in {}: {e}", path.display()))?;
 
-            if w_def.name == workflow_name || w_def.id == workflow_name || file_name.contains(workflow_name) {
+            if w_def.name == workflow_name
+                || w_def.id == workflow_name
+                || file_name.contains(workflow_name)
+            {
                 return Ok(w_def);
             }
         }
@@ -65,8 +69,9 @@ impl AiosWorkflowRunner {
         let workflows_dir = self.aios_root.join("workflows");
         let mut list = Vec::new();
 
-        let dir_entries = std::fs::read_dir(&workflows_dir)
-            .map_err(|e| anyhow::anyhow!("cannot read workflows dir {}: {e}", workflows_dir.display()))?;
+        let dir_entries = std::fs::read_dir(&workflows_dir).map_err(|e| {
+            anyhow::anyhow!("cannot read workflows dir {}: {e}", workflows_dir.display())
+        })?;
 
         for entry in dir_entries {
             let entry = entry?;
@@ -110,7 +115,7 @@ impl AiosWorkflowRunner {
 
         // Find the module that implements the engine ID
         let target_module = mod_registry.modules.values().find(|m| m.id == phase.engine);
-        
+
         let mut matching_agent: Option<&AiosAgent> = None;
         if let Some(module) = target_module {
             // Find a specialist agent matching the module domain or capability
@@ -152,13 +157,19 @@ impl AiosWorkflowRunner {
     ) -> Result<()> {
         let workflow = self.load_workflow(workflow_name)?;
 
-        println!("AIOS Workflow Lifecycle Diagnostic: {} ({})", workflow.name, workflow.id);
+        println!(
+            "AIOS Workflow Lifecycle Diagnostic: {} ({})",
+            workflow.name, workflow.id
+        );
         println!("Description: {}", workflow.description);
         println!("Triggers: {}", workflow.triggers.join(", "));
         println!("Rollback Workflow: {}", workflow.rollback_workflow);
         println!();
         println!("--------------------------------------------------");
-        println!("Lifecycle Execution Plan ({} Phases):", workflow.lifecycle.len());
+        println!(
+            "Lifecycle Execution Plan ({} Phases):",
+            workflow.lifecycle.len()
+        );
         println!("--------------------------------------------------");
 
         let registry_dir = self.aios_root.join("registry");
@@ -230,7 +241,9 @@ mod tests {
 
         // Compile prompt for first phase
         let first_phase = &workflow.lifecycle[0];
-        let prompt = runner.compile_phase_prompt(first_phase, "add login button").unwrap();
+        let prompt = runner
+            .compile_phase_prompt(first_phase, "add login button")
+            .unwrap();
         assert!(prompt.contains("AIOS Constitution"));
         assert!(prompt.contains("add login button"));
     }

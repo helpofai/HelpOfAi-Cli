@@ -12,6 +12,7 @@ use crate::models::SystemPrompt;
 use crate::project_context::{ProjectContext, load_project_context_with_parents};
 use crate::tui::app::AppMode;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[derive(Debug, Clone)]
 pub struct PromptSessionContext<'a> {
@@ -1069,6 +1070,12 @@ pub fn system_prompt_for_mode_with_context_skills_session_and_approval(
         &default_layers,
     );
 
+    // 1.5. AIOS Constitution — injected from workspace aios/ directory
+    let mode_prompt = match load_aios_constitution_block(workspace) {
+        Some(block) => format!("{mode_prompt}\n\n{block}"),
+        None => mode_prompt,
+    };
+
     // Load project context from workspace
     let project_context = load_project_context_with_parents(workspace);
 
@@ -1291,6 +1298,22 @@ pub fn build_system_prompt(base: &str, project_context: Option<&ProjectContext>)
             None => base.trim().to_string(),
         };
     SystemPrompt::Text(full_prompt)
+}
+
+/// Load the AIOS constitution as a system-prompt block from the workspace
+/// if the `aios/` directory exists. Results are memoised with OnceLock
+/// so repeated calls across prompt builds don't re-read disk.
+fn load_aios_constitution_block(workspace: &Path) -> Option<String> {
+    static CACHED_BLOCK: OnceLock<Option<String>> = OnceLock::new();
+    CACHED_BLOCK
+        .get_or_init(|| {
+            let aios_root = workspace.join("aios");
+            if !aios_root.join("aios.json").exists() {
+                return None;
+            }
+            helpofai_aios::constitution::load_constitution_prompt(&aios_root).ok()
+        })
+        .clone()
 }
 
 #[cfg(test)]

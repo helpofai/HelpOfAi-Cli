@@ -24,6 +24,7 @@ helpofai-app-server = { path = "../app-server", version = "0.8.89" }
 helpofai-config = { path = "../config", version = "0.8.89" }
 helpofai-execpolicy = { path = "../execpolicy", version = "0.8.89" }
 helpofai-mcp = { path = "../mcp", version = "0.8.89" }
+helpofai-aios = { path = "../aios", version = "0.8.89" }
 helpofai-release = { path = "../release", version = "0.8.89" }
 helpofai-secrets = { path = "../secrets", version = "0.8.89" }
 helpofai-state = { path = "../state", version = "0.8.89" }
@@ -40,5 +41,7 @@ tempfile.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+
+
 
 
