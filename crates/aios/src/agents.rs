@@ -146,7 +146,7 @@ fn generate_agent_prompt(spec: &AgentDef) -> String {
         spec.name
     ));
 
-    prompt.push_str(&format!("{}", spec.description));
+    prompt.push_str(&spec.description);
 
     if !spec.required_capabilities.is_empty() {
         prompt.push_str(&format!(

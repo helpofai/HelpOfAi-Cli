@@ -42,7 +42,7 @@ impl AiOsLoader {
 
         let mut loaded = Vec::new();
 
-        for (_key, entry) in &module_registry.modules {
+        for entry in module_registry.modules.values() {
             // Skip the root entry and constitution (they're not loadable modules)
             if entry.id.starts_with("AIOS-ROOT") || entry.id.starts_with("AIOS-CONST") {
                 continue;
