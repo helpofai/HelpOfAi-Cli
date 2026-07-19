@@ -2243,7 +2243,10 @@ fn run_aios_command(
         AiosCommand::WorkflowRun { name, task } => {
             let runner = helpofai_aios::AiosWorkflowRunner::new(&aios_root)?;
             let workflow = runner.load_workflow(&name)?;
-            println!("Executing AIOS Workflow: {} ({})", workflow.name, workflow.id);
+            println!(
+                "Executing AIOS Workflow: {} ({})",
+                workflow.name, workflow.id
+            );
             println!("Goal: {}", task);
             println!();
 
@@ -2256,15 +2259,20 @@ fn run_aios_command(
 
             for phase in &workflow.lifecycle {
                 println!("--------------------------------------------------");
-                println!("Phase: {} (Step {}/{})", phase.phase, phase.order, workflow.lifecycle.len());
+                println!(
+                    "Phase: {} (Step {}/{})",
+                    phase.phase,
+                    phase.order,
+                    workflow.lifecycle.len()
+                );
                 println!("Engine Module ID: {}", phase.engine);
-                
+
                 // Compile the phase prompt
                 let prompt = runner.compile_phase_prompt(phase, &task)?;
                 println!("Compiling context prompt... Done ({} bytes)", prompt.len());
-                
+
                 let phase_start = std::time::Instant::now();
-                
+
                 // Run the execution step via headless TUI
                 println!("Executing phase [{}] via headless subagent...", phase.phase);
                 let passthrough = vec![
@@ -2277,10 +2285,10 @@ fn run_aios_command(
 
                 let mut cmd = build_tui_command(cli, resolved_runtime, passthrough)?;
                 let status = cmd.status().context("failed to execute headless phase")?;
-                
+
                 let duration = phase_start.elapsed().as_secs_f64();
                 let success = status.success();
-                
+
                 journal_phases.push(serde_json::json!({
                     "phase": phase.phase,
                     "order": phase.order,
@@ -2305,9 +2313,16 @@ fn run_aios_command(
                     let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
                     if let Ok(content) = serde_json::to_string_pretty(&journal) {
                         let _ = std::fs::write(&file_path, content);
-                        println!("\n[Journal] Saved partial execution log to {}", file_path.display());
+                        println!(
+                            "\n[Journal] Saved partial execution log to {}",
+                            file_path.display()
+                        );
                     }
-                    bail!("Phase [{}] failed with exit status: {}", phase.phase, status);
+                    bail!(
+                        "Phase [{}] failed with exit status: {}",
+                        phase.phase,
+                        status
+                    );
                 }
                 println!("Phase [{}] completed successfully.", phase.phase);
 
@@ -2333,7 +2348,10 @@ fn run_aios_command(
             let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
             if let Ok(content) = serde_json::to_string_pretty(&journal) {
                 let _ = std::fs::write(&file_path, content);
-                println!("[Journal] Saved completed execution log to {}", file_path.display());
+                println!(
+                    "[Journal] Saved completed execution log to {}",
+                    file_path.display()
+                );
             }
 
             println!("AIOS Workflow Run Completed successfully!");

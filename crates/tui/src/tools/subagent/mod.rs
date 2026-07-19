@@ -3279,7 +3279,8 @@ fn build_subagent_system_prompt(
             if aios_root.join("aios.json").exists() {
                 if let Ok(registry) = helpofai_aios::AiosAgentRegistry::load(&aios_root) {
                     if let Some(agent) = registry.resolve(role.trim()) {
-                        let injection = helpofai_aios::AiosAgentRegistry::format_prompt_injection(agent);
+                        let injection =
+                            helpofai_aios::AiosAgentRegistry::format_prompt_injection(agent);
                         format!("{base}\n\n{injection}")
                     } else {
                         format!(
@@ -3829,7 +3830,7 @@ fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>
     // Load agent-tool-map.json
     let map_path = aios_root.join("agents").join("agent-tool-map.json");
     let map_raw = std::fs::read_to_string(&map_path).ok()?;
-    
+
     #[derive(serde::Deserialize)]
     struct ToolMapEntry {
         capability_id: String,
@@ -3843,11 +3844,28 @@ fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>
     // Any tool mapping that is present in the map but whose capability_id is NOT in the
     // required_capabilities list of the agent is disallowed!
     let all_tui_tools = vec![
-        "read_file", "write_to_file", "replace_file_content", "multi_replace_file_content",
-        "grep_search", "run_command", "agent", "list_dir", "view_file", "list_permissions",
-        "ask_permission", "ask_question", "send_message", "read_url_content", "read_browser_page",
-        "search_web", "generate_image", "schedule", "manage_task", "define_subagent",
-        "invoke_subagent", "manage_subagents",
+        "read_file",
+        "write_to_file",
+        "replace_file_content",
+        "multi_replace_file_content",
+        "grep_search",
+        "run_command",
+        "agent",
+        "list_dir",
+        "view_file",
+        "list_permissions",
+        "ask_permission",
+        "ask_question",
+        "send_message",
+        "read_url_content",
+        "read_browser_page",
+        "search_web",
+        "generate_image",
+        "schedule",
+        "manage_task",
+        "define_subagent",
+        "invoke_subagent",
+        "manage_subagents",
     ];
 
     let mut disallowed = Vec::new();
@@ -3876,14 +3894,20 @@ async fn run_subagent(
     max_steps: u32,
     mut input_rx: mpsc::UnboundedReceiver<SubAgentInput>,
 ) -> Result<SubAgentResult> {
-    let system_prompt = build_subagent_system_prompt(&agent_type, &assignment, &runtime.context.workspace);
+    let system_prompt =
+        build_subagent_system_prompt(&agent_type, &assignment, &runtime.context.workspace);
     let fork_context_enabled = fork_context;
     let fork_context = fork_context_enabled
         .then_some(runtime.fork_context.as_ref())
         .flatten();
     let request_system = subagent_request_system_prompt(&system_prompt, fork_context);
-    let mut messages =
-        build_initial_subagent_messages(&prompt, &assignment, &agent_type, fork_context, &runtime.context.workspace);
+    let mut messages = build_initial_subagent_messages(
+        &prompt,
+        &assignment,
+        &agent_type,
+        fork_context,
+        &runtime.context.workspace,
+    );
     let (runtime_for_tools, mut child_completion_rx) = runtime_for_nested_agent_tools(
         runtime,
         &agent_id,
