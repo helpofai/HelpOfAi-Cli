@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/aios",
     "crates/agent",
     "crates/app-server",
     "crates/cli",
