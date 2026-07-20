@@ -1,9 +1,11 @@
 pub mod graph;
+pub mod impact;
 pub mod parser;
 pub mod schema;
 
 use anyhow::Result;
 use graph::CodebaseKnowledgeGraph;
+use impact::{ImpactEngine, ImpactReport};
 use parser::AstParser;
 use std::path::{Path, PathBuf};
 
@@ -62,6 +64,22 @@ impl ProjectBrain {
         }
 
         Ok(indexed)
+    }
+
+    /// Perform multi-file impact analysis for a target class/function symbol.
+    pub fn analyze_impact(&self, symbol_name: &str) -> Result<ImpactReport> {
+        let engine = ImpactEngine::new(&self.graph);
+        engine.analyze_target_symbol(symbol_name)
+    }
+
+    /// Format multi-file impact analysis as Markdown context.
+    pub fn assemble_impact_markdown(&self, symbol_name: &str) -> String {
+        let engine = ImpactEngine::new(&self.graph);
+        if let Ok(report) = engine.analyze_target_symbol(symbol_name) {
+            engine.format_impact_markdown(&report)
+        } else {
+            String::new()
+        }
     }
 
     /// Query the Knowledge Graph for class/struct/fn symbols relevant to a prompt/task.

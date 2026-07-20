@@ -386,6 +386,11 @@ enum AiosCommand {
         /// Symbol query or class name.
         query: String,
     },
+    /// Analyze multi-file ripple effect and caller impact for a class/symbol.
+    BrainImpact {
+        /// Target class or function symbol name.
+        symbol: String,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -2377,6 +2382,15 @@ fn run_aios_command(
                 println!("No matching code symbols found in AIOS Brain for: {}", query);
             } else {
                 println!("{}", ctx);
+            }
+        }
+        AiosCommand::BrainImpact { symbol } => {
+            let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
+            let md = brain.assemble_impact_markdown(&symbol);
+            if md.is_empty() {
+                println!("No multi-file impact detected for symbol: {}", symbol);
+            } else {
+                println!("{}", md);
             }
         }
     }
