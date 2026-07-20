@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use std::path::{Path, PathBuf};
 
 use super::parser::ParsedSymbol;
@@ -47,7 +47,13 @@ impl CodebaseKnowledgeGraph {
                 blake3_hash = excluded.blake3_hash,
                 line_count = excluded.line_count,
                 last_indexed_at = CURRENT_TIMESTAMP",
-            params![file_id, relative_path, language, blake3_hash, line_count as i64],
+            params![
+                file_id,
+                relative_path,
+                language,
+                blake3_hash,
+                line_count as i64
+            ],
         )?;
 
         tx.execute(

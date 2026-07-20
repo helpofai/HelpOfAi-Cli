@@ -15,7 +15,11 @@ pub struct ParsedSymbol {
 pub struct AstParser;
 
 impl AstParser {
-    pub fn parse_file(content: &str, relative_path: &str, _language: &str) -> Result<Vec<ParsedSymbol>> {
+    pub fn parse_file(
+        content: &str,
+        relative_path: &str,
+        _language: &str,
+    ) -> Result<Vec<ParsedSymbol>> {
         let mut symbols = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
         let mut current_docstring: Option<String> = None;
@@ -23,8 +27,12 @@ impl AstParser {
         for (idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
 
-            if trimmed.starts_with("///") || trimmed.starts_with("/**") || trimmed.starts_with("# ") {
-                let doc = trimmed.trim_start_matches("///").trim_start_matches("/**").trim();
+            if trimmed.starts_with("///") || trimmed.starts_with("/**") || trimmed.starts_with("# ")
+            {
+                let doc = trimmed
+                    .trim_start_matches("///")
+                    .trim_start_matches("/**")
+                    .trim();
                 if let Some(ref mut existing) = current_docstring {
                     existing.push('\n');
                     existing.push_str(doc);
@@ -59,13 +67,18 @@ impl AstParser {
 
                 let name = extract_symbol_name(trimmed, kind);
                 if !name.is_empty() {
-                    let visibility = if trimmed.starts_with("pub ") || trimmed.starts_with("export ") {
-                        "public"
-                    } else {
-                        "private"
-                    };
+                    let visibility =
+                        if trimmed.starts_with("pub ") || trimmed.starts_with("export ") {
+                            "public"
+                        } else {
+                            "private"
+                        };
 
-                    let module_prefix = relative_path.replace('/', "::").replace('\\', "::").replace(".rs", "").replace(".ts", "");
+                    let module_prefix = relative_path
+                        .replace('/', "::")
+                        .replace('\\', "::")
+                        .replace(".rs", "")
+                        .replace(".ts", "");
                     let qualified_name = format!("{}::{}", module_prefix, name);
 
                     symbols.push(ParsedSymbol {
@@ -88,8 +101,15 @@ impl AstParser {
             {
                 let name = extract_fn_name(trimmed);
                 if !name.is_empty() {
-                    let visibility = if trimmed.starts_with("pub ") { "public" } else { "private" };
-                    let module_prefix = relative_path.replace('/', "::").replace('\\', "::").replace(".rs", "");
+                    let visibility = if trimmed.starts_with("pub ") {
+                        "public"
+                    } else {
+                        "private"
+                    };
+                    let module_prefix = relative_path
+                        .replace('/', "::")
+                        .replace('\\', "::")
+                        .replace(".rs", "");
                     let qualified_name = format!("{}::{}", module_prefix, name);
 
                     symbols.push(ParsedSymbol {
@@ -131,10 +151,5 @@ fn extract_fn_name(line: &str) -> String {
         .replace("def ", "")
         .replace("func ", "");
 
-    cleaned
-        .split('(')
-        .next()
-        .unwrap_or("")
-        .trim()
-        .to_string()
+    cleaned.split('(').next().unwrap_or("").trim().to_string()
 }

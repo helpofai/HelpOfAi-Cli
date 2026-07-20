@@ -40,7 +40,10 @@ impl ProjectBrain {
             if path.is_file() && is_code_file(path) {
                 if let Ok(rel_path) = path.strip_prefix(workspace_root) {
                     let rel_str = rel_path.to_string_lossy().to_string();
-                    if rel_str.contains(".git") || rel_str.contains("target") || rel_str.contains("node_modules") {
+                    if rel_str.contains(".git")
+                        || rel_str.contains("target")
+                        || rel_str.contains("node_modules")
+                    {
                         continue;
                     }
 
@@ -97,7 +100,8 @@ impl ProjectBrain {
             return String::new();
         }
 
-        let mut output = String::from("\n\n## AIOS Project Brain — Exact Class & Code Symbol Context\n\n");
+        let mut output =
+            String::from("\n\n## AIOS Project Brain — Exact Class & Code Symbol Context\n\n");
         let mut current_tokens = 20;
 
         for kw in keywords.iter().take(4) {
@@ -157,7 +161,10 @@ impl ProjectBrain {
 
 fn is_code_file(path: &Path) -> bool {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-    matches!(ext, "rs" | "ts" | "js" | "py" | "go" | "java" | "cpp" | "h" | "sql")
+    matches!(
+        ext,
+        "rs" | "ts" | "js" | "py" | "go" | "java" | "cpp" | "h" | "sql"
+    )
 }
 
 fn detect_language(path: &Path) -> &'static str {

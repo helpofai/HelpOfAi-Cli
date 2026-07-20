@@ -33,7 +33,7 @@ impl<'a> ImpactEngine<'a> {
     /// Analyze the multi-file ripple effect of modifying or adding a target symbol.
     pub fn analyze_target_symbol(&self, symbol_name: &str) -> Result<ImpactReport> {
         let conn = self.graph.get_connection()?;
-        
+
         let pattern = format!("%{}%", symbol_name);
         let mut stmt = conn.prepare(
             "SELECT f.relative_path, s.short_name, s.symbol_kind, s.start_line, 'CALLS' as rel
@@ -41,7 +41,7 @@ impl<'a> ImpactEngine<'a> {
              JOIN code_files f ON s.file_id = f.file_id
              WHERE (s.signature LIKE ?1 OR s.qualified_name LIKE ?1)
                AND s.short_name != ?2
-             LIMIT 25"
+             LIMIT 25",
         )?;
 
         let rows = stmt.query_map(params![pattern, symbol_name], |row| {
@@ -99,7 +99,11 @@ impl<'a> ImpactEngine<'a> {
         for loc in &report.locations {
             md.push_str(&format!(
                 "* **[{}]** `{}` in `{}:{}` (Relation: `{}`)\n",
-                loc.symbol_kind, loc.symbol_name, loc.file_path, loc.line_number, loc.relationship_type
+                loc.symbol_kind,
+                loc.symbol_name,
+                loc.file_path,
+                loc.line_number,
+                loc.relationship_type
             ));
         }
 

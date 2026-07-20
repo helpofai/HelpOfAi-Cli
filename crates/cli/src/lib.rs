@@ -2373,13 +2373,19 @@ fn run_aios_command(
             let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
             println!("Scanning and indexing codebase into AIOS Project Brain...");
             let count = brain.scan_and_index(&workspace_root)?;
-            println!("AIOS Brain indexing complete! Indexed {} files into Code Knowledge Graph.", count);
+            println!(
+                "AIOS Brain indexing complete! Indexed {} files into Code Knowledge Graph.",
+                count
+            );
         }
         AiosCommand::BrainQuery { query } => {
             let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
             let ctx = brain.assemble_precision_context(&query, 2000);
             if ctx.is_empty() {
-                println!("No matching code symbols found in AIOS Brain for: {}", query);
+                println!(
+                    "No matching code symbols found in AIOS Brain for: {}",
+                    query
+                );
             } else {
                 println!("{}", ctx);
             }
