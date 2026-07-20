@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stage-by-Stage Phase Execution**: Added a stateful workflow run loop to the CLI `aios run` command that executes each lifecycle phase (e.g. `understand`, `implement`, `validate`) via headless TUI subagents.
 - **Capability-based Sandboxing**: Implemented dynamic capability filtering inside `SubAgentToolRegistry` to restrict subagent tool visibility and access to only those authorized by the agent's declared capability contract.
 - **Decision Journal & Timeline Log**: Added stateful logging of workflow runs, writing detailed JSON execution journals to `aios/runs/run_<workflow>_<timestamp>.json` containing phase durations, outcomes, and gate approvals.
+- **AIOS Project Brain & Code Knowledge Graph**: Integrated SQLite-backed AST code parser, symbol indexer, and multi-language Code Knowledge Graph (`helpofai aios brain-index`) to index workspace symbols with zero AI token cost.
+- **Multi-File Impact & Ripple Analysis Engine**: Implemented workspace-wide caller dependency tracking (`helpofai aios brain-impact`) to pre-compute affected files and prevent silent breaking changes during refactorings.
 
 ## [0.8.89] - 2026-07-17
 
