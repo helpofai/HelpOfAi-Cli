@@ -11,6 +11,7 @@
 //! - `loader` — Discover all modules, resolve dependencies, compute load order
 
 pub mod agents;
+pub mod brain;
 pub mod constitution;
 pub mod loader;
 pub mod manifest;
@@ -21,6 +22,7 @@ pub mod workflows;
 // ── Re-exports ──────────────────────────────────────────────────
 
 pub use agents::{AiosAgent, AiosAgentRegistry};
+pub use brain::ProjectBrain;
 pub use constitution::load_constitution_prompt;
 pub use loader::{AiOsLoader, LoadedModule};
 pub use manifest::{parse_manifest, validate_manifest};

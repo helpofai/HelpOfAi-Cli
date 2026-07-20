@@ -56,6 +56,8 @@ tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 uuid = { version = "1.11", features = ["v4"] }
+walkdir = "2.5"
+blake3 = "1.5"
 
 [profile.release]
 # lto = false: starlark 0.13.0 ships pre-compiled LLVM bitcode (.bc) in its

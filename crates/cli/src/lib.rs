@@ -379,6 +379,13 @@ enum AiosCommand {
         /// The instruction or description of the task.
         task: String,
     },
+    /// Index the codebase using AST parser into the AIOS Knowledge Graph.
+    BrainIndex,
+    /// Query the Codebase Knowledge Graph for class and symbol context.
+    BrainQuery {
+        /// Symbol query or class name.
+        query: String,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -2355,6 +2362,22 @@ fn run_aios_command(
             }
 
             println!("AIOS Workflow Run Completed successfully!");
+        }
+        AiosCommand::BrainIndex => {
+            let workspace_root = std::env::current_dir()?;
+            let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
+            println!("Scanning and indexing codebase into AIOS Project Brain...");
+            let count = brain.scan_and_index(&workspace_root)?;
+            println!("AIOS Brain indexing complete! Indexed {} files into Code Knowledge Graph.", count);
+        }
+        AiosCommand::BrainQuery { query } => {
+            let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
+            let ctx = brain.assemble_precision_context(&query, 2000);
+            if ctx.is_empty() {
+                println!("No matching code symbols found in AIOS Brain for: {}", query);
+            } else {
+                println!("{}", ctx);
+            }
         }
     }
 

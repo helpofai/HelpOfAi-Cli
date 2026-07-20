@@ -11,3 +11,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+rusqlite = { workspace = true }
+uuid = { workspace = true }
+walkdir = { workspace = true }
+blake3 = { workspace = true }

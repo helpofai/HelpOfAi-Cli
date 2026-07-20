@@ -143,6 +143,15 @@ impl AiosWorkflowRunner {
         prompt.push_str(&format!("**Current Phase**: {}\n", phase.phase));
         prompt.push_str(&format!("**Engine**: {}\n", phase.engine));
         prompt.push_str(&format!("**Instruction**: {}\n\n", task_description));
+
+        // Inject Project Brain Symbol Context
+        if let Ok(brain) = crate::brain::ProjectBrain::open(&self.aios_root) {
+            let brain_context = brain.assemble_precision_context(task_description, 2000);
+            if !brain_context.is_empty() {
+                prompt.push_str(&brain_context);
+                prompt.push_str("\n\n");
+            }
+        }
         prompt.push_str("Execute your instructions matching the principles above. Do not exceed performance budgets.\n");
 
         Ok(prompt)
