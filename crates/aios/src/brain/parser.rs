@@ -75,11 +75,10 @@ impl AstParser {
                         };
 
                     let module_prefix = relative_path
-                        .replace('/', "::")
-                        .replace('\\', "::")
+                        .replace(['/', '\\'], "::")
                         .replace(".rs", "")
                         .replace(".ts", "");
-                    let qualified_name = format!("{}::{}", module_prefix, name);
+                    let qualified_name = format!("{module_prefix}::{name}");
 
                     symbols.push(ParsedSymbol {
                         short_name: name,
@@ -106,11 +105,8 @@ impl AstParser {
                     } else {
                         "private"
                     };
-                    let module_prefix = relative_path
-                        .replace('/', "::")
-                        .replace('\\', "::")
-                        .replace(".rs", "");
-                    let qualified_name = format!("{}::{}", module_prefix, name);
+                    let module_prefix = relative_path.replace(['/', '\\'], "::").replace(".rs", "");
+                    let qualified_name = format!("{module_prefix}::{name}");
 
                     symbols.push(ParsedSymbol {
                         short_name: name,

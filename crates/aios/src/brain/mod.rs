@@ -105,7 +105,7 @@ impl ProjectBrain {
         let mut current_tokens = 20;
 
         for kw in keywords.iter().take(4) {
-            let pattern = format!("%{}%", kw);
+            let pattern = format!("%{kw}%");
             let mut stmt = match conn.prepare(
                 "SELECT s.short_name, s.symbol_kind, s.signature, f.relative_path, s.start_line, s.docstring
                  FROM code_symbols s
@@ -132,8 +132,7 @@ impl ProjectBrain {
                 for r in rows.flatten() {
                     let (name, kind, sig, path, line, doc) = r;
                     let snippet = format!(
-                        "* **{}** `{}` ({}:{})\n  ```rust\n  {}\n  ```\n",
-                        kind, name, path, line, sig
+                        "* **{kind}** `{name}` ({path}:{line})\n  ```rust\n  {sig}\n  ```\n"
                     );
                     let snippet_tokens = snippet.len() / 4;
 
@@ -143,9 +142,9 @@ impl ProjectBrain {
 
                     output.push_str(&snippet);
                     if let Some(d) = doc {
-                        output.push_str(&format!("  *Doc:* {}\n", d));
+                        output.push_str(&format!("  *Doc:* {d}\n"));
                     }
-                    output.push_str("\n");
+                    output.push('\n');
                     current_tokens += snippet_tokens;
                 }
             }

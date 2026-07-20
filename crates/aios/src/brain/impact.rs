@@ -34,7 +34,7 @@ impl<'a> ImpactEngine<'a> {
     pub fn analyze_target_symbol(&self, symbol_name: &str) -> Result<ImpactReport> {
         let conn = self.graph.get_connection()?;
 
-        let pattern = format!("%{}%", symbol_name);
+        let pattern = format!("%{symbol_name}%");
         let mut stmt = conn.prepare(
             "SELECT f.relative_path, s.short_name, s.symbol_kind, s.start_line, 'CALLS' as rel
              FROM code_symbols s
