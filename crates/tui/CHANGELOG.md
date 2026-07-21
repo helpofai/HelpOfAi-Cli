@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.92] - 2026-07-21
+
+### Added
+
+- **Global AIOS Root Resolution**: Implemented `resolve_aios_root` to auto-discover AIOS bundles across workspace directories, `$HELPOFAI_AIOS_DIR`, `~/.helpofai/aios`, and executable sibling paths.
+- **Branded `!hoa` & `!aios` TUI Autocomplete**: Added interactive `!` bang menu supporting `!hoa`, `!aios`, and direct workflow shortcuts (`!hoa build-feature`, `!hoa fix-bug`, `!hoa review`, `!hoa refactor`, `!hoa audit`, `!hoa health`, `!hoa brain`).
+- **Live `AIOS Active` Status Badge**: Added a green `AIOS Active` status chip in the TUI footer bar whenever AIOS integration is enabled.
+- **Workspace Auto-Session Resume & Picker**: Implemented automatic workspace session detection on TUI launch, auto-resuming single sessions and prompting with an interactive session list when multiple project sessions exist.
+
 ## [0.8.91] - 2026-07-20
 
 ### Added

@@ -755,6 +755,10 @@ mod tests {
         // but App::new honors saved settings.toml values on the host machine.
         app.theme_id = crate::palette::ThemeId::Whale;
         app.ui_theme = crate::palette::UI_THEME;
+        // Disable AIOS chip so layout-width tests stay host-neutral and
+        // unaffected by the AIOS Active badge width. Tests that specifically
+        // check the AIOS chip can set aios_enabled = true explicitly.
+        app.aios_enabled = false;
         app
     }
 
