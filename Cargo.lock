@@ -2059,6 +2059,7 @@ version = "0.8.91"
 dependencies = [
  "anyhow",
  "blake3",
+ "dirs",
  "rusqlite",
  "serde",
  "serde_json",

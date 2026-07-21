@@ -2402,6 +2402,140 @@ pub(crate) fn slash_completion_hints(
         return entries.into_iter().take(limit).collect();
     }
 
+    // `!` mode: AIOS options & commands completion (supports !hoa, !aios, and direct shortcuts).
+    if trimmed.starts_with('!') {
+        let prefix = trimmed.trim_start_matches('!').to_ascii_lowercase();
+        let aios_commands = [
+            (
+                "!hoa run",
+                "Execute an AIOS workflow (!hoa run build-feature <task>)",
+            ),
+            (
+                "!aios run",
+                "Execute an AIOS workflow (!aios run build-feature <task>)",
+            ),
+            (
+                "!hoa build-feature",
+                "Build a feature using AIOS phased workflow (!hoa build-feature <task>)",
+            ),
+            (
+                "!hoa fix-bug",
+                "Fix a bug or error using AIOS self-healing (!hoa fix-bug <issue>)",
+            ),
+            (
+                "!hoa review",
+                "Perform automated AIOS code review & security audit",
+            ),
+            (
+                "!hoa refactor",
+                "Refactor codebase AST using AIOS Knowledge Graph",
+            ),
+            (
+                "!hoa optimize",
+                "Optimize performance, latency & bundle size",
+            ),
+            ("!hoa audit", "Run full codebase health & security audit"),
+            ("!hoa upgrade", "Upgrade dependencies & package versions"),
+            ("!hoa release", "Prepare & package a new release build"),
+            (
+                "!hoa status",
+                "Show AIOS module, capability & dependency registry status",
+            ),
+            (
+                "!aios status",
+                "Show AIOS module, capability & dependency registry status",
+            ),
+            (
+                "!hoa workflows",
+                "List all defined AIOS software engineering workflows",
+            ),
+            (
+                "!aios workflows",
+                "List all defined AIOS software engineering workflows",
+            ),
+            (
+                "!hoa diag",
+                "Run diagnostic plan for an AIOS workflow (!hoa diag build-feature)",
+            ),
+            (
+                "!aios diag",
+                "Run diagnostic plan for an AIOS workflow (!aios diag build-feature)",
+            ),
+            ("!hoa modules", "List all 28 installed AIOS system modules"),
+            ("!aios modules", "List all 28 installed AIOS system modules"),
+            (
+                "!hoa capabilities",
+                "List all 34 registered AIOS capabilities",
+            ),
+            (
+                "!aios capabilities",
+                "List all 34 registered AIOS capabilities",
+            ),
+            (
+                "!hoa brain index",
+                "Index codebase AST into AIOS Knowledge Graph",
+            ),
+            (
+                "!aios brain query",
+                "Query symbol context in AIOS Knowledge Graph (!aios brain query <symbol>)",
+            ),
+            (
+                "!hoa brain impact",
+                "Analyze blast-radius & ripple impact for symbol (!hoa brain impact <symbol>)",
+            ),
+            ("!hoa health", "Run AIOS project health check"),
+            ("!hoa timeline", "View AIOS decision & execution timeline"),
+            (
+                "!hoa decisions",
+                "Query AIOS decision records & architectural logs",
+            ),
+            (
+                "!hoa enable",
+                "Globally enable AIOS integration in HelpOfAi",
+            ),
+            (
+                "!aios enable",
+                "Globally enable AIOS integration in HelpOfAi",
+            ),
+            (
+                "!hoa disable",
+                "Globally disable AIOS integration in HelpOfAi",
+            ),
+            (
+                "!aios disable",
+                "Globally disable AIOS integration in HelpOfAi",
+            ),
+            (
+                "!hoa help",
+                "Display AIOS options, global status & help guide",
+            ),
+            (
+                "!aios help",
+                "Display AIOS options, global status & help guide",
+            ),
+            ("!help", "Display AIOS options, global status & help guide"),
+        ];
+
+        let mut entries: Vec<SlashMenuEntry> = Vec::new();
+        for (cmd, desc) in aios_commands {
+            let cmd_name = cmd.to_lowercase();
+            let clean_cmd = cmd_name.trim_start_matches('!');
+            if prefix.is_empty()
+                || clean_cmd.starts_with(&prefix)
+                || clean_cmd.contains(&prefix)
+                || fuzzy_chars_in_order(&prefix, clean_cmd)
+            {
+                entries.push(SlashMenuEntry {
+                    name: cmd.to_string(),
+                    description: desc.to_string(),
+                    is_skill: false,
+                    alias_hint: None,
+                });
+            }
+        }
+        return entries.into_iter().take(limit).collect();
+    }
+
     let prefix = input.trim_start_matches('/');
     let completing_skill_arg = prefix.strip_prefix("skill ").map(str::trim_start);
     if input.contains(char::is_whitespace) && completing_skill_arg.is_none() {

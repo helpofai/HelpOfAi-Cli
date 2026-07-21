@@ -106,6 +106,7 @@ pub(crate) fn looks_like_slash_command_input(input: &str) -> bool {
     let Some(rest) = trimmed
         .strip_prefix('/')
         .or_else(|| trimmed.strip_prefix('$'))
+        .or_else(|| trimmed.strip_prefix('!'))
     else {
         return false;
     };
@@ -1422,6 +1423,8 @@ pub struct App {
     pub prompt_suggestion_gen: std::sync::atomic::AtomicU64,
     /// Degraded connectivity mode; new user inputs are queued for later retry.
     pub offline_mode: bool,
+    /// Global AIOS integration enabled flag.
+    pub aios_enabled: bool,
     /// Whether an `EngineEvent::Error` has already been posted for the
     /// current turn. Suppresses the redundant "Turn failed:" status line
     /// that `TurnComplete { error: .. }` would otherwise emit on top of
@@ -2355,6 +2358,7 @@ impl App {
             prompt_suggestion: None,
             prompt_suggestion_gen: std::sync::atomic::AtomicU64::new(0),
             offline_mode: false,
+            aios_enabled: true,
             turn_error_posted: false,
             // Surface parse warnings so the user knows their config file is
             // broken instead of silently losing all settings.

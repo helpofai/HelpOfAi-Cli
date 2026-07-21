@@ -46,6 +46,8 @@ pub struct FooterProps {
     pub state_label: String,
     /// Color used for the status label.
     pub state_color: Color,
+    /// AIOS active status chip spans.
+    pub aios: Vec<Span<'static>>,
     /// Sub-agent count chip spans (empty when zero in-flight).
     pub agents: Vec<Span<'static>>,
     /// Reasoning-replay chip spans (empty when zero / not applicable).
@@ -230,6 +232,18 @@ pub fn footer_mcp_chip(connected: Option<usize>, configured: usize) -> Vec<Span<
     vec![Span::styled(label, Style::default().fg(color))]
 }
 
+/// Build the "AIOS Active" chip when AIOS integration is enabled.
+#[must_use]
+pub fn footer_aios_chip(aios_enabled: bool) -> Vec<Span<'static>> {
+    if !aios_enabled {
+        return Vec::new();
+    }
+    vec![Span::styled(
+        "AIOS Active",
+        Style::default().fg(palette::STATUS_SUCCESS),
+    )]
+}
+
 /// A status toast routed to the footer's left segment for a short time.
 #[derive(Debug, Clone)]
 pub struct FooterToast {
@@ -275,6 +289,7 @@ impl FooterProps {
         // "worked 4m". The chip stays empty until enough turns add up
         // to cross the 60s threshold inside `footer_worked_chip`.
         let worked = footer_worked_chip(app.cumulative_turn_duration);
+        let aios = footer_aios_chip(app.aios_enabled);
         Self {
             model: app.model_display_label(),
             mode_label,
@@ -285,6 +300,7 @@ impl FooterProps {
             footer_bg: app.ui_theme.footer_bg,
             state_label: state_label.to_string(),
             state_color,
+            aios,
             agents,
             reasoning_replay,
             cache,
@@ -330,6 +346,7 @@ impl FooterWidget {
         // signals; they belong on the right where they appear and
         // disappear without disturbing the steady mode·model·cost line.
         let parts: Vec<&Vec<Span<'static>>> = [
+            &self.props.aios,
             &self.props.agents,
             &self.props.reasoning_replay,
             &self.props.cache,

@@ -646,6 +646,30 @@ pub async fn run_tui(config: &Config, options: TuiOptions) -> Result<()> {
                 app.status_message = Some(format!("Failed to load session: {e}"));
             }
         }
+    } else if options.resume_session_id.is_none()
+        && let Ok(manager) = SessionManager::default_location()
+        && let Ok(sessions) = manager.list_sessions_for_workspace(&options.workspace)
+    {
+        match sessions.len() {
+            1 => {
+                let meta = &sessions[0];
+                if let Ok(saved) = manager.load_session(&meta.id) {
+                    let recovered = apply_loaded_session(&mut app, config, &saved);
+                    if !recovered {
+                        app.status_message = Some(format!(
+                            "💡 Auto-resumed previous session [{}] for this project",
+                            crate::session_manager::truncate_id(&saved.metadata.id)
+                        ));
+                    }
+                }
+            }
+            n if n > 1 => {
+                app.status_message = Some(format!(
+                    "📋 Found {n} previous sessions for this project. Type /resume to select one."
+                ));
+            }
+            _ => {}
+        }
     }
 
     if let Ok(manager) = SessionManager::default_location() {
@@ -6416,6 +6440,222 @@ async fn handle_bang_shell_input(
             return Ok(true);
         }
     };
+
+    let trimmed_cmd = command.trim();
+    let parts: Vec<&str> = trimmed_cmd.split_whitespace().collect();
+    let first = parts.first().copied().unwrap_or("").to_lowercase();
+
+    let (subcmd, sub_args) = if first == "hoa" || first == "aios" || first == "helpofai" {
+        let sub = parts.get(1).copied().unwrap_or("help").to_lowercase();
+        let sub_token = parts.get(1).copied().unwrap_or("");
+        let sub_pos = trimmed_cmd.find(sub_token).unwrap_or(0);
+        let rest = trimmed_cmd[sub_pos + sub_token.len()..].trim();
+        (sub, rest)
+    } else {
+        let sub_token = parts.first().copied().unwrap_or("");
+        let sub_pos = trimmed_cmd.find(sub_token).unwrap_or(0);
+        let rest = trimmed_cmd[sub_pos + sub_token.len()..].trim();
+        (first, rest)
+    };
+
+    match subcmd.as_str() {
+        "help" => {
+            let status = if app.aios_enabled {
+                "Enabled 🟢"
+            } else {
+                "Disabled 🔴"
+            };
+            let root_path = helpofai_aios::resolve_aios_root(Some(&app.workspace))
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| "Not Found".to_string());
+
+            let help_text = format!(
+                "🤖 AIOS (AI Software Engineering Operating System)\n\
+                 ──────────────────────────────────────────────────\n\
+                 Global AIOS Status: {}\n\
+                 Resolved Bundle:    {}\n\n\
+                 Available AIOS Commands (!hoa / !aios):\n\
+                   !hoa run <workflow> <task>  - Run an AIOS workflow step-by-step\n\
+                   !hoa status                 - View AIOS module, capability & dependency registry\n\
+                   !hoa workflows              - List defined software engineering workflows\n\
+                   !hoa diag <workflow> [task] - Dry-run diagnostic plan for a workflow\n\
+                   !hoa modules                - List installed AIOS system modules\n\
+                   !hoa capabilities           - List registered AIOS capabilities\n\
+                   !hoa brain index|query|impact - Query/Index codebase AST Knowledge Graph\n\
+                   !hoa enable                 - Globally enable AIOS integration\n\
+                   !hoa disable                - Globally disable AIOS integration\n\
+                   !hoa help / !aios help      - Show this AIOS help guide\n\n\
+                 You can also run any standard shell command after ! (e.g. !cargo test, !git status).",
+                status, root_path
+            );
+
+            app.push_history_cell(super::history::HistoryCell::System { content: help_text });
+            app.status_message = Some("AIOS Help displayed.".to_string());
+            return Ok(true);
+        }
+        "enable" => {
+            app.aios_enabled = true;
+            app.status_message = Some("🤖 AIOS globally ENABLED.".to_string());
+            app.push_history_cell(super::history::HistoryCell::System {
+                content: "🤖 AIOS globally ENABLED. Workflow and capability routing are active."
+                    .to_string(),
+            });
+            return Ok(true);
+        }
+        "disable" => {
+            app.aios_enabled = false;
+            app.status_message = Some("🚫 AIOS globally DISABLED.".to_string());
+            app.push_history_cell(super::history::HistoryCell::System {
+                content: "🚫 AIOS globally DISABLED.".to_string(),
+            });
+            return Ok(true);
+        }
+        "status" | "registry-status" => {
+            let shell_cmd = "helpofai aios registry-status".to_string();
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS registry status command submitted.".to_string());
+            return Ok(true);
+        }
+        "workflows" => {
+            let shell_cmd = "helpofai aios workflows".to_string();
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS workflows command submitted.".to_string());
+            return Ok(true);
+        }
+        "modules" => {
+            let shell_cmd = "helpofai aios modules".to_string();
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS modules command submitted.".to_string());
+            return Ok(true);
+        }
+        "capabilities" => {
+            let shell_cmd = "helpofai aios capabilities".to_string();
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS capabilities command submitted.".to_string());
+            return Ok(true);
+        }
+        "diag" => {
+            let shell_cmd = format!("helpofai aios diag {sub_args}");
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS workflow diag command submitted.".to_string());
+            return Ok(true);
+        }
+        "run" => {
+            let shell_cmd = format!("helpofai aios run {sub_args}");
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS workflow run command submitted.".to_string());
+            return Ok(true);
+        }
+        "build-feature" | "fix-bug" | "review" | "review-code" | "refactor" | "optimize"
+        | "audit" | "analyze" | "upgrade" | "release" | "rollback" => {
+            let wf_name = match subcmd.as_str() {
+                "review-code" => "review",
+                "analyze" => "audit",
+                other => other,
+            };
+            let shell_cmd = format!("helpofai aios run {wf_name} {sub_args}");
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some(format!("AIOS workflow '{wf_name}' command submitted."));
+            return Ok(true);
+        }
+        "health" | "timeline" | "decisions" => {
+            let shell_cmd = format!("helpofai aios {subcmd} {sub_args}");
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some(format!("AIOS command '{subcmd}' submitted."));
+            return Ok(true);
+        }
+        "brain" => {
+            let sub = sub_args.split_whitespace().next().unwrap_or("");
+            let shell_cmd = match sub {
+                "index" => "helpofai aios brain-index".to_string(),
+                "query" => {
+                    let arg = sub_args.strip_prefix("query").unwrap_or("").trim();
+                    format!("helpofai aios brain-query \"{arg}\"")
+                }
+                "impact" => {
+                    let arg = sub_args.strip_prefix("impact").unwrap_or("").trim();
+                    format!("helpofai aios brain-impact \"{arg}\"")
+                }
+                _ => format!("helpofai aios brain-{sub_args}"),
+            };
+            engine_handle
+                .send(Op::RunShellCommand {
+                    command: shell_cmd,
+                    mode: app.mode,
+                    trust_mode: app.trust_mode,
+                    auto_approve: app.mode == AppMode::Yolo,
+                    approval_mode: app.approval_mode,
+                })
+                .await?;
+            app.status_message = Some("AIOS brain command submitted.".to_string());
+            return Ok(true);
+        }
+        _ => {}
+    }
 
     engine_handle
         .send(Op::RunShellCommand {

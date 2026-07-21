@@ -2116,17 +2116,8 @@ fn run_aios_command(
         parse_all_registries, parse_capability_registry, parse_dependency_registry,
         parse_module_registry,
     };
-    use std::path::PathBuf;
-
-    // AIOS modules live at <workspace>/aios/
-    let aios_root = PathBuf::from("aios");
-
-    if !aios_root.join("aios.json").exists() {
-        bail!(
-            "AIOS root not found at {}. Run from a workspace that bundles AIOS-Skills-V01-0.",
-            aios_root.display()
-        );
-    }
+    // Resolve AIOS root directory using global fallback strategies
+    let aios_root = helpofai_aios::resolve_aios_root(None)?;
 
     let registry_dir = aios_root.join("registry");
 

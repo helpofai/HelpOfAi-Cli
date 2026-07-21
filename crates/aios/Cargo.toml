@@ -7,6 +7,7 @@ repository.workspace = true
 description = "AIOS module system parser and capability registry for HelpOfAi-Cli"
 
 [dependencies]
+dirs = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 anyhow = { workspace = true }

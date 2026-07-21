@@ -546,11 +546,23 @@ impl SessionManager {
         &self,
         workspace: &Path,
     ) -> std::io::Result<Option<SessionMetadata>> {
+        let sessions = self.list_sessions_for_workspace(workspace)?;
+        Ok(sessions.into_iter().next())
+    }
+
+    /// Get all non-empty sessions scoped to the specified workspace.
+    pub fn list_sessions_for_workspace(
+        &self,
+        workspace: &Path,
+    ) -> std::io::Result<Vec<SessionMetadata>> {
         let sessions = self.list_sessions()?;
-        Ok(sessions.into_iter().find(|session| {
-            workspace_scope_matches(&session.workspace, workspace)
-                && !is_empty_auto_created_session(session)
-        }))
+        Ok(sessions
+            .into_iter()
+            .filter(|session| {
+                workspace_scope_matches(&session.workspace, workspace)
+                    && !is_empty_auto_created_session(session)
+            })
+            .collect())
     }
 
     /// Search sessions by title

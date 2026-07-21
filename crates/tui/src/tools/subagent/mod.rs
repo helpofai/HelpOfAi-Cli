@@ -3275,8 +3275,7 @@ fn build_subagent_system_prompt(
     let base = agent_type.system_prompt();
     let mut prompt = match assignment.role.as_deref() {
         Some(role) if !role.trim().is_empty() => {
-            let aios_root = workspace.join("aios");
-            if aios_root.join("aios.json").exists() {
+            if let Ok(aios_root) = helpofai_aios::resolve_aios_root(Some(workspace)) {
                 if let Ok(registry) = helpofai_aios::AiosAgentRegistry::load(&aios_root) {
                     if let Some(agent) = registry.resolve(role.trim()) {
                         let injection =
@@ -3817,10 +3816,7 @@ fn translate_tool(tui_name: &str) -> &str {
 }
 
 fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>> {
-    let aios_root = workspace.join("aios");
-    if !aios_root.join("aios.json").exists() {
-        return None;
-    }
+    let aios_root = helpofai_aios::resolve_aios_root(Some(workspace)).ok()?;
 
     // Load agent registry and find agent
     let registry = helpofai_aios::AiosAgentRegistry::load(&aios_root).ok()?;

@@ -1307,10 +1307,7 @@ fn load_aios_constitution_block(workspace: &Path) -> Option<String> {
     static CACHED_BLOCK: OnceLock<Option<String>> = OnceLock::new();
     CACHED_BLOCK
         .get_or_init(|| {
-            let aios_root = workspace.join("aios");
-            if !aios_root.join("aios.json").exists() {
-                return None;
-            }
+            let aios_root = helpofai_aios::resolve_aios_root(Some(workspace)).ok()?;
             helpofai_aios::constitution::load_constitution_prompt(&aios_root).ok()
         })
         .clone()
