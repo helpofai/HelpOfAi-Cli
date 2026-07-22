@@ -13,6 +13,8 @@
 pub mod agents;
 pub mod brain;
 pub mod constitution;
+pub mod error_filter;
+pub mod event_bus;
 pub mod loader;
 pub mod manifest;
 pub mod registry;
@@ -24,6 +26,7 @@ pub mod workflows;
 pub use agents::{AiosAgent, AiosAgentRegistry};
 pub use brain::ProjectBrain;
 pub use constitution::load_constitution_prompt;
+pub use event_bus::{AiosEvent, AiosEventReceiver, AiosEventSender, aios_channel};
 pub use loader::{AiOsLoader, LoadedModule};
 pub use manifest::{parse_manifest, validate_manifest};
 pub use registry::{

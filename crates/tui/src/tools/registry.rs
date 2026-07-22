@@ -542,6 +542,17 @@ impl ToolRegistryBuilder {
             .with_tool(Arc::new(ShellInteractTool::new("exec_interact")))
     }
 
+    /// Include AIOS two-way protocol tools.
+    #[must_use]
+    pub fn with_aios_tools(self) -> Self {
+        use super::aios_bridge::{
+            AiosBrainQueryTool, AiosRunAndTraceTool, AiosTriggerWorkflowTool,
+        };
+        self.with_tool(Arc::new(AiosRunAndTraceTool))
+            .with_tool(Arc::new(AiosBrainQueryTool))
+            .with_tool(Arc::new(AiosTriggerWorkflowTool))
+    }
+
     /// Include search tools (`grep_files`).
     #[must_use]
     pub fn with_search_tools(self) -> Self {
@@ -944,6 +955,7 @@ impl ToolRegistryBuilder {
             .with_user_input_tool()
             .with_parallel_tool()
             .with_git_tools()
+            .with_aios_tools()
             .with_git_history_tools()
             .with_diagnostics_tool()
             .with_project_tools()

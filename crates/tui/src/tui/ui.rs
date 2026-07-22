@@ -3647,6 +3647,18 @@ async fn run_event_loop(
                 continue;
             }
 
+            if key.code == KeyCode::Char('t') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                if app.view_stack.top_kind() == Some(ModalKind::Terminals) {
+                    app.view_stack.pop();
+                } else {
+                    app.view_stack
+                        .push(crate::tui::views::terminals::TerminalsView::new(
+                            app.runtime_services.shell_manager.clone(),
+                        ));
+                }
+                continue;
+            }
+
             // y / Y in the Tasks sidebar: yank the current turn id (y)
             // or copy full task detail (Y) to the system clipboard.
             // Only active when the composer is empty to avoid stealing
@@ -5054,7 +5066,7 @@ async fn run_gateway_command(config: &Config, subcommand: &str) -> Result<String
                 model_ids.sort();
                 let list = model_ids
                     .iter()
-                    .map(|id| format!("  - {}", id))
+                    .map(|id| format!("  - {id}"))
                     .collect::<Vec<_>>()
                     .join("\n");
                 Ok(format!(
@@ -5098,12 +5110,11 @@ async fn run_gateway_command(config: &Config, subcommand: &str) -> Result<String
             Ok(format!(
                 "✓ OmniRoute Online\n\
                  ──────────────────────────────\n\
-                 **Gateway URL:** {}\n\
-                 **Version:** {}\n\
-                 **Models:** {} Available\n\
-                 **Last Latency:** {} ms\n\
-                 **Cache State:** hit={}",
-                base_url, version, model_count, latency, cache_hit
+                 **Gateway URL:** {base_url}\n\
+                 **Version:** {version}\n\
+                 **Models:** {model_count} Available\n\
+                 **Last Latency:** {latency} ms\n\
+                 **Cache State:** hit={cache_hit}"
             ))
         }
         _ => unreachable!(),
@@ -6472,8 +6483,8 @@ async fn handle_bang_shell_input(
             let help_text = format!(
                 "🤖 AIOS (AI Software Engineering Operating System)\n\
                  ──────────────────────────────────────────────────\n\
-                 Global AIOS Status: {}\n\
-                 Resolved Bundle:    {}\n\n\
+                 Global AIOS Status: {status}\n\
+                 Resolved Bundle:    {root_path}\n\n\
                  Available AIOS Commands (!hoa / !aios):\n\
                    !hoa run <workflow> <task>  - Run an AIOS workflow step-by-step\n\
                    !hoa status                 - View AIOS module, capability & dependency registry\n\
@@ -6485,8 +6496,7 @@ async fn handle_bang_shell_input(
                    !hoa enable                 - Globally enable AIOS integration\n\
                    !hoa disable                - Globally disable AIOS integration\n\
                    !hoa help / !aios help      - Show this AIOS help guide\n\n\
-                 You can also run any standard shell command after ! (e.g. !cargo test, !git status).",
-                status, root_path
+                 You can also run any standard shell command after ! (e.g. !cargo test, !git status)."
             );
 
             app.push_history_cell(super::history::HistoryCell::System { content: help_text });
@@ -6582,6 +6592,26 @@ async fn handle_bang_shell_input(
         }
         "run" => {
             let shell_cmd = format!("helpofai aios run {sub_args}");
+            // Create a fresh AIOS event channel for this workflow run so the
+            // sidebar panel gets live phase-by-phase progress automatically.
+            let (wf_name, task_desc) = sub_args
+                .trim()
+                .split_once(' ')
+                .map(|(w, t)| (w.to_string(), t.to_string()))
+                .unwrap_or_else(|| (sub_args.trim().to_string(), String::new()));
+
+            let (tx, rx) = helpofai_aios::aios_channel();
+            // Pre-populate the started entry immediately so the panel appears
+            // before the shell command even starts.
+            tx.send_started(format!("workflow:{wf_name}"), task_desc.clone());
+            app.aios_event_rx = Some(rx);
+
+            // Store the sender on the app so the workflow runner (if invoked
+            // in-process) can call send_progress/send_done on it.
+            // For shell-dispatched runs the sender is dropped here; the panel
+            // will show the "running" state until the command exits.
+            drop(tx);
+
             engine_handle
                 .send(Op::RunShellCommand {
                     command: shell_cmd,
@@ -7112,9 +7142,9 @@ async fn switch_provider(
         target.as_str(),
     );
     switch_summary.push(char::from(10));
-    switch_summary.push_str(&format!("Model: {} → {}", previous_model, new_model));
+    switch_summary.push_str(&format!("Model: {previous_model} → {new_model}"));
     switch_summary.push(char::from(10));
-    switch_summary.push_str(&format!("Endpoint: {}", new_endpoint));
+    switch_summary.push_str(&format!("Endpoint: {new_endpoint}"));
     if let Some(ref warning) = persist_warning {
         switch_summary.push(char::from(10));
         switch_summary.push_str(warning);
@@ -7422,12 +7452,11 @@ async fn apply_command_result(
                 }
             }
             AppAction::FetchGateway { subcommand } => {
-                app.status_message = Some(format!("Querying gateway {}...", subcommand));
+                app.status_message = Some(format!("Querying gateway {subcommand}..."));
                 match run_gateway_command(config, &subcommand).await {
                     Ok(result) => {
                         app.add_message(HistoryCell::System { content: result });
-                        app.status_message =
-                            Some(format!("Gateway query {} completed", subcommand));
+                        app.status_message = Some(format!("Gateway query {subcommand} completed"));
                     }
                     Err(error) => {
                         app.add_message(HistoryCell::System {
@@ -8973,6 +9002,34 @@ fn draw_app_frame_inner(
     // failing `?` would return early and leave the terminal stuck in
     // synchronized-update mode (screen frozen).
     let result = (|| -> Result<()> {
+        // Drain AIOS event bus before drawing so the panel and footer chip
+        // always show the latest process state without a separate poll task.
+        app.drain_aios_events();
+
+        // Also drain shell job completions and issue ping-back toasts
+        if let Some(shell_manager) = app.runtime_services.shell_manager.clone() {
+            if let Ok(mut sm) = shell_manager.try_lock() {
+                for event in sm.drain_finished_jobs() {
+                    let (msg, level) = if event.exit_code == Some(0) {
+                        (
+                            format!("Command finished: {}", event.command),
+                            crate::tui::app::StatusToastLevel::Success,
+                        )
+                    } else {
+                        (
+                            format!(
+                                "Command failed ({}): {}",
+                                event.exit_code.unwrap_or(-1),
+                                event.command
+                            ),
+                            crate::tui::app::StatusToastLevel::Error,
+                        )
+                    };
+                    app.push_status_toast(msg, level, Some(5000));
+                }
+            }
+        }
+
         if full_repaint {
             terminal.backend_mut().write_all(TERMINAL_ORIGIN_RESET)?;
             terminal.clear()?;

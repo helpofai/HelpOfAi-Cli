@@ -17,6 +17,7 @@ use crate::tui::widgets::agent_card::AgentLifecycle;
 
 pub mod mode_picker;
 pub mod status_picker;
+pub mod terminals;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModalKind {
@@ -40,6 +41,7 @@ pub enum ModalKind {
     ThemePicker,
     ContextMenu,
     MemorySettings,
+    Terminals,
 }
 
 #[derive(Debug, Clone)]
@@ -1595,13 +1597,7 @@ impl ModalView for ConfigView {
                         let scope =
                             truncate_view_text(row.scope.label(self.locale), scope_column_width);
                         let mut line = Line::from(format!(
-                            "  {:<key_width$} {:<value_width$} {:<scope_width$}",
-                            key,
-                            value,
-                            scope,
-                            key_width = key_column_width,
-                            value_width = value_column_width,
-                            scope_width = scope_column_width
+                            "  {key:<key_column_width$} {value:<value_column_width$} {scope:<scope_column_width$}"
                         ));
                         line.style = style;
                         lines.push(line);

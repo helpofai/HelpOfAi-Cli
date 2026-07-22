@@ -25,8 +25,8 @@ use crate::tools::subagent::{AgentWorkerStatus, SubAgentStatus, agent_worker_sta
 use crate::tools::todo::TodoStatus;
 
 use super::app::{
-    App, SidebarFocus, SidebarHoverRow, SidebarHoverSection, SidebarHoverState, TaskPanelEntry,
-    TaskPanelEntryKind,
+    AiosProcessStatus, App, SidebarFocus, SidebarHoverRow, SidebarHoverSection, SidebarHoverState,
+    TaskPanelEntry, TaskPanelEntryKind,
 };
 use super::history::{GenericToolCell, HistoryCell, ToolCell, ToolStatus, summarize_tool_output};
 use super::subagent_routing::active_fanout_counts;
@@ -60,6 +60,7 @@ pub fn render_sidebar(f: &mut Frame, area: Rect, app: &mut App) {
         SidebarFocus::Work => render_sidebar_work(f, area, app),
         SidebarFocus::Tasks => render_sidebar_tasks(f, area, app),
         SidebarFocus::Agents => render_sidebar_subagents(f, area, app),
+        SidebarFocus::Aios => render_sidebar_aios(f, area, app),
         SidebarFocus::Context => render_context_panel(f, area, app),
         SidebarFocus::Hidden => Block::default()
             .style(Style::default().bg(app.ui_theme.surface_bg))
@@ -106,6 +107,7 @@ fn render_sidebar_auto(f: &mut Frame, area: Rect, app: &mut App) {
             AutoSidebarPanel::Work => render_sidebar_work(f, *rect, app),
             AutoSidebarPanel::Tasks => render_sidebar_tasks(f, *rect, app),
             AutoSidebarPanel::Agents => render_sidebar_subagents(f, *rect, app),
+            AutoSidebarPanel::Aios => render_sidebar_aios(f, *rect, app),
             AutoSidebarPanel::Context => render_context_panel(f, *rect, app),
         }
     }
@@ -128,6 +130,7 @@ fn auto_sidebar_state(app: &mut App) -> AutoSidebarState {
             && app.agent_progress.is_empty()
             && active_fanout_counts(app).is_none()
             && !foreground_rlm_running(app),
+        aios_empty: app.aios_processes.is_empty(),
         context_enabled: app.context_panel,
     }
 }
@@ -143,7 +146,11 @@ pub(crate) fn sidebar_auto_idle(app: &mut App) -> bool {
         return false;
     }
     let state = auto_sidebar_state(app);
-    !state.work_has_content && state.tasks_empty && state.agents_empty && !state.context_enabled
+    !state.work_has_content
+        && state.tasks_empty
+        && state.agents_empty
+        && state.aios_empty
+        && !state.context_enabled
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,6 +158,7 @@ enum AutoSidebarPanel {
     Work,
     Tasks,
     Agents,
+    Aios,
     Context,
 }
 
@@ -159,12 +167,14 @@ struct AutoSidebarState {
     work_has_content: bool,
     tasks_empty: bool,
     agents_empty: bool,
+    aios_empty: bool,
     context_enabled: bool,
 }
 
 fn auto_sidebar_panels(state: AutoSidebarState) -> Vec<AutoSidebarPanel> {
-    let nothing_else_active = state.tasks_empty && state.agents_empty && !state.context_enabled;
-    let mut visible = Vec::with_capacity(4);
+    let nothing_else_active =
+        state.tasks_empty && state.agents_empty && state.aios_empty && !state.context_enabled;
+    let mut visible = Vec::with_capacity(5);
 
     if state.work_has_content || nothing_else_active {
         visible.push(AutoSidebarPanel::Work);
@@ -174,6 +184,9 @@ fn auto_sidebar_panels(state: AutoSidebarState) -> Vec<AutoSidebarPanel> {
     }
     if !state.agents_empty {
         visible.push(AutoSidebarPanel::Agents);
+    }
+    if !state.aios_empty {
+        visible.push(AutoSidebarPanel::Aios);
     }
     if state.context_enabled {
         visible.push(AutoSidebarPanel::Context);
@@ -2142,6 +2155,101 @@ fn duration_ms(duration: Duration) -> u64 {
     u64::try_from(duration.as_millis()).unwrap_or(u64::MAX)
 }
 
+/// Render the "AIOS Processes" sidebar panel.
+///
+/// Shows all AIOS background process entries (workflow runs, module tasks, etc.)
+/// with their status, elapsed time, and current phase detail.
+fn render_sidebar_aios(f: &mut Frame, area: Rect, app: &mut App) {
+    if area.height < 3 || area.width < 10 {
+        return;
+    }
+
+    let content_w = area.width.saturating_sub(4) as usize;
+    let running_count = app
+        .aios_processes
+        .iter()
+        .filter(|p| p.status == AiosProcessStatus::Running)
+        .count();
+
+    // ── Header ──────────────────────────────────────────────────────────
+    let header_label = if running_count > 0 {
+        format!("⚙ AIOS Processes ({running_count} running)")
+    } else {
+        "AIOS Processes".to_string()
+    };
+    let header_color = if running_count > 0 {
+        palette::STATUS_WARNING
+    } else {
+        palette::TEXT_HINT
+    };
+
+    // ── Build rows ───────────────────────────────────────────────────────
+    let mut lines: Vec<Line<'static>> = Vec::new();
+
+    // Header row
+    lines.push(Line::from(vec![Span::styled(
+        truncate_line_to_width(&header_label, content_w),
+        Style::default().fg(header_color),
+    )]));
+    // Divider
+    lines.push(Line::from(vec![Span::styled(
+        "─".repeat(area.width.saturating_sub(2) as usize),
+        Style::default().fg(palette::TEXT_DIM),
+    )]));
+
+    if app.aios_processes.is_empty() {
+        lines.push(Line::from(vec![Span::styled(
+            "No AIOS processes",
+            Style::default().fg(palette::TEXT_MUTED),
+        )]));
+    } else {
+        for entry in &app.aios_processes {
+            let elapsed = entry.started_at.elapsed();
+            let elapsed_str = if elapsed.as_secs() >= 60 {
+                format!("{}m{}s", elapsed.as_secs() / 60, elapsed.as_secs() % 60)
+            } else {
+                format!("{}s", elapsed.as_secs())
+            };
+
+            let (icon, label_color) = match entry.status {
+                AiosProcessStatus::Running => ("⚙", palette::STATUS_WARNING),
+                AiosProcessStatus::Done => ("✓", palette::STATUS_SUCCESS),
+                AiosProcessStatus::Failed => ("✗", palette::STATUS_ERROR),
+            };
+
+            // First row: icon + label + elapsed
+            let label_text = format!(
+                "{} {}  [{}]",
+                icon,
+                truncate_line_to_width(&entry.label, content_w.saturating_sub(10)),
+                elapsed_str,
+            );
+            lines.push(Line::from(vec![Span::styled(
+                label_text,
+                Style::default().fg(label_color),
+            )]));
+
+            // Second row: detail / phase (indented, muted)
+            if !entry.detail.is_empty() {
+                let detail_text = format!(
+                    "  └ {}",
+                    truncate_line_to_width(&entry.detail, content_w.saturating_sub(4))
+                );
+                lines.push(Line::from(vec![Span::styled(
+                    detail_text,
+                    Style::default().fg(palette::TEXT_MUTED),
+                )]));
+            }
+        }
+    }
+
+    let panel = Paragraph::new(lines)
+        .block(Block::default().style(Style::default().bg(app.ui_theme.surface_bg)))
+        .wrap(Wrap { trim: false });
+
+    f.render_widget(panel, area);
+}
+
 fn render_sidebar_subagents(f: &mut Frame, area: Rect, app: &mut App) {
     if area.height < 3 {
         return;
@@ -3164,6 +3272,7 @@ mod tests {
         let panels = auto_sidebar_panels(AutoSidebarState {
             work_has_content: false,
             tasks_empty: false,
+            aios_empty: true,
             agents_empty: true,
             context_enabled: false,
         });
@@ -3176,6 +3285,7 @@ mod tests {
         let panels = auto_sidebar_panels(AutoSidebarState {
             work_has_content: false,
             tasks_empty: true,
+            aios_empty: true,
             agents_empty: true,
             context_enabled: false,
         });

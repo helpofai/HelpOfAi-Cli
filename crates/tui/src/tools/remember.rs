@@ -115,8 +115,7 @@ impl ToolSpec for RememberTool {
             }
             _ => {
                 return Err(ToolError::invalid_input(format!(
-                    "unknown category '{}'",
-                    category
+                    "unknown category '{category}'"
                 )));
             }
         }

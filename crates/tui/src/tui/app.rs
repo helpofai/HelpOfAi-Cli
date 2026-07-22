@@ -346,8 +346,45 @@ pub enum SidebarFocus {
     Work,
     Tasks,
     Agents,
+    Aios,
     Context,
     Hidden,
+}
+
+/// Status of a tracked AIOS background process.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)] // Done/Failed used by future completion-tracking callers
+pub enum AiosProcessStatus {
+    /// Process is actively running.
+    Running,
+    /// Process completed successfully.
+    Done,
+    /// Process failed.
+    Failed,
+}
+
+impl AiosProcessStatus {
+    #[allow(dead_code)] // used by sidebar render and future status reporters
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Running => "running",
+            Self::Done => "done",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+/// A single AIOS background process entry shown in the AIOS sidebar panel.
+#[derive(Debug, Clone)]
+pub struct AiosProcessEntry {
+    /// Short human-readable label, e.g. "workflow: feature-delivery".
+    pub label: String,
+    /// Current status detail line (phase name, progress note, error, …).
+    pub detail: String,
+    /// Process lifecycle state.
+    pub status: AiosProcessStatus,
+    /// Wall-clock start time for elapsed display.
+    pub started_at: std::time::Instant,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -399,6 +436,7 @@ impl SidebarFocus {
             "work" | "plan" | "todos" => Self::Work,
             "tasks" => Self::Tasks,
             "agents" | "subagents" | "sub-agents" => Self::Agents,
+            "aios" => Self::Aios,
             "context" | "session" => Self::Context,
             "hidden" | "hide" | "closed" | "off" | "none" => Self::Hidden,
             _ => Self::Auto,
@@ -413,6 +451,7 @@ impl SidebarFocus {
             Self::Work => "work",
             Self::Tasks => "tasks",
             Self::Agents => "agents",
+            Self::Aios => "aios",
             Self::Context => "context",
             Self::Hidden => "hidden",
         }
@@ -1425,6 +1464,16 @@ pub struct App {
     pub offline_mode: bool,
     /// Global AIOS integration enabled flag.
     pub aios_enabled: bool,
+    /// Active and recently-completed AIOS background processes.
+    /// Entries are pushed when a workflow/module task starts and updated
+    /// as it progresses. Completed entries are retained for a short grace
+    /// period so the sidebar doesn't flash empty immediately on finish.
+    pub aios_processes: Vec<AiosProcessEntry>,
+    /// Receiver end of the AIOS event bus. Drained every render tick so
+    /// the sidebar panel and footer chip reflect live AIOS activity.
+    /// `None` until the first AIOS operation creates a channel.
+    pub aios_event_rx: Option<helpofai_aios::AiosEventReceiver>,
+
     /// Whether an `EngineEvent::Error` has already been posted for the
     /// current turn. Suppresses the redundant "Turn failed:" status line
     /// that `TurnComplete { error: .. }` would otherwise emit on top of
@@ -2359,6 +2408,8 @@ impl App {
             prompt_suggestion_gen: std::sync::atomic::AtomicU64::new(0),
             offline_mode: false,
             aios_enabled: true,
+            aios_processes: Vec::new(),
+            aios_event_rx: None,
             turn_error_posted: false,
             // Surface parse warnings so the user knows their config file is
             // broken instead of silently losing all settings.
@@ -5434,6 +5485,66 @@ impl App {
                 .unwrap_or(DEFAULT_TEXT_MODEL);
         }
         &self.model
+    }
+
+    /// Drain all pending AIOS events from the bus and apply them to
+    /// `aios_processes`. Call once per render tick.
+    ///
+    /// Also prunes completed/failed entries older than 30 s so the panel
+    /// doesn't accumulate stale rows forever.
+    pub fn drain_aios_events(&mut self) {
+        if let Some(rx) = &self.aios_event_rx {
+            for ev in rx.try_drain() {
+                self.apply_aios_event(ev);
+            }
+        }
+        // Prune entries that finished more than 30 s ago.
+        let now = std::time::Instant::now();
+        self.aios_processes.retain(|p| match p.status {
+            AiosProcessStatus::Running => true,
+            AiosProcessStatus::Done | AiosProcessStatus::Failed => {
+                now.duration_since(p.started_at).as_secs() < 30
+            }
+        });
+    }
+
+    /// Apply a single AIOS event to `aios_processes`.
+    pub fn apply_aios_event(&mut self, event: helpofai_aios::AiosEvent) {
+        use helpofai_aios::AiosEvent;
+        match event {
+            AiosEvent::ProcessStarted { label, detail } => {
+                // If an entry with this label already exists, reset it.
+                if let Some(entry) = self.aios_processes.iter_mut().find(|e| e.label == label) {
+                    entry.detail = detail;
+                    entry.status = AiosProcessStatus::Running;
+                    entry.started_at = std::time::Instant::now();
+                } else {
+                    self.aios_processes.push(AiosProcessEntry {
+                        label,
+                        detail,
+                        status: AiosProcessStatus::Running,
+                        started_at: std::time::Instant::now(),
+                    });
+                }
+            }
+            AiosEvent::ProcessProgress { label, detail } => {
+                if let Some(entry) = self.aios_processes.iter_mut().find(|e| e.label == label) {
+                    entry.detail = detail;
+                }
+            }
+            AiosEvent::ProcessDone { label } => {
+                if let Some(entry) = self.aios_processes.iter_mut().find(|e| e.label == label) {
+                    entry.status = AiosProcessStatus::Done;
+                    entry.detail = "completed".to_string();
+                }
+            }
+            AiosEvent::ProcessFailed { label, error } => {
+                if let Some(entry) = self.aios_processes.iter_mut().find(|e| e.label == label) {
+                    entry.status = AiosProcessStatus::Failed;
+                    entry.detail = error;
+                }
+            }
+        }
     }
 
     pub fn model_display_label(&self) -> String {

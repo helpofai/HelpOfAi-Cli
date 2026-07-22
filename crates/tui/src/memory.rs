@@ -161,7 +161,7 @@ pub fn append_to_section(path: &Path, section: &str, line_to_append: &str) -> io
         let mut new_lines = Vec::new();
         if lines
             .first()
-            .map_or(true, |l| !l.starts_with("# User Memory"))
+            .is_none_or(|l| !l.starts_with("# User Memory"))
         {
             new_lines.push("# User Memory".to_string());
             new_lines.push("".to_string());

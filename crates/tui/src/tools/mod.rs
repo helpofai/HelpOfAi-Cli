@@ -8,6 +8,7 @@
 #![deny(clippy::print_stdout)]
 #![deny(clippy::print_stderr)]
 
+pub mod aios_bridge;
 pub mod apply_patch;
 pub mod approval_cache;
 pub mod arg_repair;

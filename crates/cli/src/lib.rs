@@ -2165,7 +2165,7 @@ fn run_aios_command(
                     }
                 }
                 None => {
-                    eprintln!("Module '{}' not found in registry.", id);
+                    eprintln!("Module '{id}' not found in registry.");
                 }
             }
         }
@@ -2175,7 +2175,7 @@ fn run_aios_command(
             println!("AIOS capabilities — {}", list.len());
             println!();
             for (name, id, module_id) in &list {
-                println!("  {:30}  {:30}  {}", name, id, module_id);
+                println!("  {name:30}  {id:30}  {module_id}");
             }
         }
         AiosCommand::CapabilityResolve { id } => {
@@ -2192,13 +2192,10 @@ fn run_aios_command(
             });
             match result {
                 Some((provider, module_id)) => {
-                    println!(
-                        "Capability '{}' → provided by '{}' (module: {})",
-                        id, provider, module_id
-                    );
+                    println!("Capability '{id}' → provided by '{provider}' (module: {module_id})");
                 }
                 None => {
-                    eprintln!("Capability '{}' is not registered.", id);
+                    eprintln!("Capability '{id}' is not registered.");
                 }
             }
         }
@@ -2250,7 +2247,7 @@ fn run_aios_command(
                 "Executing AIOS Workflow: {} ({})",
                 workflow.name, workflow.id
             );
-            println!("Goal: {}", task);
+            println!("Goal: {task}");
             println!();
 
             // Initialize timeline/journal
@@ -2313,7 +2310,7 @@ fn run_aios_command(
                     });
                     let runs_dir = aios_root.join("runs");
                     let _ = std::fs::create_dir_all(&runs_dir);
-                    let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
+                    let file_path = runs_dir.join(format!("run_{name}_{start_time}.json"));
                     if let Ok(content) = serde_json::to_string_pretty(&journal) {
                         let _ = std::fs::write(&file_path, content);
                         println!(
@@ -2330,7 +2327,7 @@ fn run_aios_command(
                 println!("Phase [{}] completed successfully.", phase.phase);
 
                 if let Some(ref gate) = phase.gate {
-                    println!("[Gate: {}] Evaluating output...", gate);
+                    println!("[Gate: {gate}] Evaluating output...");
                     std::thread::sleep(std::time::Duration::from_millis(500));
                     println!("[Gate APPROVED] Phase constraints satisfied.");
                 }
@@ -2348,7 +2345,7 @@ fn run_aios_command(
             });
             let runs_dir = aios_root.join("runs");
             let _ = std::fs::create_dir_all(&runs_dir);
-            let file_path = runs_dir.join(format!("run_{}_{}.json", name, start_time));
+            let file_path = runs_dir.join(format!("run_{name}_{start_time}.json"));
             if let Ok(content) = serde_json::to_string_pretty(&journal) {
                 let _ = std::fs::write(&file_path, content);
                 println!(
@@ -2365,29 +2362,25 @@ fn run_aios_command(
             println!("Scanning and indexing codebase into AIOS Project Brain...");
             let count = brain.scan_and_index(&workspace_root)?;
             println!(
-                "AIOS Brain indexing complete! Indexed {} files into Code Knowledge Graph.",
-                count
+                "AIOS Brain indexing complete! Indexed {count} files into Code Knowledge Graph."
             );
         }
         AiosCommand::BrainQuery { query } => {
             let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
             let ctx = brain.assemble_precision_context(&query, 2000);
             if ctx.is_empty() {
-                println!(
-                    "No matching code symbols found in AIOS Brain for: {}",
-                    query
-                );
+                println!("No matching code symbols found in AIOS Brain for: {query}");
             } else {
-                println!("{}", ctx);
+                println!("{ctx}");
             }
         }
         AiosCommand::BrainImpact { symbol } => {
             let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
             let md = brain.assemble_impact_markdown(&symbol);
             if md.is_empty() {
-                println!("No multi-file impact detected for symbol: {}", symbol);
+                println!("No multi-file impact detected for symbol: {symbol}");
             } else {
-                println!("{}", md);
+                println!("{md}");
             }
         }
     }

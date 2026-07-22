@@ -805,7 +805,7 @@ fn apply_model_template(
             if window == 1_000_000 {
                 "one-million".to_string()
             } else {
-                format!("{}", window)
+                format!("{window}")
             }
         )
     } else {

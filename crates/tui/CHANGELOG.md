@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.93] - 2026-07-22
+
+### Added
+
+- **Multi-Terminal View**: Added a new multi-terminal TUI pane (accessible via `Ctrl+t`) to track live stdout/stderr streams from active background tasks.
+- **Smart Build Log Filter**: Implemented an AIOS smart error filter (`aios_run_and_trace`) to extract, deduplicate, and compact compilation errors for AI ingestion, reducing log token bloat up to 90%.
+- **Live Background Task UI Hooks**: Integrated real-time AIOS process blinking and shell job ping-back notifications directly into the main TUI render loop.
+
 ## [0.8.92] - 2026-07-21
 
 ### Added

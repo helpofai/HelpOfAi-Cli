@@ -1432,7 +1432,18 @@ mod tests {
         fs::write(tmp.path().join("src").join("main.rs"), "fn main() {}").expect("write src");
         fs::write(tmp.path().join(".DS_Store"), "noise").expect("write ds store");
         fs::write(tmp.path().join("paper.pdf"), "not a real pdf").expect("write pdf");
-        fs::create_dir_all(tmp.path().join(".deepseek").join("state")).expect("mkdir state");
+        // New canonical location for sub-agent state (post-.deepseek rename)
+        fs::create_dir_all(tmp.path().join(".helpofai").join("state")).expect("mkdir state");
+        fs::write(
+            tmp.path()
+                .join(".helpofai")
+                .join("state")
+                .join("subagents.v1.json"),
+            "{}",
+        )
+        .expect("write state");
+        // Legacy location — should also be ignored when present
+        fs::create_dir_all(tmp.path().join(".deepseek").join("state")).expect("mkdir legacy state");
         fs::write(
             tmp.path()
                 .join(".deepseek")
@@ -1440,7 +1451,7 @@ mod tests {
                 .join("subagents.v1.json"),
             "{}",
         )
-        .expect("write state");
+        .expect("write legacy state");
         fs::create_dir_all(tmp.path().join(".playwright-mcp")).expect("mkdir playwright");
         fs::write(
             tmp.path().join(".playwright-mcp").join("trace.log"),
@@ -1470,6 +1481,7 @@ mod tests {
         assert!(pack.contains("\"src/main.rs\""), "{pack}");
         assert!(pack.contains("\".github/\""), "{pack}");
         assert!(pack.contains("\".github/workflows/ci.yml\""), "{pack}");
+        assert!(!pack.contains(".helpofai/state"), "{pack}");
         assert!(!pack.contains(".deepseek"), "{pack}");
         assert!(!pack.contains(".playwright-mcp"), "{pack}");
         assert!(!pack.contains(".agents"), "{pack}");

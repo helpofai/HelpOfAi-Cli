@@ -232,16 +232,46 @@ pub fn footer_mcp_chip(connected: Option<usize>, configured: usize) -> Vec<Span<
     vec![Span::styled(label, Style::default().fg(color))]
 }
 
-/// Build the "AIOS Active" chip when AIOS integration is enabled.
+/// Build the "AIOS Active" footer chip.
+///
+/// - `aios_enabled`   — whether AIOS integration is globally on.
+/// - `active_count`   — number of currently-running AIOS processes.
+/// - `blink_on`       — controls blink phase; callers derive this from a
+///   frame-parity value so the chip alternates once per second.
+///
+/// When processes are active the chip blinks: "on" frames show the label
+/// in bright amber with a gear prefix; "off" frames dim it. When idle
+/// (no active processes) it is rendered in steady `STATUS_SUCCESS`.
 #[must_use]
-pub fn footer_aios_chip(aios_enabled: bool) -> Vec<Span<'static>> {
+pub fn footer_aios_chip(
+    aios_enabled: bool,
+    active_count: usize,
+    blink_on: bool,
+) -> Vec<Span<'static>> {
     if !aios_enabled {
         return Vec::new();
     }
-    vec![Span::styled(
-        "AIOS Active",
-        Style::default().fg(palette::STATUS_SUCCESS),
-    )]
+    if active_count > 0 {
+        // Blinking state: amber ⚙ on "on" frames, dimmer on "off" frames.
+        let (text, color) = if blink_on {
+            (
+                format!("⚙ AIOS Active ({active_count})"),
+                palette::STATUS_WARNING,
+            )
+        } else {
+            (
+                format!("⚙ AIOS Active ({active_count})"),
+                palette::TEXT_MUTED,
+            )
+        };
+        vec![Span::styled(text, Style::default().fg(color))]
+    } else {
+        // Idle steady chip.
+        vec![Span::styled(
+            "AIOS Active",
+            Style::default().fg(palette::STATUS_SUCCESS),
+        )]
+    }
 }
 
 /// A status toast routed to the footer's left segment for a short time.
@@ -289,7 +319,17 @@ impl FooterProps {
         // "worked 4m". The chip stays empty until enough turns add up
         // to cross the 60s threshold inside `footer_worked_chip`.
         let worked = footer_worked_chip(app.cumulative_turn_duration);
-        let aios = footer_aios_chip(app.aios_enabled);
+        let aios_active_count = app
+            .aios_processes
+            .iter()
+            .filter(|p| p.status == crate::tui::app::AiosProcessStatus::Running)
+            .count();
+        // Blink at ~1 Hz: toggle on each whole second.
+        let blink_on = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() % 2 == 0)
+            .unwrap_or(true);
+        let aios = footer_aios_chip(app.aios_enabled, aios_active_count, blink_on);
         Self {
             model: app.model_display_label(),
             mode_label,

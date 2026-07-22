@@ -7,6 +7,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 
+use crate::event_bus::AiosEventSender;
 use crate::manifest::{parse_manifest, validate_manifest};
 use crate::registry::{DependencyRegistry, parse_all_registries};
 use crate::types::ModuleManifest;
@@ -34,11 +35,27 @@ impl AiOsLoader {
         Self { root: root.into() }
     }
 
-    /// Discover all modules listed in the module registry and parse
-    /// their manifests. Returns loaded modules in registry order.
-    pub fn discover_modules(&self) -> anyhow::Result<Vec<LoadedModule>> {
+    /// Discover all modules listed in the module registry and parse their
+    /// manifests. Returns loaded modules in registry order.
+    ///
+    /// Pass `Some(tx)` to stream per-module progress events to the TUI so
+    /// the AIOS Processes sidebar panel shows live scan activity.
+    pub fn discover_modules(
+        &self,
+        events: Option<&AiosEventSender>,
+    ) -> anyhow::Result<Vec<LoadedModule>> {
         let registry_dir = self.root.join("registry");
         let (module_registry, _cap_registry, _dep_registry) = parse_all_registries(&registry_dir)?;
+
+        if let Some(tx) = events {
+            tx.send_started(
+                "module-scan",
+                format!(
+                    "scanning {} registry entries",
+                    module_registry.modules.len()
+                ),
+            );
+        }
 
         let mut loaded = Vec::new();
 
@@ -70,6 +87,12 @@ impl AiOsLoader {
                         );
                         continue;
                     }
+                    if let Some(tx) = events {
+                        tx.send_progress(
+                            "module-scan",
+                            format!("loaded {} — {}", manifest.id, manifest.name),
+                        );
+                    }
                     let dir = if module_dir.is_dir() {
                         module_dir
                     } else {
@@ -90,30 +113,30 @@ impl AiOsLoader {
             }
         }
 
+        if let Some(tx) = events {
+            tx.send_done("module-scan");
+        }
         Ok(loaded)
     }
 
-    /// Compute a valid load order for the given modules, using the
-    /// dependency registry to resolve dependencies.
+    /// Compute a valid load order for the given modules using the
+    /// dependency registry.
     ///
-    /// The algorithm is a Kahn-style topological sort:
-    /// 1. Build adjacency: for each module, its dependants (modules that need it).
+    /// Kahn-style topological sort:
+    /// 1. Build adjacency: for each module, its dependants.
     /// 2. Start with modules that have zero unsatisfied dependencies.
     /// 3. Process each, removing it from dependants' pending counts.
-    /// 4. Any modules left unprocessed are either optional or have unresolved cycles.
+    /// 4. Any modules left unprocessed are optional or have unresolved cycles.
     pub fn compute_load_order(
         modules: &[LoadedModule],
         dep_registry: &DependencyRegistry,
     ) -> Vec<usize> {
-        // Map module ID → index in the modules slice
         let id_to_index: HashMap<&str, usize> = modules
             .iter()
             .enumerate()
             .map(|(i, m)| (m.manifest.id.as_str(), i))
             .collect();
 
-        // For each module index, count how many of its dependencies are
-        // NOT present in the loaded set (unsatisfied).
         let mut unsatisfied: Vec<usize> = modules
             .iter()
             .map(|m| {
@@ -125,8 +148,6 @@ impl AiOsLoader {
             })
             .collect();
 
-        // Build reverse edges: for each module A, which loaded modules
-        // depend on A?
         let mut dependants: Vec<Vec<usize>> = vec![Vec::new(); modules.len()];
         for (i, m) in modules.iter().enumerate() {
             for dep_id in dep_registry.depends_on(&m.manifest.id) {
@@ -136,7 +157,6 @@ impl AiOsLoader {
             }
         }
 
-        // Kahn's algorithm
         let mut queue: VecDeque<usize> = (0..modules.len())
             .filter(|&i| unsatisfied[i] == 0)
             .collect();
@@ -172,11 +192,16 @@ impl AiOsLoader {
     }
 
     /// Full pipeline: discover modules, compute load order, return both.
-    pub fn load(&self) -> anyhow::Result<(Vec<LoadedModule>, Vec<usize>, DependencyRegistry)> {
+    ///
+    /// Pass `Some(tx)` to stream progress events to the TUI during the scan.
+    pub fn load(
+        &self,
+        events: Option<&AiosEventSender>,
+    ) -> anyhow::Result<(Vec<LoadedModule>, Vec<usize>, DependencyRegistry)> {
         let registry_dir = self.root.join("registry");
         let (_mod_reg, _cap_reg, dep_registry) = parse_all_registries(&registry_dir)?;
 
-        let modules = self.discover_modules()?;
+        let modules = self.discover_modules(events)?;
         let order = Self::compute_load_order(&modules, &dep_registry);
 
         Ok((modules, order, dep_registry))

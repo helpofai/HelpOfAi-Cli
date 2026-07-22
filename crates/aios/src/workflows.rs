@@ -9,6 +9,7 @@ use std::path::PathBuf;
 
 use crate::agents::{AiosAgent, AiosAgentRegistry};
 use crate::constitution::load_constitution_prompt;
+use crate::event_bus::AiosEventSender;
 use crate::registry::parse_all_registries;
 use crate::types::{WorkflowDef, WorkflowPhase};
 
@@ -16,6 +17,8 @@ use crate::types::{WorkflowDef, WorkflowPhase};
 pub struct AiosWorkflowRunner {
     aios_root: PathBuf,
     agent_registry: AiosAgentRegistry,
+    /// Optional event bus sender — present when called from the TUI.
+    pub events: Option<AiosEventSender>,
 }
 
 impl AiosWorkflowRunner {
@@ -28,7 +31,15 @@ impl AiosWorkflowRunner {
         Ok(Self {
             aios_root,
             agent_registry,
+            events: None,
         })
+    }
+
+    /// Attach an event bus sender so live progress is streamed to the TUI.
+    #[must_use]
+    pub fn with_events(mut self, tx: AiosEventSender) -> Self {
+        self.events = Some(tx);
+        self
     }
 
     /// Load a workflow definition from the workspace.
@@ -61,7 +72,7 @@ impl AiosWorkflowRunner {
             }
         }
 
-        bail!("Workflow '{}' not found in registry.", workflow_name)
+        bail!("Workflow '{workflow_name}' not found in registry.")
     }
 
     /// List all workflows in the system.
@@ -142,7 +153,7 @@ impl AiosWorkflowRunner {
         prompt.push_str("## Active Task Context\n\n");
         prompt.push_str(&format!("**Current Phase**: {}\n", phase.phase));
         prompt.push_str(&format!("**Engine**: {}\n", phase.engine));
-        prompt.push_str(&format!("**Instruction**: {}\n\n", task_description));
+        prompt.push_str(&format!("**Instruction**: {task_description}\n\n"));
 
         // Inject Project Brain Symbol Context
         if let Ok(brain) = crate::brain::ProjectBrain::open(&self.aios_root) {
@@ -159,12 +170,27 @@ impl AiosWorkflowRunner {
 
     /// Execute a workflow dry-run or verification, displaying the structural phases,
     /// provider modules, specialist agents, and verification gates.
+    ///
+    /// Emits `ProcessStarted` → per-phase `ProcessProgress` → `ProcessDone` events
+    /// when an [`AiosEventSender`] is attached via [`Self::with_events`].
     pub fn run_workflow_diagnostics(
         &self,
         workflow_name: &str,
         task_description: &str,
     ) -> Result<()> {
         let workflow = self.load_workflow(workflow_name)?;
+        let process_label = format!("workflow:{workflow_name}");
+
+        if let Some(tx) = &self.events {
+            tx.send_started(
+                &process_label,
+                format!(
+                    "starting {} — {} phases",
+                    workflow.name,
+                    workflow.lifecycle.len()
+                ),
+            );
+        }
 
         println!(
             "AIOS Workflow Lifecycle Diagnostic: {} ({})",
@@ -185,7 +211,6 @@ impl AiosWorkflowRunner {
         let (mod_registry, _, _) = parse_all_registries(&registry_dir)?;
 
         for phase in &workflow.lifecycle {
-            // Find module info
             let mod_name = mod_registry
                 .modules
                 .values()
@@ -193,7 +218,6 @@ impl AiosWorkflowRunner {
                 .map(|m| m.name.as_str())
                 .unwrap_or("Unknown Engine");
 
-            // Find matching agent
             let matching_agent = self.agent_registry.agents.values().find(|a| {
                 mod_registry
                     .modules
@@ -207,25 +231,36 @@ impl AiosWorkflowRunner {
                 .map(|a| format!("{} ({})", a.spec.name, a.spec.role))
                 .unwrap_or_else(|| "System Engine".to_string());
 
+            // Emit live phase progress to the TUI panel.
+            if let Some(tx) = &self.events {
+                tx.send_progress(
+                    &process_label,
+                    format!("phase {} — {} via {}", phase.order, phase.phase, mod_name),
+                );
+            }
+
             println!(
                 "  [{}] Phase: {:12} | Engine: {:20} ({:20}) | Agent: {}",
                 phase.order, phase.phase, phase.engine, mod_name, agent_str
             );
 
             if let Some(ref gate) = phase.gate {
-                println!("      ↳ Gating mechanism: {}", gate);
+                println!("      ↳ Gating mechanism: {gate}");
             }
         }
         println!("--------------------------------------------------");
         println!();
 
-        // Display sample compiled prompt for first phase
         if let Some(first_phase) = workflow.lifecycle.first() {
             let sample_prompt = self.compile_phase_prompt(first_phase, task_description)?;
             println!("Sample Compiled Prompt for Phase [{}]:", first_phase.phase);
             println!("```markdown");
             println!("{}", sample_prompt.trim());
             println!("```");
+        }
+
+        if let Some(tx) = &self.events {
+            tx.send_done(&process_label);
         }
 
         Ok(())

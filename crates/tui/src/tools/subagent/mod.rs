@@ -2931,15 +2931,16 @@ async fn subagent_session_projection(
 }
 
 fn default_state_path(workspace: &Path) -> PathBuf {
-    // Prefer .helpofai, fall back to .deepseek for project-local state
+    // Always write to .helpofai/state/. Only read from the legacy .deepseek/state/
+    // when it already exists on disk (workspaces created before the rename) and
+    // .helpofai/state/ has not been created yet — that way old data is not lost,
+    // but we never create a new .deepseek directory.
     let primary = workspace.join(".helpofai").join("state");
-    if primary.exists() {
-        return primary.join(SUBAGENT_STATE_FILE);
+    let legacy = workspace.join(".deepseek").join("state");
+    if !primary.exists() && legacy.join(SUBAGENT_STATE_FILE).exists() {
+        return legacy.join(SUBAGENT_STATE_FILE);
     }
-    workspace
-        .join(".deepseek")
-        .join("state")
-        .join(SUBAGENT_STATE_FILE)
+    primary.join(SUBAGENT_STATE_FILE)
 }
 
 fn epoch_millis_now() -> u64 {
@@ -5546,12 +5547,10 @@ fn stamp_subagent_summary(raw: &str) -> (String, bool) {
         .saturating_sub(SUBAGENT_SUMMARY_HEAD_CHARS)
         .saturating_sub(SUBAGENT_SUMMARY_TAIL_CHARS);
     let stamped = format!(
-        "{head}\n\n[Sub-agent summary truncated: {head_chars} + {tail_chars} of {total} \
+        "{head}\n\n[Sub-agent summary truncated: {SUBAGENT_SUMMARY_HEAD_CHARS} + {SUBAGENT_SUMMARY_TAIL_CHARS} of {total} \
 chars shown. This is the child's self-report; the elided middle ({omitted} chars) is not in \
 the spillover store and cannot be retrieved via retrieve_tool_result. Re-open the child or \
 read changed files directly to verify material claims.]\n\n{tail}",
-        head_chars = SUBAGENT_SUMMARY_HEAD_CHARS,
-        tail_chars = SUBAGENT_SUMMARY_TAIL_CHARS,
     );
     (stamped, true)
 }

@@ -247,6 +247,7 @@ pub enum SidebarFocusValue {
     Work,
     Tasks,
     Agents,
+    Aios,
     Context,
     Hidden,
 }
@@ -870,6 +871,7 @@ impl SidebarFocusValue {
             Self::Work => "work",
             Self::Tasks => "tasks",
             Self::Agents => "agents",
+            Self::Aios => "aios",
             Self::Context => "context",
             Self::Hidden => "hidden",
         }
@@ -1008,6 +1010,7 @@ impl From<&str> for SidebarFocusValue {
             SidebarFocus::Work => Self::Work,
             SidebarFocus::Tasks => Self::Tasks,
             SidebarFocus::Agents => Self::Agents,
+            SidebarFocus::Aios => Self::Aios,
             SidebarFocus::Context => Self::Context,
             SidebarFocus::Hidden => Self::Hidden,
         }
