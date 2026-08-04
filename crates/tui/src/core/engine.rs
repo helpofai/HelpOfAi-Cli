@@ -968,6 +968,13 @@ impl Engine {
         self.reset_cancel_token();
         self.turn_counter = self.turn_counter.saturating_add(1);
 
+        let mut command = command;
+        let mut is_background = false;
+        if command.trim().ends_with('&') {
+            command = command.trim().trim_end_matches('&').trim().to_string();
+            is_background = true;
+        }
+
         let turn_id = format!(
             "{}{seq}",
             USER_SHELL_TOOL_ID_PREFIX,
@@ -975,7 +982,11 @@ impl Engine {
         );
         let tool_id = turn_id.clone();
         let tool_name = "exec_shell".to_string();
-        let tool_input = json!({ "command": command, "source": "user" });
+        let tool_input = json!({
+            "command": command,
+            "source": "user",
+            "background": is_background,
+        });
         let snapshot_prompt = tool_input["command"]
             .as_str()
             .unwrap_or_default()

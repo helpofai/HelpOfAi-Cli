@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.94] - 2026-08-04
+
+### Added
+
+- **Arbitrary Background Commands (`&`)**: Support running any shell command asynchronously in the background by appending `&` (e.g. `!cargo build &`). Status is tracked dynamically via `/jobs`.
+- **TTY State Recovery Commands**: Added `/reset` and `/reset-tty` TUI commands to restore raw terminal mode, mouse capture, and viewport states if a child process crashes or leaves the console unstable.
+- **Smart AIOS Task Autocomplete & Fallbacks**: Integrated generic task routing (`!aios <task>`) to auto-dispatch workflow runs, and added smart default parameter strings so common actions like `!aios review` run without requiring explicit arguments.
+
+### Fixed
+
+- **Resilient Cursor Probes**: Handled `crossterm` cursor position timeout errors gracefully, returning a default `(0, 0)` fallback instead of panicking the TUI when raw-mode reads are delayed (specifically resolving startup and runtime crashes on Kali Linux).
+
 ## [0.8.93] - 2026-07-22
 
 ### Added

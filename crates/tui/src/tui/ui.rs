@@ -6466,7 +6466,7 @@ async fn handle_bang_shell_input(
         let sub_token = parts.first().copied().unwrap_or("");
         let sub_pos = trimmed_cmd.find(sub_token).unwrap_or(0);
         let rest = trimmed_cmd[sub_pos + sub_token.len()..].trim();
-        (first, rest)
+        (first.clone(), rest)
     };
 
     match subcmd.as_str() {
@@ -6591,25 +6591,37 @@ async fn handle_bang_shell_input(
             return Ok(true);
         }
         "run" => {
-            let shell_cmd = format!("helpofai aios run {sub_args}");
-            // Create a fresh AIOS event channel for this workflow run so the
-            // sidebar panel gets live phase-by-phase progress automatically.
-            let (wf_name, task_desc) = sub_args
-                .trim()
-                .split_once(' ')
-                .map(|(w, t)| (w.to_string(), t.to_string()))
-                .unwrap_or_else(|| (sub_args.trim().to_string(), String::new()));
+            let trimmed = sub_args.trim();
+            let (wf_name, task_desc) = if let Some((w, t)) = trimmed.split_once(' ') {
+                let task_str = t.trim();
+                (
+                    w.trim().to_string(),
+                    if task_str.is_empty() {
+                        "Execute workspace workflow task".to_string()
+                    } else {
+                        task_str.to_string()
+                    },
+                )
+            } else if !trimmed.is_empty() {
+                (
+                    trimmed.to_string(),
+                    match trimmed {
+                        "review" => "Review recent workspace commits and changes".to_string(),
+                        "audit" => "Perform workspace security and architectural audit".to_string(),
+                        _ => "Execute workspace workflow task".to_string(),
+                    },
+                )
+            } else {
+                (
+                    "review".to_string(),
+                    "Review recent workspace commits and changes".to_string(),
+                )
+            };
 
+            let shell_cmd = format!("helpofai aios run {wf_name} \"{task_desc}\"");
             let (tx, rx) = helpofai_aios::aios_channel();
-            // Pre-populate the started entry immediately so the panel appears
-            // before the shell command even starts.
             tx.send_started(format!("workflow:{wf_name}"), task_desc.clone());
             app.aios_event_rx = Some(rx);
-
-            // Store the sender on the app so the workflow runner (if invoked
-            // in-process) can call send_progress/send_done on it.
-            // For shell-dispatched runs the sender is dropped here; the panel
-            // will show the "running" state until the command exits.
             drop(tx);
 
             engine_handle
@@ -6621,7 +6633,9 @@ async fn handle_bang_shell_input(
                     approval_mode: app.approval_mode,
                 })
                 .await?;
-            app.status_message = Some("AIOS workflow run command submitted.".to_string());
+            app.status_message = Some(format!(
+                "AIOS workflow '{wf_name}' submitted: \"{task_desc}\""
+            ));
             return Ok(true);
         }
         "build-feature" | "fix-bug" | "review" | "review-code" | "refactor" | "optimize"
@@ -6631,7 +6645,20 @@ async fn handle_bang_shell_input(
                 "analyze" => "audit",
                 other => other,
             };
-            let shell_cmd = format!("helpofai aios run {wf_name} {sub_args}");
+            let trimmed_args = sub_args.trim();
+            let task_arg = if trimmed_args.is_empty() {
+                match wf_name {
+                    "review" => "Review recent workspace commits and changes",
+                    "audit" => "Perform workspace security and architectural audit",
+                    "build-feature" => "Implement workspace feature requirements",
+                    "fix-bug" => "Diagnose and fix workspace bug",
+                    "refactor" => "Refactor target workspace modules",
+                    _ => "Execute workspace workflow task",
+                }
+            } else {
+                trimmed_args
+            };
+            let shell_cmd = format!("helpofai aios run {wf_name} \"{task_arg}\"");
             engine_handle
                 .send(Op::RunShellCommand {
                     command: shell_cmd,
@@ -6641,7 +6668,9 @@ async fn handle_bang_shell_input(
                     approval_mode: app.approval_mode,
                 })
                 .await?;
-            app.status_message = Some(format!("AIOS workflow '{wf_name}' command submitted."));
+            app.status_message = Some(format!(
+                "AIOS workflow '{wf_name}' submitted: \"{task_arg}\""
+            ));
             return Ok(true);
         }
         "health" | "timeline" | "decisions" => {
@@ -6684,7 +6713,32 @@ async fn handle_bang_shell_input(
             app.status_message = Some("AIOS brain command submitted.".to_string());
             return Ok(true);
         }
-        _ => {}
+        _ => {
+            if first == "hoa" || first == "aios" || first == "helpofai" {
+                let task_prompt = format!("{} {}", subcmd, sub_args).trim().to_string();
+                if !task_prompt.is_empty() {
+                    let shell_cmd = format!("helpofai aios run build-feature \"{task_prompt}\"");
+                    let (tx, rx) = helpofai_aios::aios_channel();
+                    tx.send_started("workflow:build-feature".to_string(), task_prompt.clone());
+                    app.aios_event_rx = Some(rx);
+                    drop(tx);
+
+                    engine_handle
+                        .send(Op::RunShellCommand {
+                            command: shell_cmd,
+                            mode: app.mode,
+                            trust_mode: app.trust_mode,
+                            auto_approve: app.mode == AppMode::Yolo,
+                            approval_mode: app.approval_mode,
+                        })
+                        .await?;
+                    app.status_message = Some(format!(
+                        "Routed AIOS task to 'build-feature': \"{task_prompt}\""
+                    ));
+                    return Ok(true);
+                }
+            }
+        }
     }
 
     engine_handle
@@ -8158,6 +8212,22 @@ async fn execute_command_input(
     web_config_session: &mut Option<WebConfigSession>,
     input: &str,
 ) -> Result<bool> {
+    let trimmed = input.trim();
+    if trimmed.eq_ignore_ascii_case("/reset-tty") || trimmed.eq_ignore_ascii_case("/reset") {
+        let _ = crossterm::terminal::disable_raw_mode();
+        let _ = crossterm::terminal::enable_raw_mode();
+        let mut stdout = std::io::stdout();
+        let _ = crossterm::execute!(
+            stdout,
+            crossterm::cursor::Show,
+            crossterm::event::EnableMouseCapture
+        );
+        let _ = terminal.clear();
+        app.status_message =
+            Some("Terminal Raw Mode & Viewport successfully recovered.".to_string());
+        return Ok(false);
+    }
+
     if let Some(parsed_index) = parse_queue_send_command(input) {
         match parsed_index {
             Ok(index) => {

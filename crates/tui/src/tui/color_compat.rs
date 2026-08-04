@@ -190,7 +190,16 @@ impl<W: Write> Backend for ColorCompatBackend<W> {
     }
 
     fn get_cursor_position(&mut self) -> io::Result<Position> {
-        self.inner.get_cursor_position()
+        match self.inner.get_cursor_position() {
+            Ok(pos) => Ok(pos),
+            Err(err) => {
+                tracing::warn!(
+                    ?err,
+                    "failed to read cursor position from terminal; falling back to (0, 0)"
+                );
+                Ok(Position::new(0, 0))
+            }
+        }
     }
 
     fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> io::Result<()> {

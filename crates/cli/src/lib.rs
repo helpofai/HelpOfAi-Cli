@@ -377,6 +377,7 @@ enum AiosCommand {
         /// Workflow name or ID.
         name: String,
         /// The instruction or description of the task.
+        #[arg(default_value = "Execute workspace workflow task")]
         task: String,
     },
     /// Index the codebase using AST parser into the AIOS Knowledge Graph.
