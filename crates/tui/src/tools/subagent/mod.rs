@@ -3050,10 +3050,6 @@ impl ToolSpec for AgentTool {
                     "type": "string",
                     "description": SUBAGENT_TYPE_DESCRIPTION
                 },
-                "role": {
-                    "type": "string",
-                    "description": "Optional specialized role for the child agent (e.g. 'architect', 'backend', 'frontend', 'security', 'database', 'qa', 'devops', 'reviewer', 'explorer', 'implementer'). Loads specialized AIOS agent instructions when available."
-                },
                 "model_strength": {
                     "type": "string",
                     "enum": ["same", "faster"],
