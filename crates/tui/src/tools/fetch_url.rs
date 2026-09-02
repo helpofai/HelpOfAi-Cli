@@ -270,7 +270,7 @@ impl ToolSpec for FetchUrlTool {
 
 /// Check if an IP address is loopback, private, link-local, cloud-metadata,
 /// multicast, or reserved — all addresses that should not be reachable via
-/// an LLM-initiated fetch_url request (SSRF prevention).
+/// an LLM-initiated fetch_url request by default (SSRF prevention).
 fn is_restricted_ip(ip: &std::net::IpAddr) -> bool {
     match ip {
         std::net::IpAddr::V4(v4) => {
@@ -308,6 +308,38 @@ fn is_restricted_ip(ip: &std::net::IpAddr) -> bool {
     }
 }
 
+/// Check if an IP address is cloud-metadata (169.254.169.254), link-local (169.254.0.0/16, fe80::/10),
+/// multicast, broadcast, unspecified, or reserved (Class E / CGNAT / benchmark) —
+/// addresses that must remain strictly blocked even when `allow_local_network` is enabled.
+fn is_cloud_metadata_or_reserved_ip(ip: &std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v4) => {
+            v4.is_multicast()
+                || v4.is_broadcast()
+                || v4.is_unspecified()
+                || v4.is_link_local() // 169.254.0.0/16 (includes 169.254.169.254 cloud metadata)
+                || *ip == std::net::IpAddr::V4(std::net::Ipv4Addr::new(169, 254, 169, 254))
+                // 100.64.0.0/10 — Carrier-grade NAT (CGNAT / shared address space)
+                || matches!(v4.octets(), [100, 64..=127, ..])
+                // 198.18.0.0/15 — IETF benchmark testing
+                || matches!(v4.octets(), [198, 18..=19, ..])
+                // 240.0.0.0/4 — reserved (former Class E)
+                || v4.octets()[0] >= 240
+        }
+        std::net::IpAddr::V6(v6) => {
+            if v6.is_unspecified()
+                || matches!(v6.octets(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, ..])
+            {
+                return true;
+            }
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_cloud_metadata_or_reserved_ip(&std::net::IpAddr::V4(v4));
+            }
+            v6.is_multicast() || matches!(v6.segments(), [0xfe80..=0xfebf, ..]) // Link-local fe80::/10
+        }
+    }
+}
+
 async fn validate_fetch_target(
     url: &reqwest::Url,
     context: &ToolContext,
@@ -325,12 +357,18 @@ async fn validate_fetch_target(
 
     validate_network_policy(&host, context)?;
 
+    let allow_local = context
+        .network_policy
+        .as_ref()
+        .map(|d| d.allows_local_network())
+        .unwrap_or(false);
+
     // SSRF protection: resolve hostname and reject private/link-local/loopback IPs.
     // Prevents LLM-prompted requests to cloud metadata (169.254.169.254),
-    // localhost services, and internal networks.
-    if host == "localhost" || host == "localhost.localdomain" {
+    // localhost services, and internal networks, unless allow_local_network is configured.
+    if !allow_local && (host == "localhost" || host == "localhost.localdomain") {
         return Err(ToolError::permission_denied(
-            "requests to localhost are not allowed",
+            "requests to localhost are not allowed by default; set `network.allow_local_network = true` in config to enable",
         ));
     }
     // Normalize bracketed IPv6 literals before the literal-IP check so they
@@ -341,9 +379,15 @@ async fn validate_fetch_target(
         .and_then(|s| s.strip_suffix(']'))
         .unwrap_or(host.as_str());
     if let Ok(ip) = ip_candidate.parse::<std::net::IpAddr>() {
-        if is_restricted_ip(&ip) {
+        if allow_local {
+            if is_cloud_metadata_or_reserved_ip(&ip) {
+                return Err(ToolError::permission_denied(format!(
+                    "IP {ip} is a restricted metadata/reserved address"
+                )));
+            }
+        } else if is_restricted_ip(&ip) {
             return Err(ToolError::permission_denied(format!(
-                "IP {ip} is a restricted address (private/loopback/link-local)"
+                "IP {ip} is a restricted address (private/loopback/link-local); set network.allow_local_network = true in config to permit local network access"
             )));
         }
         return Ok(None);
@@ -385,6 +429,16 @@ fn validate_dns_resolved_ip(
     ip: &std::net::IpAddr,
     decider: Option<&NetworkPolicyDecider>,
 ) -> Result<(), ToolError> {
+    let allow_local = decider.map(|d| d.allows_local_network()).unwrap_or(false);
+    if allow_local {
+        if !is_cloud_metadata_or_reserved_ip(ip) {
+            return Ok(());
+        }
+        return Err(ToolError::permission_denied(format!(
+            "resolved IP {ip} is a restricted metadata/reserved address"
+        )));
+    }
+
     if !is_restricted_ip(ip) {
         return Ok(());
     }
@@ -403,7 +457,7 @@ fn validate_dns_resolved_ip(
     }
 
     Err(ToolError::permission_denied(format!(
-        "resolved IP {ip} is a restricted address (private/loopback/link-local)"
+        "resolved IP {ip} is a restricted address (private/loopback/link-local); set network.allow_local_network = true in config to permit local network access"
     )))
 }
 
@@ -656,6 +710,7 @@ mod tests {
             allow: vec!["api.deepseek.com".to_string()],
             deny: vec![],
             proxy: Vec::new(),
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);
@@ -736,6 +791,7 @@ mod tests {
             allow: vec!["api.deepseek.com".to_string()],
             deny: vec![],
             proxy: Vec::new(),
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);
@@ -764,6 +820,7 @@ mod tests {
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: vec!["github.com".to_string()],
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);
@@ -782,6 +839,7 @@ mod tests {
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: vec!["github.com".to_string()],
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);
@@ -802,6 +860,7 @@ mod tests {
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: vec!["198.18.0.1".to_string()],
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);
@@ -830,6 +889,7 @@ mod tests {
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: vec!["github.com".to_string()],
+            allow_local_network: false,
             audit: true,
         };
         let decider = NetworkPolicyDecider::new(policy, Some(auditor));
@@ -840,5 +900,72 @@ mod tests {
         let body = std::fs::read_to_string(dir.path().join("audit.log")).expect("audit log");
         assert!(body.contains("github.com"));
         assert!(body.contains("TrustedProxyFakeIp-Allow"));
+    }
+
+    #[tokio::test]
+    async fn local_network_allowed_permits_localhost_and_loopback() {
+        use crate::network_policy::{Decision, NetworkPolicy, NetworkPolicyDecider};
+
+        let policy = NetworkPolicy {
+            default: Decision::Allow.into(),
+            allow: Vec::new(),
+            deny: Vec::new(),
+            proxy: Vec::new(),
+            allow_local_network: true,
+            audit: false,
+        };
+        let decider = NetworkPolicyDecider::new(policy, None);
+        let ctx = ToolContext::new(PathBuf::from(".")).with_network_policy(decider);
+
+        let url_localhost = reqwest::Url::parse("http://localhost:8000/login").unwrap();
+        assert!(validate_fetch_target(&url_localhost, &ctx).await.is_ok());
+
+        let url_127 = reqwest::Url::parse("http://127.0.0.1:8000/register").unwrap();
+        assert!(validate_fetch_target(&url_127, &ctx).await.is_ok());
+
+        let url_v6 = reqwest::Url::parse("http://[::1]:8000/api/status").unwrap();
+        assert!(validate_fetch_target(&url_v6, &ctx).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn local_network_allowed_permits_lan_private_ips() {
+        use crate::network_policy::{Decision, NetworkPolicy, NetworkPolicyDecider};
+
+        let policy = NetworkPolicy {
+            default: Decision::Allow.into(),
+            allow: Vec::new(),
+            deny: Vec::new(),
+            proxy: Vec::new(),
+            allow_local_network: true,
+            audit: false,
+        };
+        let decider = NetworkPolicyDecider::new(policy, None);
+        let ctx = ToolContext::new(PathBuf::from(".")).with_network_policy(decider);
+
+        let url_lan = reqwest::Url::parse("http://192.168.1.100:8080/metrics").unwrap();
+        assert!(validate_fetch_target(&url_lan, &ctx).await.is_ok());
+
+        let url_corp = reqwest::Url::parse("http://10.0.5.20/api").unwrap();
+        assert!(validate_fetch_target(&url_corp, &ctx).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn local_network_allowed_still_blocks_cloud_metadata() {
+        use crate::network_policy::{Decision, NetworkPolicy, NetworkPolicyDecider};
+
+        let policy = NetworkPolicy {
+            default: Decision::Allow.into(),
+            allow: Vec::new(),
+            deny: Vec::new(),
+            proxy: Vec::new(),
+            allow_local_network: true,
+            audit: false,
+        };
+        let decider = NetworkPolicyDecider::new(policy, None);
+        let ctx = ToolContext::new(PathBuf::from(".")).with_network_policy(decider);
+
+        let url_meta = reqwest::Url::parse("http://169.254.169.254/latest/meta-data").unwrap();
+        let err = validate_fetch_target(&url_meta, &ctx).await.unwrap_err();
+        assert!(format!("{err}").contains("restricted metadata/reserved address"));
     }
 }

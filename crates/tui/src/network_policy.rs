@@ -107,6 +107,11 @@ pub struct NetworkPolicy {
     /// explicitly trusted proxy setup. This does not affect literal IP URLs.
     #[serde(default)]
     pub proxy: Vec<String>,
+    /// Whether to allow requests to localhost, loopback (127.0.0.1, ::1),
+    /// and private local network (LAN) ranges (192.168.x.x, 10.x.x.x, 172.16.x.x).
+    /// Cloud metadata IPs (169.254.169.254) remain strictly blocked.
+    #[serde(default)]
+    pub allow_local_network: bool,
     /// Whether to record one audit-log line per network call. Defaults to true.
     #[serde(default = "default_audit")]
     pub audit: bool,
@@ -122,11 +127,21 @@ fn default_audit() -> bool {
 
 impl Default for NetworkPolicy {
     fn default() -> Self {
+        let allow_local_env = std::env::var("HELPOFAI_ALLOW_LOCAL_NETWORK")
+            .or_else(|_| std::env::var("DEEPSEEK_ALLOW_LOCAL_NETWORK"))
+            .ok()
+            .map(|v| {
+                let s = v.trim().to_ascii_lowercase();
+                matches!(s.as_str(), "1" | "true" | "yes" | "on")
+            })
+            .unwrap_or(false);
+
         Self {
             default: DecisionToml::Prompt,
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: Vec::new(),
+            allow_local_network: allow_local_env,
             audit: true,
         }
     }
@@ -507,6 +522,12 @@ impl NetworkPolicyDecider {
         &self.policy
     }
 
+    /// Whether local network and loopback access is allowed by the policy.
+    #[must_use]
+    pub fn allows_local_network(&self) -> bool {
+        self.policy.allow_local_network
+    }
+
     /// Inspect the session cache.
     #[must_use]
     pub fn cache(&self) -> &NetworkSessionCache {
@@ -532,13 +553,11 @@ impl NetworkPolicyDecider {
             self.audit_record(&normalized, tool, "Allow");
             return Decision::Allow;
         }
-        let decision = self.policy.decide(&normalized);
-        match decision {
-            Decision::Allow => self.audit_record(&normalized, tool, "Allow"),
-            Decision::Deny => self.audit_record(&normalized, tool, "Deny"),
-            Decision::Prompt => {}
+        let outcome = self.policy.decide(&normalized);
+        if outcome != Decision::Prompt {
+            self.audit_record(&normalized, tool, outcome.as_str());
         }
-        decision
+        outcome
     }
 
     /// Approve `host` for the rest of the session (one-shot). Audit log gets
@@ -603,6 +622,7 @@ mod tests {
             allow: allow.iter().map(|s| (*s).to_string()).collect(),
             deny: deny.iter().map(|s| (*s).to_string()).collect(),
             proxy: Vec::new(),
+            allow_local_network: false,
             audit: false,
         }
     }

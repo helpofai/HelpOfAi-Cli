@@ -2251,6 +2251,11 @@ pub struct NetworkPolicyToml {
     /// explicitly trusted proxy setup. Literal IP URLs remain blocked.
     #[serde(default)]
     pub proxy: Vec<String>,
+    /// Whether to allow requests to localhost, loopback (127.0.0.1, ::1),
+    /// and private local network (LAN) ranges (192.168.x.x, 10.x.x.x, 172.16.x.x).
+    /// Cloud metadata IPs (169.254.169.254) remain strictly blocked.
+    #[serde(default)]
+    pub allow_local_network: bool,
     /// Whether to record one audit-log line per outbound network call.
     #[serde(default = "default_network_audit")]
     pub audit: bool,
@@ -2271,6 +2276,7 @@ impl Default for NetworkPolicyToml {
             allow: Vec::new(),
             deny: Vec::new(),
             proxy: Vec::new(),
+            allow_local_network: false,
             audit: default_network_audit(),
         }
     }
@@ -2281,11 +2287,21 @@ impl NetworkPolicyToml {
     /// on-disk schema.
     #[must_use]
     pub fn into_runtime(self) -> crate::network_policy::NetworkPolicy {
+        let allow_local_env = std::env::var("HELPOFAI_ALLOW_LOCAL_NETWORK")
+            .or_else(|_| std::env::var("DEEPSEEK_ALLOW_LOCAL_NETWORK"))
+            .ok()
+            .map(|v| {
+                let s = v.trim().to_ascii_lowercase();
+                matches!(s.as_str(), "1" | "true" | "yes" | "on")
+            })
+            .unwrap_or(self.allow_local_network);
+
         crate::network_policy::NetworkPolicy {
             default: crate::network_policy::Decision::parse(&self.default).into(),
             allow: self.allow,
             deny: self.deny,
             proxy: self.proxy,
+            allow_local_network: allow_local_env,
             audit: self.audit,
         }
     }

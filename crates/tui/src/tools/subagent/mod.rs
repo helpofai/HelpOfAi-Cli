@@ -146,7 +146,8 @@ const VALID_SUBAGENT_TYPES: &str = "general (aliases: general-purpose, general_p
 const VALID_ROLE_ALIASES: &str = "default; worker (aliases: general, general-purpose, general_purpose); \
      explorer (aliases: explore, exploration); awaiter (aliases: plan, planning, planner); \
      reviewer (aliases: review, code-review, code_review); implementer (aliases: implement, implementation, builder); \
-     verifier (aliases: verify, verification, validator, tester); custom";
+     verifier (aliases: verify, verification, validator, tester); custom; \
+     aios enterprise roles (architect, backend, frontend, database, api, qa, devops, security, documentation, android, ios, flutter, laravel, react)";
 const SUBAGENT_TYPE_DESCRIPTION: &str = "Sub-agent type. Accepted vocabulary: general (aliases: general-purpose, general_purpose, worker, default), \
      explore (aliases: exploration, explorer), plan (aliases: planning, planner, awaiter), \
      review (aliases: code-review, code_review, reviewer), implementer (aliases: implement, implementation, builder), \
@@ -154,7 +155,8 @@ const SUBAGENT_TYPE_DESCRIPTION: &str = "Sub-agent type. Accepted vocabulary: ge
 const SUBAGENT_ROLE_DESCRIPTION: &str = "Role alias. Accepted vocabulary: default; worker (aliases: general, general-purpose, general_purpose); \
      explorer (aliases: explore, exploration); awaiter (aliases: plan, planning, planner); \
      reviewer (aliases: review, code-review, code_review); implementer (aliases: implement, implementation, builder); \
-     verifier (aliases: verify, verification, validator, tester); custom. \
+     verifier (aliases: verify, verification, validator, tester); custom; \
+     aios enterprise roles: architect, backend, frontend, database, api, qa, devops, security, documentation, android, ios, flutter, laravel, react. \
      Must match `type` if both are given.";
 /// Whale species used as friendly names for sub-agents in the UI. The full
 /// Cetacea infraorder — baleen whales (Mysticeti), toothed whales
@@ -438,7 +440,9 @@ impl SubAgentType {
             "review" | "code-review" | "code_review" | "reviewer" => Some(Self::Review),
             "implementer" | "implement" | "implementation" | "builder" => Some(Self::Implementer),
             "verifier" | "verify" | "verification" | "validator" | "tester" => Some(Self::Verifier),
-            "custom" => Some(Self::Custom),
+            "custom" | "architect" | "backend" | "frontend" | "database" | "api" | "qa"
+            | "devops" | "security" | "documentation" | "android" | "ios" | "flutter"
+            | "laravel" | "react" => Some(Self::Custom),
             _ => None,
         }
     }
@@ -3046,6 +3050,10 @@ impl ToolSpec for AgentTool {
                     "type": "string",
                     "description": SUBAGENT_TYPE_DESCRIPTION
                 },
+                "role": {
+                    "type": "string",
+                    "description": "Optional specialized role for the child agent (e.g. 'architect', 'backend', 'frontend', 'security', 'database', 'qa', 'devops', 'reviewer', 'explorer', 'implementer'). Loads specialized AIOS agent instructions when available."
+                },
                 "model_strength": {
                     "type": "string",
                     "enum": ["same", "faster"],
@@ -5044,6 +5052,20 @@ fn normalize_role_alias(input: &str) -> Option<&'static str> {
         "implementer" | "implement" | "implementation" | "builder" => Some("implementer"),
         "verifier" | "verify" | "verification" | "validator" | "tester" => Some("verifier"),
         "custom" => Some("custom"),
+        "architect" => Some("architect"),
+        "backend" => Some("backend"),
+        "frontend" => Some("frontend"),
+        "database" => Some("database"),
+        "api" => Some("api"),
+        "qa" => Some("qa"),
+        "devops" => Some("devops"),
+        "security" => Some("security"),
+        "documentation" => Some("documentation"),
+        "android" => Some("android"),
+        "ios" => Some("ios"),
+        "flutter" => Some("flutter"),
+        "laravel" => Some("laravel"),
+        "react" => Some("react"),
         _ => None,
     }
 }

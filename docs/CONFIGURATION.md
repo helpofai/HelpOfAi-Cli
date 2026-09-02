@@ -495,6 +495,7 @@ Remaining variables:
   legacy directory exists)
 - `DEEPSEEK_ALLOW_INSECURE_HTTP` (`1`/`true` allows non-local `http://` base URLs; default is reject)
 - `DEEPSEEK_FORCE_HTTP1` (`1|true|yes|on` pins the HTTP client to HTTP/1.1, disabling HTTP/2; useful on Windows or behind proxies that mishandle long-lived H2 streams)
+- `HELPOFAI_ALLOW_LOCAL_NETWORK` (`1|true|yes|on` enables requests to `localhost`, `127.0.0.1`, and private LAN IP ranges for `fetch_url`; cloud metadata `169.254.169.254` remains blocked)
 - `HELPOFAI_HOME` (override the base data directory; defaults to `~/.helpofai`).
   If you previously exported `DEEPSEEK_HOME`, rename it to `HELPOFAI_HOME`;
   the old env var is not used for new HelpOfAi state paths.

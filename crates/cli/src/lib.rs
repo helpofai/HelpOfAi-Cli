@@ -381,6 +381,7 @@ enum AiosCommand {
         task: String,
     },
     /// Index the codebase using AST parser into the AIOS Knowledge Graph.
+    #[command(visible_alias = "brain-scan")]
     BrainIndex,
     /// Query the Codebase Knowledge Graph for class and symbol context.
     BrainQuery {

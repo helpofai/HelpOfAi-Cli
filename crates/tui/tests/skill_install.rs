@@ -62,6 +62,7 @@ fn allow_all_policy() -> NetworkPolicy {
         allow: Vec::new(),
         deny: Vec::new(),
         proxy: Vec::new(),
+        allow_local_network: false,
         audit: false,
     }
 }
@@ -72,6 +73,7 @@ fn deny_all_policy() -> NetworkPolicy {
         allow: Vec::new(),
         deny: Vec::new(),
         proxy: Vec::new(),
+        allow_local_network: false,
         audit: false,
     }
 }
@@ -82,6 +84,7 @@ fn prompt_all_policy() -> NetworkPolicy {
         allow: Vec::new(),
         deny: Vec::new(),
         proxy: Vec::new(),
+        allow_local_network: false,
         audit: false,
     }
 }

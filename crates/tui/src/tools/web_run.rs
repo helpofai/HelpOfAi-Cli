@@ -1961,6 +1961,7 @@ mod tests {
             allow: vec!["api.deepseek.com".to_string()],
             deny: vec![],
             proxy: Vec::new(),
+            allow_local_network: false,
             audit: false,
         };
         let decider = NetworkPolicyDecider::new(policy, None);

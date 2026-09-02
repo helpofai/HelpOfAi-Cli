@@ -266,11 +266,25 @@ impl ToolSpec for AiosBrainQueryTool {
             .map(|v| v.min(800) as usize)
             .unwrap_or(300);
 
-        let aios_root = helpofai_aios::resolve_aios_root(Some(&context.workspace))
-            .map_err(|e| ToolError::execution_failed(format!("AIOS root not found: {e}")))?;
+        let aios_root = match helpofai_aios::resolve_aios_root(Some(&context.workspace)) {
+            Ok(root) => root,
+            Err(_) => {
+                return Ok(ToolResult::success(
+                    "AIOS Project Brain is uninitialized for this workspace (aios.json not found). \
+                    To enable codebase knowledge graph querying, initialize an AIOS bundle or index the workspace."
+                        .to_string(),
+                ));
+            }
+        };
 
-        let brain = helpofai_aios::ProjectBrain::open(&aios_root)
-            .map_err(|e| ToolError::execution_failed(format!("Brain open failed: {e}")))?;
+        let brain = match helpofai_aios::ProjectBrain::open(&aios_root) {
+            Ok(b) => b,
+            Err(e) => {
+                return Ok(ToolResult::success(format!(
+                    "AIOS Project Brain could not be opened: {e}. Run `!hoa brain index` to generate the index."
+                )));
+            }
+        };
 
         let result = brain.assemble_precision_context(query, budget * 4); // budget in tokens → chars
 
@@ -278,7 +292,7 @@ impl ToolSpec for AiosBrainQueryTool {
             Ok(ToolResult::success(
                 "No matching symbols found in the AIOS Project Brain. \
                 The codebase may not have been indexed yet. \
-                Run `!hoa brain scan` to index it."
+                Run `!hoa brain index` to index it."
                     .to_string(),
             ))
         } else {

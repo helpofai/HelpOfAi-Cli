@@ -6690,7 +6690,7 @@ async fn handle_bang_shell_input(
         "brain" => {
             let sub = sub_args.split_whitespace().next().unwrap_or("");
             let shell_cmd = match sub {
-                "index" => "helpofai aios brain-index".to_string(),
+                "index" | "scan" => "helpofai aios brain-index".to_string(),
                 "query" => {
                     let arg = sub_args.strip_prefix("query").unwrap_or("").trim();
                     format!("helpofai aios brain-query \"{arg}\"")

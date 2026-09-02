@@ -60,6 +60,26 @@ impl ModalView for TerminalsView {
                 self.active_tab += 1;
                 ViewAction::None
             }
+            KeyCode::Char('w') | KeyCode::Char('n') => {
+                let jobs = self
+                    .shell_manager
+                    .as_ref()
+                    .map(|sm| sm.lock().unwrap().list_jobs())
+                    .unwrap_or_default();
+                let max_tab = jobs.len().saturating_sub(1);
+                let safe_tab = self.active_tab.min(max_tab);
+                if let Some(active_job) = jobs.get(safe_tab) {
+                    let _ = crate::tools::shell::spawn_detached_terminal_window(
+                        &active_job.command,
+                        &active_job.cwd,
+                    );
+                } else {
+                    let cwd =
+                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+                    let _ = crate::tools::shell::spawn_detached_terminal_window("", &cwd);
+                }
+                ViewAction::None
+            }
             _ => ViewAction::None,
         }
     }
@@ -85,7 +105,10 @@ impl ModalView for TerminalsView {
                     " Multi-Terminal ",
                     Style::default().add_modifier(Modifier::BOLD),
                 ),
-                Span::styled(" (Esc to close) ", Style::default().fg(palette::TEXT_MUTED)),
+                Span::styled(
+                    " (w: pop out new window, j/k: switch, Esc: close) ",
+                    Style::default().fg(palette::TEXT_MUTED),
+                ),
             ]);
 
         let inner_area = block.inner(popup_area);

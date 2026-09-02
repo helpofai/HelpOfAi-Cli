@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.95] - 2026-09-02
+
+### Added
+
+- **Local Network & Device Inspection (`allow_local_network`)**: Added configurable local network support across `fetch_url` and network policy, allowing inspection of `localhost`, `127.0.0.1`, and private LAN subnets (`192.168.x.x`, `10.x.x.x`) with strict protection against cloud metadata SSRF targets (`169.254.169.254`).
+- **Separate OS Window Terminal Engine**: Added native cross-platform detached terminal window launching (`new_window: true` in `exec_shell` and `w` shortcut in `Ctrl+T` Multi-Terminal) for Windows Terminal, PowerShell, macOS Terminal.app, and Linux terminal emulators.
+- **AIOS Enterprise Sub-Agent Fleet**: Upgraded `SubAgentType` and `AgentTool` to natively recognize and validate all 14 AIOS specialized enterprise roles (`architect`, `backend`, `frontend`, `database`, `api`, `qa`, `devops`, `security`, `documentation`, `android`, `ios`, `flutter`, `laravel`, `react`), dynamically loading their companion prompt instructions.
+
 ## [0.8.94] - 2026-08-04
 
 ### Added

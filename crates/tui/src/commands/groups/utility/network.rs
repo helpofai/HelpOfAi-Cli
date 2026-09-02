@@ -54,12 +54,21 @@ fn network_inner(arg: Option<&str>) -> anyhow::Result<String> {
             }
             update_default(value)
         }
+        "local" | "allow-local" => {
+            let Some(value) = parts.next() else {
+                bail!("Usage: /network local <allow|deny|true|false>");
+            };
+            if parts.next().is_some() {
+                bail!("Usage: /network local <allow|deny|true|false>");
+            }
+            update_local_network(value)
+        }
         _ => bail!(usage()),
     }
 }
 
 fn usage() -> &'static str {
-    "Usage: /network [list|allow <host>|deny <host>|remove <host>|default <allow|deny|prompt>]"
+    "Usage: /network [list|allow <host>|deny <host>|remove <host>|default <allow|deny|prompt>|local <allow|deny>]"
 }
 
 #[derive(Clone, Copy)]
@@ -77,6 +86,10 @@ fn list_policy() -> anyhow::Result<String> {
         .and_then(|table| table.get("default"))
         .and_then(Value::as_str)
         .unwrap_or("prompt");
+    let allow_local = network
+        .and_then(|table| table.get("allow_local_network"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let allow = network
         .map(|table| string_array(table, "allow"))
         .unwrap_or_default();
@@ -87,9 +100,10 @@ fn list_policy() -> anyhow::Result<String> {
     Ok(format!(
         "Network policy ({})\n\
          default = {default}\n\
+         allow_local_network = {allow_local}\n\
          allow = {}\n\
          deny = {}\n\n\
-         Use `/network allow <host>` to allow a host, `/network deny <host>` to block it, or `/network remove <host>` to clear an entry.",
+         Use `/network allow <host>` to allow a host, `/network deny <host>` to block it, `/network local allow` for localhost/LAN, or `/network remove <host>` to clear an entry.",
         path.display(),
         display_list(&allow),
         display_list(&deny)
@@ -144,6 +158,26 @@ fn update_default(value: &str) -> anyhow::Result<String> {
 
     Ok(format!(
         "Network default set to {normalized}\nSaved to {}.",
+        path.display()
+    ))
+}
+
+fn update_local_network(value: &str) -> anyhow::Result<String> {
+    let allowed = match value.trim().to_ascii_lowercase().as_str() {
+        "allow" | "true" | "yes" | "on" | "enable" | "enabled" => true,
+        "deny" | "false" | "no" | "off" | "disable" | "disabled" => false,
+        _ => bail!("Usage: /network local <allow|deny|true|false>"),
+    };
+
+    let path = crate::config_persistence::config_toml_path(None)?;
+    let mut doc = load_config_doc(&path)?;
+    let network = network_table_mut(&mut doc)?;
+    network.insert("allow_local_network".to_string(), Value::Boolean(allowed));
+    save_config_doc(&path, &doc)?;
+
+    let status_str = if allowed { "ALLOWED" } else { "DENIED" };
+    Ok(format!(
+        "Local network access (localhost, 127.0.0.1, LAN) is now {status_str}\nSaved to {}.",
         path.display()
     ))
 }

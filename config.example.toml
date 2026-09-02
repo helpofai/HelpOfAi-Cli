@@ -570,6 +570,7 @@ max_subagents = 10 # optional (1-20)
 # default = "prompt"     # allow | deny | prompt
 # allow = ["api.deepseek.com", "github.com", ".githubusercontent.com"]
 # deny = []
+# allow_local_network = false  # set true to allow requests to localhost (127.0.0.1) and private LAN (192.168.x.x)
 # audit = true            # one line per call to ~/.helpofai/audit.log
 
 # ─────────────────────────────────────────────────────────────────────────────────

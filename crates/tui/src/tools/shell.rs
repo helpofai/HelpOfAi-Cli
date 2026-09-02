@@ -2117,6 +2117,178 @@ async fn execute_foreground_via_background(
     }
 }
 
+/// Spawns a command in a new, independent native OS terminal window (cross-platform).
+pub fn spawn_detached_terminal_window(command: &str, cwd: &Path) -> Result<ShellResult, ToolError> {
+    let task_id = format!("window_{}", Uuid::new_v4().simple());
+
+    #[cfg(windows)]
+    {
+        // On Windows, try Windows Terminal (wt.exe) first, fallback to PowerShell or CMD
+        let cmd_to_run = if command.trim().is_empty() {
+            "powershell.exe".to_string()
+        } else {
+            command.to_string()
+        };
+
+        let wt_launched = if !command.trim().is_empty() {
+            Command::new("cmd.exe")
+                .args([
+                    "/C",
+                    "start",
+                    "wt.exe",
+                    "-d",
+                    &cwd.to_string_lossy(),
+                    "powershell.exe",
+                    "-NoExit",
+                    "-Command",
+                    &cmd_to_run,
+                ])
+                .current_dir(cwd)
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        } else {
+            Command::new("cmd.exe")
+                .args(["/C", "start", "wt.exe", "-d", &cwd.to_string_lossy()])
+                .current_dir(cwd)
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+        };
+
+        if !wt_launched {
+            let ps_status = if !command.trim().is_empty() {
+                Command::new("cmd.exe")
+                    .args([
+                        "/C",
+                        "start",
+                        "powershell.exe",
+                        "-NoExit",
+                        "-Command",
+                        &cmd_to_run,
+                    ])
+                    .current_dir(cwd)
+                    .status()
+            } else {
+                Command::new("cmd.exe")
+                    .args(["/C", "start", "powershell.exe"])
+                    .current_dir(cwd)
+                    .status()
+            };
+
+            if !matches!(ps_status, Ok(s) if s.success()) {
+                return Err(ToolError::execution_failed(
+                    "Failed to launch native terminal window on Windows",
+                ));
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let escaped_cmd = command.replace('\\', "\\\\").replace('"', "\\\"");
+        let escaped_cwd = cwd
+            .to_string_lossy()
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"");
+        let script = if escaped_cmd.trim().is_empty() {
+            format!(
+                "tell application \"Terminal\"\n  do script \"cd \\\"{}\\\"\"\n  activate\nend tell",
+                escaped_cwd
+            )
+        } else {
+            format!(
+                "tell application \"Terminal\"\n  do script \"cd \\\"{}\\\" && {}\"\n  activate\nend tell",
+                escaped_cwd, escaped_cmd
+            )
+        };
+        let status = Command::new("osascript")
+            .arg("-e")
+            .arg(&script)
+            .status()
+            .map_err(|e| {
+                ToolError::execution_failed(format!("Failed to launch Terminal.app: {e}"))
+            })?;
+        if !status.success() {
+            return Err(ToolError::execution_failed(
+                "osascript failed to open Terminal.app",
+            ));
+        }
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let emulators = [
+            ("x-terminal-emulator", vec!["-e", "bash", "-c"]),
+            ("gnome-terminal", vec!["--", "bash", "-c"]),
+            ("konsole", vec!["-e", "bash", "-c"]),
+            ("xfce4-terminal", vec!["-e", "bash", "-c"]),
+            ("alacritty", vec!["-e", "bash", "-c"]),
+            ("kitty", vec!["bash", "-c"]),
+            ("xterm", vec!["-e", "bash", "-c"]),
+        ];
+
+        let mut spawned = false;
+        let bash_cmd = if command.trim().is_empty() {
+            format!("cd '{}'; exec bash", cwd.display())
+        } else {
+            format!("cd '{}' && {}; exec bash", cwd.display(), command)
+        };
+
+        if let Ok(term) = std::env::var("TERMINAL") {
+            if let Ok(status) = Command::new(&term)
+                .args(["-e", "bash", "-c", &bash_cmd])
+                .current_dir(cwd)
+                .status()
+            {
+                if status.success() {
+                    spawned = true;
+                }
+            }
+        }
+
+        if !spawned {
+            for (term, prefix_args) in emulators {
+                let mut cmd = Command::new(term);
+                for arg in prefix_args {
+                    cmd.arg(arg);
+                }
+                cmd.arg(&bash_cmd).current_dir(cwd);
+                if let Ok(status) = cmd.status() {
+                    if status.success() {
+                        spawned = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if !spawned {
+            return Err(ToolError::execution_failed(
+                "No supported terminal emulator (x-terminal-emulator, gnome-terminal, konsole, xterm) found on Linux",
+            ));
+        }
+    }
+
+    Ok(ShellResult {
+        task_id: Some(task_id),
+        status: ShellStatus::Running,
+        exit_code: None,
+        stdout: format!("Launched command in separate OS window: {command}"),
+        stderr: String::new(),
+        duration_ms: 0,
+        stdout_len: 0,
+        stderr_len: 0,
+        stdout_omitted: 0,
+        stderr_omitted: 0,
+        stdout_truncated: false,
+        stderr_truncated: false,
+        sandboxed: false,
+        sandbox_type: None,
+        sandbox_denied: false,
+    })
+}
+
 /// Tool for executing shell commands.
 pub struct ExecShellTool;
 
@@ -2127,7 +2299,7 @@ impl ToolSpec for ExecShellTool {
     }
 
     fn description(&self) -> &'static str {
-        "Execute a shell command in the workspace directory. Foreground mode is for bounded commands; use background=true or task_shell_start for work expected to take >5 seconds. Background jobs return immediately and report completion through task/status state instead of resuming the model."
+        "Execute a shell command in the workspace directory. Foreground mode is for bounded commands; use background=true or task_shell_start for work expected to take >5 seconds. Use new_window=true to pop out the command into a separate native OS terminal window (Windows Terminal/PowerShell on Windows, Terminal.app on macOS, x-terminal-emulator on Linux)."
     }
 
     fn input_schema(&self) -> serde_json::Value {
@@ -2145,6 +2317,10 @@ impl ToolSpec for ExecShellTool {
                 "background": {
                     "type": "boolean",
                     "description": "Run in background and return task_id (default: false). Returns immediately; completion is tracked in task/status state. Prefer this for commands expected to take >5 seconds, including builds, test suites, servers, CI polling, sleep, or other long-running work. Use exec_shell_wait only when you need early output, final output, or a true dependency barrier."
+                },
+                "new_window": {
+                    "type": "boolean",
+                    "description": "Open and execute the command in a separate native OS terminal window (Windows Terminal/PowerShell on Windows, Terminal.app on macOS, x-terminal-emulator/gnome-terminal on Linux). Ideal for long-running servers, UI watchers, interactive sub-agents, or persistent background tasks."
                 },
                 "interactive": {
                     "type": "boolean",
@@ -2329,6 +2505,30 @@ impl ToolSpec for ExecShellTool {
         } else {
             std::collections::HashMap::new()
         };
+
+        let new_window = optional_bool(&input, "new_window", false);
+        if new_window {
+            let target_cwd = working_dir
+                .as_deref()
+                .map(Path::new)
+                .unwrap_or(&context.workspace);
+            let res = spawn_detached_terminal_window(command, target_cwd)?;
+            let metadata = json!({
+                "task_id": res.task_id,
+                "new_window": true,
+                "command": command,
+                "status": "Running",
+                "cwd": target_cwd.display().to_string(),
+            });
+            return Ok(ToolResult {
+                content: format!(
+                    "Command launched in a new separate native terminal window:\n\nCommand: `{command}`\nDirectory: {}\n\nThe task is running independently in its own window.",
+                    target_cwd.display()
+                ),
+                success: true,
+                metadata: Some(metadata),
+            });
+        }
 
         // Route through external sandbox backend when configured.
         if let Some(backend) = &context.sandbox_backend {
