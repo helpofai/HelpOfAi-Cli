@@ -390,7 +390,7 @@ impl ToolSpec for AiosBrainTool {
                     })))
                 }
             }
-            "query" | _ => {
+            "query" => {
                 let query = required_str(&input, "query")?;
                 let budget = input
                     .get("token_budget")
@@ -403,7 +403,7 @@ impl ToolSpec for AiosBrainTool {
                 if result.is_empty() {
                     Ok(ToolResult::success(format!(
                         "No matching code symbols found in AIOS Project Brain for `{query}`.\n\
-                        Run `aios_brain` with action='index' to index or re-index the workspace."
+                        Try broadening your search term or re-running with action 'index' to update the code graph."
                     ))
                     .with_metadata(json!({
                         "action": "query",
@@ -411,13 +411,17 @@ impl ToolSpec for AiosBrainTool {
                         "found": false,
                     })))
                 } else {
-                    Ok(ToolResult::success(result).with_metadata(json!({
+                    Ok(ToolResult::success(format!(
+                        "## AIOS Project Brain Symbols for `{query}`\n\n{result}"
+                    ))
+                    .with_metadata(json!({
                         "action": "query",
                         "query": query,
                         "found": true,
                     })))
                 }
             }
+            other => Err(ToolError::invalid_input(format!("Unknown action: {other}"))),
         }
     }
 }
@@ -656,7 +660,7 @@ impl ToolSpec for AiosWorkflowTool {
                     "valid": true,
                 })))
             }
-            "run" | _ => {
+            "run" => {
                 let workflow_name = required_str(&input, "workflow_name")?;
                 let goal = required_str(&input, "goal")?;
                 let workflow = runner.load_workflow(workflow_name).map_err(|e| {
@@ -795,6 +799,7 @@ impl ToolSpec for AiosWorkflowTool {
                     "journal": run_file.to_string_lossy(),
                 })))
             }
+            other => Err(ToolError::invalid_input(format!("Unknown action: {other}"))),
         }
     }
 }
