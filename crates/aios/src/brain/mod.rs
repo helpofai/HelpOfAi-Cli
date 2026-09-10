@@ -28,6 +28,18 @@ impl ProjectBrain {
         &self.aios_root
     }
 
+    /// Return count of indexed files and symbols in the knowledge graph.
+    pub fn stats(&self) -> Result<(usize, usize)> {
+        let conn = self.graph.get_connection()?;
+        let files: usize = conn
+            .query_row("SELECT COUNT(*) FROM code_files", [], |r| r.get(0))
+            .unwrap_or(0);
+        let symbols: usize = conn
+            .query_row("SELECT COUNT(*) FROM code_symbols", [], |r| r.get(0))
+            .unwrap_or(0);
+        Ok((files, symbols))
+    }
+
     /// Perform a deep scan of the workspace, indexing code files into the SQLite Knowledge Graph.
     pub fn scan_and_index(&self, workspace_root: &Path) -> Result<usize> {
         let mut indexed = 0;

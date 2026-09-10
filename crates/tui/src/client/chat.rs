@@ -22,18 +22,17 @@ use crate::config::wire_model_for_provider;
 /// `doctor` uses a bounded non-streaming request, but normal TUI turns first
 /// wait for the SSE response to open. On some Windows/proxy paths that wait can
 /// hang before any stream chunk exists, leaving the UI stuck at "Working...".
-const DEFAULT_STREAM_OPEN_TIMEOUT: Duration = Duration::from_secs(45);
+const DEFAULT_STREAM_OPEN_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// Reads `DEEPSEEK_STREAM_OPEN_TIMEOUT_SECS` as a bounded override for the
-/// response-header wait. This is intentionally shorter than the per-chunk idle
-/// timeout because it only covers connection setup and upstream header return,
-/// not model thinking time after streaming has started.
+/// Reads `HELPOFAI_STREAM_OPEN_TIMEOUT_SECS` or `DEEPSEEK_STREAM_OPEN_TIMEOUT_SECS`
+/// as a bounded override for the response-header wait. This is intentionally shorter
+/// than the per-chunk idle timeout because it only covers connection setup and upstream
+/// header return, not model thinking time after streaming has started.
 fn stream_open_timeout() -> Duration {
-    stream_open_timeout_from_env(
-        std::env::var("DEEPSEEK_STREAM_OPEN_TIMEOUT_SECS")
-            .ok()
-            .as_deref(),
-    )
+    let env_val = std::env::var("HELPOFAI_STREAM_OPEN_TIMEOUT_SECS")
+        .or_else(|_| std::env::var("DEEPSEEK_STREAM_OPEN_TIMEOUT_SECS"))
+        .ok();
+    stream_open_timeout_from_env(env_val.as_deref())
 }
 
 fn stream_open_timeout_from_env(value: Option<&str>) -> Duration {
@@ -2662,10 +2661,10 @@ mod stream_diagnostics_tests {
 
     #[test]
     fn stream_open_timeout_defaults_and_clamps_env_values() {
-        assert_eq!(stream_open_timeout_from_env(None), Duration::from_secs(45));
+        assert_eq!(stream_open_timeout_from_env(None), Duration::from_secs(60));
         assert_eq!(
             stream_open_timeout_from_env(Some("not-a-number")),
-            Duration::from_secs(45)
+            Duration::from_secs(60)
         );
         assert_eq!(
             stream_open_timeout_from_env(Some("1")),

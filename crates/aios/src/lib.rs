@@ -50,15 +50,21 @@ use std::path::{Path, PathBuf};
 /// 5. Executable sibling directory: `<exe_dir>/aios/aios.json`
 pub fn resolve_aios_root(workspace_hint: Option<&Path>) -> anyhow::Result<PathBuf> {
     if let Some(ws) = workspace_hint {
-        let candidate = ws.join("aios");
-        if candidate.join("aios.json").exists() {
-            return Ok(candidate);
+        for ancestor in ws.ancestors() {
+            let candidate = ancestor.join("aios");
+            if candidate.join("aios.json").exists() {
+                return Ok(candidate);
+            }
         }
     }
 
-    let local = PathBuf::from("aios");
-    if local.join("aios.json").exists() {
-        return Ok(local);
+    if let Ok(cwd) = std::env::current_dir() {
+        for ancestor in cwd.ancestors() {
+            let candidate = ancestor.join("aios");
+            if candidate.join("aios.json").exists() {
+                return Ok(candidate);
+            }
+        }
     }
 
     if let Ok(env_path) = std::env::var("HELPOFAI_AIOS_DIR") {

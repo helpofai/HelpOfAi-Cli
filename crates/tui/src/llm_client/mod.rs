@@ -794,11 +794,29 @@ pub struct RetryConfig {
 
 impl Default for RetryConfig {
     fn default() -> Self {
+        let max_retries = std::env::var("HELPOFAI_RETRY_MAX_RETRIES")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_MAX_RETRIES"))
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(5);
+
+        let initial_delay = std::env::var("HELPOFAI_RETRY_INITIAL_DELAY")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_INITIAL_DELAY"))
+            .ok()
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(1.0);
+
+        let max_delay = std::env::var("HELPOFAI_RETRY_MAX_DELAY")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_MAX_DELAY"))
+            .ok()
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(60.0);
+
         Self {
             enabled: true,
-            max_retries: 3,
-            initial_delay: 1.0,
-            max_delay: 60.0,
+            max_retries,
+            initial_delay,
+            max_delay,
             exponential_base: 2.0,
             jitter: true,
             jitter_factor: 0.1,
@@ -1155,7 +1173,7 @@ mod tests {
     fn test_retry_config_defaults() {
         let config = RetryConfig::default();
         assert!(config.enabled);
-        assert_eq!(config.max_retries, 3);
+        assert_eq!(config.max_retries, 5);
         assert_f64_eq(config.initial_delay, 1.0);
         assert_f64_eq(config.max_delay, 60.0);
         assert_f64_eq(config.exponential_base, 2.0);

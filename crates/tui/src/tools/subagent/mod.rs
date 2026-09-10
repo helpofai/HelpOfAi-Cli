@@ -3828,6 +3828,29 @@ fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>
     let agent = registry.resolve(role)?;
     let required_caps = &agent.spec.required_capabilities;
 
+    // Load capabilities.json to map capability name <-> capability ID
+    let mut effective_caps: std::collections::HashSet<String> =
+        required_caps.iter().cloned().collect();
+    let caps_path = aios_root.join("registry").join("capabilities.json");
+    if let Ok(caps_raw) = std::fs::read_to_string(&caps_path) {
+        #[derive(serde::Deserialize)]
+        struct CapEntry {
+            id: String,
+        }
+        #[derive(serde::Deserialize)]
+        struct CapsRoot {
+            capabilities: HashMap<String, CapEntry>,
+        }
+        if let Ok(caps_root) = serde_json::from_str::<CapsRoot>(&caps_raw) {
+            for (name, entry) in caps_root.capabilities {
+                if effective_caps.contains(&name) || effective_caps.contains(&entry.id) {
+                    effective_caps.insert(name);
+                    effective_caps.insert(entry.id);
+                }
+            }
+        }
+    }
+
     // Load agent-tool-map.json
     let map_path = aios_root.join("agents").join("agent-tool-map.json");
     let map_raw = std::fs::read_to_string(&map_path).ok()?;
@@ -3842,8 +3865,6 @@ fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>
     }
     let map_root: MapRoot = serde_json::from_str(&map_raw).ok()?;
 
-    // Any tool mapping that is present in the map but whose capability_id is NOT in the
-    // required_capabilities list of the agent is disallowed!
     let all_tui_tools = vec![
         "read_file",
         "write_to_file",
@@ -3869,11 +3890,48 @@ fn get_aios_disallowed_tools(role: &str, workspace: &Path) -> Option<Vec<String>
         "manage_subagents",
     ];
 
+    let is_core_inspection = |t: &str| -> bool {
+        matches!(
+            t,
+            "read_file"
+                | "view_file"
+                | "grep_files"
+                | "grep_search"
+                | "list_dir"
+                | "git_diff"
+                | "git_status"
+                | "diagnostics"
+        )
+    };
+
+    let role_lower = role.to_ascii_lowercase();
+    let can_shell = effective_caps.contains("capability_routing")
+        || effective_caps.contains("code_review")
+        || effective_caps.contains("unit_testing")
+        || effective_caps.contains("ci_cd_orchestration")
+        || effective_caps.contains("deployment_planning")
+        || matches!(
+            role_lower.as_str(),
+            "reviewer" | "qa" | "devops" | "backend" | "general" | "master"
+        );
+
     let mut disallowed = Vec::new();
     for t in all_tui_tools {
         let trans = translate_tool(t);
+        // Core inspection tools and native AIOS tools are never disallowed.
+        if is_core_inspection(t)
+            || is_core_inspection(trans)
+            || t.starts_with("aios_")
+            || trans.starts_with("aios_")
+        {
+            continue;
+        }
+        // Shell execution for inspection, test, and verification roles should not be disallowed.
+        if (trans == "exec_shell" || t == "run_command") && can_shell {
+            continue;
+        }
         if let Some(entry) = map_root.tool_map.get(trans) {
-            if !required_caps.contains(&entry.capability_id) {
+            if !effective_caps.contains(&entry.capability_id) {
                 disallowed.push(t.to_string());
             }
         }
@@ -5262,7 +5320,8 @@ impl SubAgentToolRegistry {
         // review, and RLM, plus per-child fresh todo/plan state. `agent` is
         // retained only when depth budget remains.
         let can_spawn_child = !runtime.would_exceed_depth();
-        let context = runtime.context.clone();
+        let mut context = runtime.context.clone();
+        context.shell_policy = runtime.worker_profile.shell;
         let mut registry = ToolRegistryBuilder::new().with_full_agent_surface(
             Some(runtime.client.clone()),
             runtime.model.clone(),

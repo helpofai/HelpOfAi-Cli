@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.96] - 2026-09-11
+
+### Added
+
+- **AIOS First-Class Tools Suite (`aios_workflow`, `aios_brain`, `aios_registry`, `aios_run_and_trace`)**: Upgraded model-facing bridge tools providing full control over AIOS execution—including listing, inspecting, diagnosing, and running multi-phase workflows with journal persistence, querying the Project Brain knowledge graph, executing multi-file blast-radius impact analysis, inspecting 28 modules and 34 capabilities, and extracting specialist agent system prompts.
+- **Enterprise Constitution & Golden Rules Injection**: Automatically compiles and injects `aios/constitution.json` into model prompts when `aios/` is present, binding models to the Golden Rule, 15 engineering principles, and supremacy ordering.
+- **Subcrate AIOS Root Discovery**: Enhanced bundle resolution to walk parent directory ancestors, ensuring AIOS tools and workflows resolve reliably across subdirectories and subcrates.
+
 ## [0.8.95] - 2026-09-02
 
 ### Added
@@ -2391,7 +2399,9 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.73...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...HEAD
+[0.8.96]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.95...v0.8.96
+[0.8.95]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.94...v0.8.95
 [0.8.73]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.72...v0.8.73
 [0.8.72]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.71...v0.8.72
 [0.8.71]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.70...v0.8.71

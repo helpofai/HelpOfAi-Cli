@@ -18,7 +18,16 @@ use helpofai_protocol::fleet::FleetHostSpec;
 use thiserror::Error;
 
 const DEFAULT_LOG_LIMIT_BYTES: usize = 64 * 1024;
-const DEFAULT_CONNECT_TIMEOUT_SECONDS: u64 = 10;
+const DEFAULT_CONNECT_TIMEOUT_SECONDS: u64 = 30;
+
+fn resolve_connect_timeout_seconds() -> u64 {
+    std::env::var("HELPOFAI_SSH_CONNECT_TIMEOUT")
+        .or_else(|_| std::env::var("DEEPSEEK_SSH_CONNECT_TIMEOUT"))
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(DEFAULT_CONNECT_TIMEOUT_SECONDS)
+        .clamp(5, 300)
+}
 
 pub type FleetHostResult<T> = Result<T, FleetHostError>;
 
@@ -395,7 +404,7 @@ impl SshFleetHostConfig {
             env_allowlist: BTreeSet::new(),
             helpofai_binary: "helpofai".to_string(),
             ssh_binary: "ssh".to_string(),
-            connect_timeout_seconds: DEFAULT_CONNECT_TIMEOUT_SECONDS,
+            connect_timeout_seconds: resolve_connect_timeout_seconds(),
         }
     }
 
@@ -488,6 +497,12 @@ impl SshFleetHostAdapter {
             "BatchMode=yes".to_string(),
             "-o".to_string(),
             format!("ConnectTimeout={}", self.config.connect_timeout_seconds),
+            "-o".to_string(),
+            "ServerAliveInterval=15".to_string(),
+            "-o".to_string(),
+            "ServerAliveCountMax=4".to_string(),
+            "-o".to_string(),
+            "TCPKeepAlive=yes".to_string(),
         ];
         for key in env.keys() {
             args.push("-o".to_string());

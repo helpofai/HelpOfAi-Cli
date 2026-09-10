@@ -3600,11 +3600,29 @@ impl Config {
     /// Resolve the effective retry policy with defaults applied.
     #[must_use]
     pub fn retry_policy(&self) -> RetryPolicy {
+        let max_retries = std::env::var("HELPOFAI_RETRY_MAX_RETRIES")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_MAX_RETRIES"))
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(5);
+
+        let initial_delay = std::env::var("HELPOFAI_RETRY_INITIAL_DELAY")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_INITIAL_DELAY"))
+            .ok()
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(1.0);
+
+        let max_delay = std::env::var("HELPOFAI_RETRY_MAX_DELAY")
+            .or_else(|_| std::env::var("DEEPSEEK_RETRY_MAX_DELAY"))
+            .ok()
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(60.0);
+
         let defaults = RetryPolicy {
             enabled: true,
-            max_retries: 3,
-            initial_delay: 1.0,
-            max_delay: 60.0,
+            max_retries,
+            initial_delay,
+            max_delay,
             exponential_base: 2.0,
         };
 

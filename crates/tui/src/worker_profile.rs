@@ -160,8 +160,8 @@ impl WorkerRuntimeProfile {
             SubAgentType::Implementer | SubAgentType::General => {
                 (PermissionSet::full(), ShellPolicy::Full)
             }
-            // Custom starts locked down; the caller opens specific tools explicitly.
-            SubAgentType::Custom => (PermissionSet::read_only(), ShellPolicy::None),
+            // Custom starts with full capability request; bounded by parent in derive_child.
+            SubAgentType::Custom => (PermissionSet::full(), ShellPolicy::Full),
         };
         Self {
             role,

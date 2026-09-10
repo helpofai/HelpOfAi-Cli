@@ -323,6 +323,9 @@ struct ExecArgs {
     /// Enable tool-backed agent mode with auto-approvals
     #[arg(long, default_value_t = false)]
     auto: bool,
+    /// YOLO mode: enable agent tools + shell execution with auto-approvals
+    #[arg(long, default_value_t = false)]
+    yolo: bool,
     /// Emit machine-readable JSON output
     #[arg(long, default_value_t = false, conflicts_with = "output_format")]
     json: bool,
@@ -1145,8 +1148,9 @@ async fn main() -> Result<()> {
                 let resume_session_id = resolve_exec_resume_session_id(&args, &workspace)?;
                 // The `deepseek` launcher forwards `--yolo` to this binary via
                 // the DEEPSEEK_YOLO env var (which the config loader folds into
-                // `config.yolo`), not as a CLI flag. Honour either source.
-                let yolo = cli.yolo || config.yolo.unwrap_or(false);
+                // `config.yolo`), not as a CLI flag. Honour either source, as well
+                // as the explicit `--yolo` flag on `exec`.
+                let yolo = cli.yolo || args.yolo || config.yolo.unwrap_or(false);
                 let needs_engine = args.auto
                     || yolo
                     || resume_session_id.is_some()

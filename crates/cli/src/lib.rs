@@ -2280,6 +2280,7 @@ fn run_aios_command(
                 let passthrough = vec![
                     "exec".to_string(),
                     "--auto".to_string(),
+                    "--yolo".to_string(),
                     "--append-system-prompt".to_string(),
                     prompt,
                     task.clone(),

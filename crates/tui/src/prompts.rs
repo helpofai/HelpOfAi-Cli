@@ -1212,6 +1212,14 @@ pub fn system_prompt_for_mode_with_context_skills_session_and_approval(
         render_environment_block(workspace, session_context.locale_tag),
     );
 
+    // AIOS Constitution: if an aios/ directory is present in the workspace,
+    // inject the enterprise constitution and engineering principles.
+    if let Some(aios_constitution) = load_aios_constitution_block(workspace) {
+        if !aios_constitution.trim().is_empty() {
+            full_prompt = format!("{full_prompt}\n\n{aios_constitution}");
+        }
+    }
+
     // 6a. Configured `instructions = [...]` files (#454). Loaded
     // and concatenated in declared order. Placed below the volatile boundary
     // because these files are workspace-scoped and may differ between
