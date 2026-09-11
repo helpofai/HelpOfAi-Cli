@@ -76,6 +76,10 @@ project_overhaul_prompt.md
 **/session_*.json
 *.db
 npm/*/bin/downloads/
+aios/.cache/snapshots/
+aios/.cache/journal/
+aios/.cache/brain/
+.cache/
 
 # Companion app (tracked separately)
 apps/

@@ -411,6 +411,19 @@ enum AiosCommand {
         /// Target class or function symbol name.
         symbol: String,
     },
+    /// Collect matching files, symbols, callers, configs, and test suites for a feature or keyword.
+    Collect {
+        /// Feature name, class name, or keyword query.
+        query: String,
+    },
+    /// Inspect project dependencies and generate framework modernization roadmap.
+    #[command(visible_alias = "upgrade-plan")]
+    UpgradeAnalyze,
+    /// Rollback the last (or specified) AIOS atomic file transaction.
+    Rollback {
+        /// Transaction ID to revert (leave empty for most recent).
+        tx_id: Option<String>,
+    },
     /// Initialize the AIOS architecture bundle into the current workspace or global directory.
     Init {
         /// Force overwrite existing aios bundle if it already exists.
@@ -2445,8 +2458,7 @@ fn run_aios_command(
             let count = brain.scan_and_index(&workspace_root)?;
             let elapsed = start.elapsed();
             println!(
-                "AIOS Brain indexing complete! Indexed {count} files into Code Knowledge Graph in {:.2?}.",
-                elapsed
+                "AIOS Brain indexing complete! Indexed {count} files into Code Knowledge Graph in {elapsed:.2?}."
             );
         }
         AiosCommand::BrainQuery { query } => {
@@ -2466,6 +2478,92 @@ fn run_aios_command(
             } else {
                 println!("{md}");
             }
+        }
+        AiosCommand::Collect { query } => {
+            let workspace_root = std::env::current_dir()?;
+            let ops = helpofai_aios::AiosWorkspaceOps::new(&aios_root, &workspace_root);
+            let bundle = ops.collect_project_context(&query)?;
+            println!("## AIOS Project Context Bundle: {}\n", bundle.target_query);
+            println!("{}\n", bundle.summary);
+            if !bundle.matched_files.is_empty() {
+                println!(
+                    "### Matched Workspace Files ({}):",
+                    bundle.matched_files.len()
+                );
+                for f in &bundle.matched_files {
+                    println!(
+                        "  - `{}` ({} lines, {})",
+                        f.relative_path, f.line_count, f.language
+                    );
+                    for s in &f.symbols {
+                        println!("      ↳ {s}");
+                    }
+                }
+                println!();
+            }
+            if !bundle.callers_and_references.is_empty() {
+                println!("### Callers & Multi-File References:");
+                for c in &bundle.callers_and_references {
+                    println!("  - {c}");
+                }
+                println!();
+            }
+            if !bundle.test_files.is_empty() {
+                println!("### Associated Test Suites:");
+                for t in &bundle.test_files {
+                    println!("  - `{t}`");
+                }
+                println!();
+            }
+            if !bundle.configs_detected.is_empty() {
+                println!("### Detected Manifests:");
+                for c in &bundle.configs_detected {
+                    println!("  - `{c}`");
+                }
+                println!();
+            }
+        }
+        AiosCommand::UpgradeAnalyze => {
+            let workspace_root = std::env::current_dir()?;
+            let ops = helpofai_aios::AiosWorkspaceOps::new(&aios_root, &workspace_root);
+            let analysis = ops.analyze_upgrade()?;
+            println!("## AIOS Project Modernization & Upgrade Analysis\n");
+            println!("Project Type: **{}**", analysis.project_type);
+            println!(
+                "Detected Frameworks: {}\n",
+                analysis.detected_frameworks.join(", ")
+            );
+            println!("### Modernization Recommendations:");
+            for r in &analysis.recommendations {
+                println!(
+                    "\n* [{}] **{}** (Current: {}, Target: {})",
+                    r.severity,
+                    r.component,
+                    r.current_version.as_deref().unwrap_or("N/A"),
+                    r.target_version.as_deref().unwrap_or("Latest")
+                );
+                println!("  {}", r.details);
+                println!("  Migration Steps:");
+                for step in &r.migration_steps {
+                    println!("    1. {step}");
+                }
+            }
+            if !analysis.breaking_changes_warning.is_empty() {
+                println!("\n### Potential Breaking Changes / Caveats:");
+                for w in &analysis.breaking_changes_warning {
+                    println!("  ⚠ {w}");
+                }
+            }
+            println!(
+                "\nSuggested AIOS Workflow: `{}`",
+                analysis.suggested_workflow
+            );
+        }
+        AiosCommand::Rollback { tx_id } => {
+            let workspace_root = std::env::current_dir()?;
+            let ops = helpofai_aios::AiosWorkspaceOps::new(&aios_root, &workspace_root);
+            let msg = ops.rollback_transaction(tx_id.as_deref())?;
+            println!("{msg}");
         }
         AiosCommand::WebInspect {
             url,

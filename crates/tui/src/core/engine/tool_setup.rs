@@ -76,6 +76,7 @@ impl Engine {
                 .with_validation_tools()
                 .with_handle_tools()
                 .with_runtime_read_only_task_tools()
+                .with_aios_tools()
                 .with_todo_tool(todo_list)
                 .with_plan_tool(plan_state)
                 .with_goal_tools(self.config.goal_state.clone());

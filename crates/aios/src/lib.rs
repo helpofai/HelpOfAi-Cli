@@ -21,6 +21,7 @@ pub mod registry;
 pub mod types;
 pub mod web_inspector;
 pub mod workflows;
+pub mod workspace_ops;
 
 // ── Re-exports ──────────────────────────────────────────────────
 
@@ -44,6 +45,10 @@ pub use web_inspector::{
     WebInspectReport, inspect_web_page,
 };
 pub use workflows::AiosWorkflowRunner;
+pub use workspace_ops::{
+    AiosWorkspaceOps, CollectedFile, OperationRecord, ProjectContextBundle, ProjectUpgradeAnalysis,
+    TransactionJournal, UpgradeRecommendation,
+};
 
 use include_dir::{Dir, include_dir};
 use std::path::{Path, PathBuf};

@@ -11,6 +11,7 @@
 //! 4. `aios_workflow`: Full control over AIOS agentic workflows: list, inspect, diagnose, and run.
 //! 5. `aios_trigger_workflow`: Backwards-compatible workflow triggering tool.
 //! 6. `aios_registry`: Inspect modules, capabilities, dependencies, and specialist agents.
+//! 7. `aios_workspace`: Safe atomic file operations (read, collect, write, copy, move, delete, rollback) and upgrade analysis.
 
 use async_trait::async_trait;
 use serde_json::{Value, json};
@@ -1070,6 +1071,352 @@ impl ToolSpec for AiosRegistryTool {
     }
 }
 
+// ── 7. AIOS Workspace Operations & Upgrade Tool ─────────────────────────────
+
+/// High-level AIOS workspace intelligence: safely read, collect, write, copy, move,
+/// delete, rollback, and modernize project files with atomic snapshots.
+pub struct AiosWorkspaceTool;
+
+#[async_trait]
+impl ToolSpec for AiosWorkspaceTool {
+    fn name(&self) -> &'static str {
+        "aios_workspace"
+    }
+
+    fn description(&self) -> &'static str {
+        "Enterprise-grade AIOS workspace operations for safely reading, collecting, writing, \
+        copying, moving, deleting, and upgrading project files. All modifications are automatically \
+        protected by a snapshot rollback journal.\n\n\
+        Actions:\n\
+        - 'collect': Deep multi-file collector — gathers matching files, AST symbols, callers, configs, and test suites for a target component or feature into a structured bundle.\n\
+        - 'read': Safely read file with syntax line range and AST symbol summary.\n\
+        - 'write': Atomic write with pre-image hash verification and automatic snapshot backup.\n\
+        - 'copy': Safe copy of file or directory with snapshot protection.\n\
+        - 'move': Atomic move/rename of file or directory with optional workspace-wide reference/import updating.\n\
+        - 'delete': Safe deletion into AIOS snapshot trash (completely undoable).\n\
+        - 'rollback': Rollback the most recent or specified transaction, restoring all affected files.\n\
+        - 'analyze_upgrade': Analyze project tech stack (Laravel/PHP, Next.js/Node, Rust, Python) and generate modernization recommendations."
+    }
+
+    fn input_schema(&self) -> Value {
+        json!({
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["collect", "read", "write", "copy", "move", "delete", "rollback", "analyze_upgrade"],
+                    "description": "The workspace operation to perform."
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Relative file or directory path for read, write, move, copy, or delete."
+                },
+                "target_path": {
+                    "type": "string",
+                    "description": "Destination relative path for copy or move operations."
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Content to write for the 'write' action."
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Search keyword, class, or symbol name for the 'collect' action."
+                },
+                "start_line": {
+                    "type": "integer",
+                    "description": "Optional starting line number for 'read'."
+                },
+                "end_line": {
+                    "type": "integer",
+                    "description": "Optional ending line number for 'read'."
+                },
+                "update_references": {
+                    "type": "boolean",
+                    "description": "For 'move': whether to update imports/references across the workspace (default: true).",
+                    "default": true
+                },
+                "tx_id": {
+                    "type": "string",
+                    "description": "Optional transaction ID for 'rollback' (defaults to most recent)."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable intent or reason for the file operation (logged in transaction journal)."
+                }
+            },
+            "required": ["action"],
+            "additionalProperties": false
+        })
+    }
+
+    fn capabilities(&self) -> Vec<ToolCapability> {
+        vec![ToolCapability::WritesFiles]
+    }
+
+    fn approval_requirement(&self) -> ApprovalRequirement {
+        ApprovalRequirement::Auto
+    }
+
+    fn supports_parallel(&self) -> bool {
+        false
+    }
+
+    async fn execute(&self, input: Value, context: &ToolContext) -> Result<ToolResult, ToolError> {
+        let action = required_str(&input, "action")?;
+
+        let aios_root = match helpofai_aios::resolve_aios_root(Some(&context.workspace)) {
+            Ok(root) => root,
+            Err(_) => {
+                return Ok(ToolResult::error(
+                    "AIOS root bundle (aios.json) not found in workspace (./aios). \
+                    Initialize an AIOS bundle in the workspace to enable AIOS workspace operations.",
+                ));
+            }
+        };
+
+        let ops = helpofai_aios::AiosWorkspaceOps::new(&aios_root, &context.workspace);
+
+        match action {
+            "collect" => {
+                let query = required_str(&input, "query")?;
+                let bundle = ops.collect_project_context(query).map_err(|e| {
+                    ToolError::execution_failed(format!("Failed to collect project context: {e}"))
+                })?;
+
+                let mut report = format!(
+                    "## AIOS Project Context Bundle: `{query}`\n\n{}\n\n",
+                    bundle.summary
+                );
+
+                if !bundle.matched_files.is_empty() {
+                    report.push_str("### Matched Workspace Files\n\n");
+                    for f in &bundle.matched_files {
+                        report.push_str(&format!(
+                            "* **`{}`** ({} lines, {})\n",
+                            f.relative_path, f.line_count, f.language
+                        ));
+                        for s in &f.symbols {
+                            report.push_str(&format!("    ↳ {s}\n"));
+                        }
+                    }
+                    report.push('\n');
+                }
+
+                if !bundle.callers_and_references.is_empty() {
+                    report.push_str("### Callers & Multi-File References\n\n");
+                    for c in &bundle.callers_and_references {
+                        report.push_str(&format!("* {c}\n"));
+                    }
+                    report.push('\n');
+                }
+
+                if !bundle.test_files.is_empty() {
+                    report.push_str("### Associated Test Suites\n\n");
+                    for t in &bundle.test_files {
+                        report.push_str(&format!("* `{t}`\n"));
+                    }
+                    report.push('\n');
+                }
+
+                if !bundle.configs_detected.is_empty() {
+                    report.push_str("### Detected Project Manifests\n\n");
+                    for c in &bundle.configs_detected {
+                        report.push_str(&format!("* `{c}`\n"));
+                    }
+                }
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "collect",
+                    "matched_files_count": bundle.matched_files.len(),
+                    "symbols_count": bundle.related_symbols.len(),
+                    "test_files_count": bundle.test_files.len(),
+                })))
+            }
+            "read" => {
+                let path = required_str(&input, "path")?;
+                let start_line = input
+                    .get("start_line")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as usize);
+                let end_line = input
+                    .get("end_line")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as usize);
+
+                let (content, symbols) =
+                    ops.read_file_rich(path, start_line, end_line)
+                        .map_err(|e| {
+                            ToolError::execution_failed(format!(
+                                "Failed to read file '{path}': {e}"
+                            ))
+                        })?;
+
+                let mut report = format!("## File: `{path}`\n\n");
+                if !symbols.is_empty() {
+                    report.push_str("**Declared Symbols**:\n");
+                    for s in &symbols {
+                        report.push_str(&format!("- {s}\n"));
+                    }
+                    report.push_str("\n---\n\n");
+                }
+                report.push_str("```\n");
+                report.push_str(&content);
+                report.push_str("\n```");
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "read",
+                    "path": path,
+                    "symbol_count": symbols.len(),
+                })))
+            }
+            "write" => {
+                let path = required_str(&input, "path")?;
+                let content = required_str(&input, "content")?;
+                let desc = optional_str(&input, "description").unwrap_or("AIOS file write");
+
+                let tx_id = ops.write_file_safe(path, content, desc).map_err(|e| {
+                    ToolError::execution_failed(format!("Failed to write file '{path}': {e}"))
+                })?;
+
+                Ok(ToolResult::success(format!(
+                    "Successfully wrote `{path}` (atomic write with rollback snapshot saved, tx: `{tx_id}`)"
+                )).with_metadata(json!({
+                    "action": "write",
+                    "path": path,
+                    "tx_id": tx_id,
+                })))
+            }
+            "copy" => {
+                let path = required_str(&input, "path")?;
+                let target = required_str(&input, "target_path")?;
+                let desc = optional_str(&input, "description").unwrap_or("AIOS copy path");
+
+                let tx_id = ops.copy_path_safe(path, target, desc).map_err(|e| {
+                    ToolError::execution_failed(format!(
+                        "Failed to copy '{path}' to '{target}': {e}"
+                    ))
+                })?;
+
+                Ok(ToolResult::success(format!(
+                    "Successfully copied `{path}` to `{target}` (tx: `{tx_id}`)"
+                ))
+                .with_metadata(json!({
+                    "action": "copy",
+                    "source": path,
+                    "target": target,
+                    "tx_id": tx_id,
+                })))
+            }
+            "move" => {
+                let path = required_str(&input, "path")?;
+                let target = required_str(&input, "target_path")?;
+                let update_refs = input
+                    .get("update_references")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(true);
+                let desc = optional_str(&input, "description").unwrap_or("AIOS move/rename");
+
+                let tx_id = ops
+                    .move_path_safe(path, target, update_refs, desc)
+                    .map_err(|e| {
+                        ToolError::execution_failed(format!(
+                            "Failed to move '{path}' to '{target}': {e}"
+                        ))
+                    })?;
+
+                Ok(ToolResult::success(format!(
+                    "Successfully moved `{path}` to `{target}` (references updated: {update_refs}, tx: `{tx_id}`)"
+                )).with_metadata(json!({
+                    "action": "move",
+                    "source": path,
+                    "target": target,
+                    "tx_id": tx_id,
+                })))
+            }
+            "delete" => {
+                let path = required_str(&input, "path")?;
+                let desc = optional_str(&input, "description").unwrap_or("AIOS delete path");
+
+                let tx_id = ops.delete_path_safe(path, desc).map_err(|e| {
+                    ToolError::execution_failed(format!("Failed to delete '{path}': {e}"))
+                })?;
+
+                Ok(ToolResult::success(format!(
+                    "Successfully deleted `{path}` (snapshot archived in AIOS trash, tx: `{tx_id}`)"
+                ))
+                .with_metadata(json!({
+                    "action": "delete",
+                    "path": path,
+                    "tx_id": tx_id,
+                })))
+            }
+            "rollback" => {
+                let tx_id = optional_str(&input, "tx_id");
+                let result_msg = ops.rollback_transaction(tx_id).map_err(|e| {
+                    ToolError::execution_failed(format!("Failed to rollback transaction: {e}"))
+                })?;
+
+                Ok(ToolResult::success(result_msg).with_metadata(json!({
+                    "action": "rollback",
+                    "tx_id": tx_id,
+                })))
+            }
+            "analyze_upgrade" => {
+                let analysis = ops.analyze_upgrade().map_err(|e| {
+                    ToolError::execution_failed(format!("Failed to analyze project upgrade: {e}"))
+                })?;
+
+                let mut report = format!(
+                    "## AIOS Project Modernization & Upgrade Analysis\n\n\
+                    - **Project Type**: {}\n\
+                    - **Detected Frameworks**: {}\n\
+                    - **Suggested AIOS Workflow**: `{}`\n\n\
+                    ### Recommendations\n\n",
+                    analysis.project_type,
+                    analysis.detected_frameworks.join(", "),
+                    analysis.suggested_workflow
+                );
+
+                for r in &analysis.recommendations {
+                    report.push_str(&format!(
+                        "#### [{}] {}\n\
+                        - **Current Version**: {}\n\
+                        - **Target Version**: {}\n\
+                        - **Details**: {}\n\
+                        - **Migration Steps**:\n",
+                        r.severity,
+                        r.component,
+                        r.current_version.as_deref().unwrap_or("N/A"),
+                        r.target_version.as_deref().unwrap_or("Latest"),
+                        r.details
+                    ));
+                    for s in &r.migration_steps {
+                        report.push_str(&format!("  1. {s}\n"));
+                    }
+                    report.push('\n');
+                }
+
+                if !analysis.breaking_changes_warning.is_empty() {
+                    report.push_str("### Potential Breaking Changes / Caveats\n\n");
+                    for w in &analysis.breaking_changes_warning {
+                        report.push_str(&format!("* ⚠ {w}\n"));
+                    }
+                }
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "analyze_upgrade",
+                    "project_type": analysis.project_type,
+                    "recommendations_count": analysis.recommendations.len(),
+                })))
+            }
+            _ => Err(ToolError::invalid_input(format!(
+                "Unknown action: {action}"
+            ))),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1158,5 +1505,54 @@ mod tests {
             .await
             .unwrap();
         assert!(brain_query_res.success);
+
+        // Workspace Tool Test
+        let ws_tool = AiosWorkspaceTool;
+        let analyze_res = ws_tool
+            .execute(json!({ "action": "analyze_upgrade" }), &ctx)
+            .await
+            .unwrap();
+        assert!(analyze_res.success);
+        assert!(analyze_res.content.contains("Project Modernization"));
+
+        let write_res = ws_tool
+            .execute(
+                json!({
+                    "action": "write",
+                    "path": "test_aios_file.txt",
+                    "content": "hello aios workspace"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
+        assert!(write_res.success);
+        assert!(write_res.content.contains("Successfully wrote"));
+
+        let read_res = ws_tool
+            .execute(
+                json!({
+                    "action": "read",
+                    "path": "test_aios_file.txt"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
+        assert!(read_res.success);
+        assert!(read_res.content.contains("hello aios workspace"));
+
+        let del_res = ws_tool
+            .execute(
+                json!({
+                    "action": "delete",
+                    "path": "test_aios_file.txt"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
+        assert!(del_res.success);
+        assert!(del_res.content.contains("Successfully deleted"));
     }
 }

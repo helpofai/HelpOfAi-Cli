@@ -547,7 +547,7 @@ impl ToolRegistryBuilder {
     pub fn with_aios_tools(self) -> Self {
         use super::aios_bridge::{
             AiosBrainQueryTool, AiosBrainTool, AiosRegistryTool, AiosRunAndTraceTool,
-            AiosTriggerWorkflowTool, AiosWorkflowTool,
+            AiosTriggerWorkflowTool, AiosWorkflowTool, AiosWorkspaceTool,
         };
         self.with_tool(Arc::new(AiosRunAndTraceTool))
             .with_tool(Arc::new(AiosBrainTool))
@@ -555,6 +555,7 @@ impl ToolRegistryBuilder {
             .with_tool(Arc::new(AiosWorkflowTool))
             .with_tool(Arc::new(AiosTriggerWorkflowTool))
             .with_tool(Arc::new(AiosRegistryTool))
+            .with_tool(Arc::new(AiosWorkspaceTool))
     }
 
     /// Include search tools (`grep_files`).
