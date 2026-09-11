@@ -247,6 +247,9 @@ impl ToolSpec for AiosBrainTool {
 
     fn description(&self) -> &'static str {
         "Interact with the AIOS Project Brain knowledge graph. \
+        CRITICAL: When the user asks to understand, explore, scan, or inspect the entire project, \
+        ALWAYS call this tool (action='index' or action='status') first instead of reading files directly. \
+        This indexes thousands of workspace classes, functions, and symbols in milliseconds without overflowing the context window. \
         Actions: \
         'query': Search code symbols, functions, structs, classes, and signatures matching a keyword. \
         'impact': Perform multi-file impact analysis for a symbol to find callers, dependencies, and blast radius before modifying code. \
@@ -1087,15 +1090,17 @@ impl ToolSpec for AiosWorkspaceTool {
         "Enterprise-grade AIOS workspace operations for safely reading, collecting, writing, \
         copying, moving, deleting, and upgrading project files. All modifications are automatically \
         protected by a snapshot rollback journal.\n\n\
+        CRITICAL: When the user asks to inspect, understand, or upgrade a large project, feature, or service, \
+        use action='collect' or action='analyze_upgrade' instead of manually reading dozens of individual files.\n\n\
         Actions:\n\
         - 'collect': Deep multi-file collector — gathers matching files, AST symbols, callers, configs, and test suites for a target component or feature into a structured bundle.\n\
+        - 'analyze_upgrade': Analyze project tech stack (Laravel/PHP, Next.js/Node, Rust, Python) and generate modernization recommendations.\n\
         - 'read': Safely read file with syntax line range and AST symbol summary.\n\
         - 'write': Atomic write with pre-image hash verification and automatic snapshot backup.\n\
         - 'copy': Safe copy of file or directory with snapshot protection.\n\
         - 'move': Atomic move/rename of file or directory with optional workspace-wide reference/import updating.\n\
         - 'delete': Safe deletion into AIOS snapshot trash (completely undoable).\n\
-        - 'rollback': Rollback the most recent or specified transaction, restoring all affected files.\n\
-        - 'analyze_upgrade': Analyze project tech stack (Laravel/PHP, Next.js/Node, Rust, Python) and generate modernization recommendations."
+        - 'rollback': Rollback the most recent or specified transaction, restoring all affected files."
     }
 
     fn input_schema(&self) -> Value {
