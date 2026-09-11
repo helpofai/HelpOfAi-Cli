@@ -70,7 +70,7 @@ impl ToolSpec for WebInspectTool {
         let options = WebInspectOptions {
             url: url.to_string(),
             wait_ms,
-            engine: WebInspectEngine::from_str(engine_str),
+            engine: WebInspectEngine::from(engine_str),
             correlate_workspace,
         };
 

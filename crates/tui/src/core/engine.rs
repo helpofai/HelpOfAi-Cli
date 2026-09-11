@@ -1891,6 +1891,7 @@ impl Engine {
         self.emit_goal_updated().await;
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn handle_send_message(
         &mut self,
         content: String,

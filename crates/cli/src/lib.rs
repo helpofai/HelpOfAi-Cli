@@ -2469,7 +2469,7 @@ fn run_aios_command(
             let options = helpofai_aios::WebInspectOptions {
                 url,
                 wait_ms,
-                engine: helpofai_aios::WebInspectEngine::from_str(&engine),
+                engine: helpofai_aios::WebInspectEngine::from(engine.as_str()),
                 correlate_workspace: true,
             };
             let workspace = cli
@@ -2492,7 +2492,7 @@ fn run_web_inspect_cli(cli: &Cli, args: WebInspectArgs) -> anyhow::Result<()> {
     let options = helpofai_aios::WebInspectOptions {
         url: args.url,
         wait_ms: args.wait_ms,
-        engine: helpofai_aios::WebInspectEngine::from_str(&args.engine),
+        engine: helpofai_aios::WebInspectEngine::from(args.engine.as_str()),
         correlate_workspace: true,
     };
     let workspace = cli

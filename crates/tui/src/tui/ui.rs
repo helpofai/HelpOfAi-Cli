@@ -6715,7 +6715,7 @@ async fn handle_bang_shell_input(
         }
         _ => {
             if first == "hoa" || first == "aios" || first == "helpofai" {
-                let task_prompt = format!("{} {}", subcmd, sub_args).trim().to_string();
+                let task_prompt = format!("{subcmd} {sub_args}").trim().to_string();
                 if !task_prompt.is_empty() {
                     let shell_cmd = format!("helpofai aios run build-feature \"{task_prompt}\"");
                     let (tx, rx) = helpofai_aios::aios_channel();

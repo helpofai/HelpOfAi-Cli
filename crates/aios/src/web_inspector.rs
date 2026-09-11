@@ -27,15 +27,29 @@ pub enum WebInspectEngine {
     Http,
 }
 
-impl WebInspectEngine {
-    pub fn from_str(s: &str) -> Self {
-        match s.trim().to_lowercase().as_str() {
+impl std::str::FromStr for WebInspectEngine {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.trim().to_lowercase().as_str() {
             "cdp" | "chrome" | "edge" => Self::Cdp,
             "playwright" => Self::Playwright,
             "puppeteer" => Self::Puppeteer,
             "http" | "curl" => Self::Http,
             _ => Self::Auto,
-        }
+        })
+    }
+}
+
+impl From<&str> for WebInspectEngine {
+    fn from(s: &str) -> Self {
+        s.parse().unwrap_or_default()
+    }
+}
+
+impl WebInspectEngine {
+    pub fn parse_engine(s: &str) -> Self {
+        s.parse().unwrap_or_default()
     }
 }
 
@@ -215,7 +229,7 @@ pub fn inspect_web_page(
     let target_url =
         if !url.starts_with("http://") && !url.starts_with("https://") && !url.starts_with("data:")
         {
-            format!("http://{}", url)
+            format!("http://{url}")
         } else {
             url.to_string()
         };
@@ -232,9 +246,7 @@ pub fn inspect_web_page(
 
     let chosen_engine = match options.engine {
         WebInspectEngine::Auto => {
-            if node_available && browser_opt.is_some() {
-                WebInspectEngine::Cdp
-            } else if browser_opt.is_some() {
+            if browser_opt.is_some() {
                 WebInspectEngine::Cdp
             } else {
                 WebInspectEngine::Http
@@ -525,7 +537,7 @@ main().catch(err => {
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
     if stdout.is_empty() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        anyhow::bail!("Node CDP runner produced empty output. Stderr: {}", stderr);
+        anyhow::bail!("Node CDP runner produced empty output. Stderr: {stderr}");
     }
 
     let parsed: NodeCdpOutput = serde_json::from_str(&stdout)?;
@@ -704,7 +716,7 @@ fn extract_candidate_filename(source: Option<&str>) -> Option<String> {
         .split('#')
         .next()
         .unwrap_or(s);
-    let last_segment = url_clean.rsplit(|c| c == '/' || c == '\\').next()?;
+    let last_segment = url_clean.rsplit(['/', '\\']).next()?;
 
     if is_supported_source_ext(last_segment) {
         Some(last_segment.to_string())
@@ -715,7 +727,7 @@ fn extract_candidate_filename(source: Option<&str>) -> Option<String> {
 
 fn extract_candidate_from_stack(stack: Option<&str>) -> Option<String> {
     let s = stack?;
-    for part in s.split(|c: char| c == '(' || c == ')' || c == ' ' || c == '\n') {
+    for part in s.split(['(', ')', ' ', '\n']) {
         if let Some(fname) = extract_candidate_filename(Some(part.trim())) {
             return Some(fname);
         }
@@ -767,10 +779,8 @@ fn find_file_in_workspace(workspace: &Path, target_filename: &str) -> Option<Pat
         })
         .filter_map(Result::ok)
     {
-        if entry.file_type().is_file() {
-            if entry.file_name().to_string_lossy() == target_filename {
-                return Some(entry.path().to_path_buf());
-            }
+        if entry.file_type().is_file() && entry.file_name().to_string_lossy() == target_filename {
+            return Some(entry.path().to_path_buf());
         }
     }
 
@@ -825,14 +835,14 @@ fn format_diagnostic_summary(
     correlated: &[FileDiagnosticMatch],
 ) -> String {
     let mut out = String::new();
-    out.push_str(&format!("Web Page Inspection: {}\n", url));
+    out.push_str(&format!("Web Page Inspection: {url}\n"));
     if let Some(t) = title {
-        out.push_str(&format!("Title: {}\n", t));
+        out.push_str(&format!("Title: {t}\n"));
     }
     if let Some(s) = status {
-        out.push_str(&format!("HTTP Status: {}\n", s));
+        out.push_str(&format!("HTTP Status: {s}\n"));
     }
-    out.push_str(&format!("Engine: {}\n", engine));
+    out.push_str(&format!("Engine: {engine}\n"));
     out.push_str(&format!(
         "Results: {} console errors/warnings, {} network errors, {} workspace file matches.\n\n",
         console_errors.len(),
@@ -864,7 +874,7 @@ fn format_diagnostic_summary(
                 err.message,
                 err.source
                     .as_ref()
-                    .map(|s| format!(" ({})", s))
+                    .map(|s| format!(" ({s})"))
                     .unwrap_or_default()
             ));
         }
