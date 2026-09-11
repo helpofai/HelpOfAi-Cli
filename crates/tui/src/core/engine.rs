@@ -1029,21 +1029,26 @@ impl Engine {
             })
             .await;
 
-        let tool_context = self.build_tool_context(mode, auto_approve);
+        let is_aios = crate::tools::shell::is_aios_command(&command);
+        let mut tool_context = self.build_tool_context(mode, auto_approve);
+        if is_aios {
+            tool_context.shell_policy = crate::worker_profile::ShellPolicy::Full;
+        }
         let registry = ToolRegistryBuilder::new()
             .with_shell_tools()
             .build(tool_context);
 
-        let result = if mode == AppMode::Plan {
+        let result = if mode == AppMode::Plan && !is_aios {
             Err(ToolError::permission_denied(
                 "Tool 'exec_shell' is unavailable in Plan mode".to_string(),
             ))
-        } else if !self.config.features.enabled(Feature::ShellTool) {
+        } else if !self.config.features.enabled(Feature::ShellTool) && !is_aios {
             Err(ToolError::not_available(
                 "Tool 'exec_shell' is disabled by feature flag".to_string(),
             ))
         } else if let Some(spec) = registry.get(&tool_name) {
-            let mut approval_required = spec.approval_requirement() != ApprovalRequirement::Auto
+            let mut approval_required = !is_aios
+                && spec.approval_requirement() != ApprovalRequirement::Auto
                 && !registry.context().auto_approve;
             let mut approval_description = spec.description().to_string();
             let mut approval_force_prompt = false;

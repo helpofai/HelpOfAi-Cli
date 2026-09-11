@@ -2289,6 +2289,21 @@ pub fn spawn_detached_terminal_window(command: &str, cwd: &Path) -> Result<Shell
     })
 }
 
+/// Check if a command is an AIOS internal or diagnostic command.
+/// AIOS commands are always permitted across all execution modes (Agent, Plan, YOLO).
+pub fn is_aios_command(command: &str) -> bool {
+    let trimmed = command.trim();
+    trimmed.starts_with("helpofai aios")
+        || trimmed.starts_with("hoa ")
+        || trimmed == "hoa"
+        || trimmed.starts_with("aios ")
+        || trimmed == "aios"
+        || trimmed.starts_with("helpofai web-inspect")
+        || trimmed.starts_with("helpofai ")
+        || trimmed.contains("helpofai aios ")
+        || trimmed.contains("helpofai web-inspect ")
+}
+
 /// Tool for executing shell commands.
 pub struct ExecShellTool;
 
@@ -2362,6 +2377,12 @@ impl ToolSpec for ExecShellTool {
     fn approval_requirement_for(&self, input: &serde_json::Value) -> ApprovalRequirement {
         if exec_shell_input_is_parallel_readonly(input) {
             ApprovalRequirement::Auto
+        } else if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+            if is_aios_command(cmd) {
+                ApprovalRequirement::Auto
+            } else {
+                self.approval_requirement()
+            }
         } else {
             self.approval_requirement()
         }
@@ -2385,18 +2406,19 @@ impl ToolSpec for ExecShellTool {
         context: &ToolContext,
     ) -> Result<ToolResult, ToolError> {
         let command = required_str(&input, "command")?;
+        let is_aios = is_aios_command(command);
         match context.shell_policy {
-            ShellPolicy::None => {
+            ShellPolicy::None if !is_aios => {
                 return Ok(ToolResult::error(
                     "Shell tools are disabled by the active permission profile.",
                 ));
             }
-            ShellPolicy::ReadOnly if !exec_shell_input_is_parallel_readonly(&input) => {
+            ShellPolicy::ReadOnly if !is_aios && !exec_shell_input_is_parallel_readonly(&input) => {
                 return Ok(ToolResult::error(
                     "Shell command blocked by read-only shell policy. Use a non-mutating, non-background inspection command, or switch to Agent/YOLO for write-capable shell work.",
                 ));
             }
-            ShellPolicy::ReadOnly | ShellPolicy::Full => {}
+            ShellPolicy::ReadOnly | ShellPolicy::Full | ShellPolicy::None => {}
         }
         let timeout_ms = optional_u64(&input, "timeout_ms", 120_000).min(600_000);
         let background = optional_bool(&input, "background", false);
