@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.99] - 2026-09-11
+
+### Added
+- **AIOS Full Platform Exposure to AI Agents**: Integrated all native AIOS subsystems, engines, and architectural catalogs as first-class tools for AI agents in Agent Mode and Plan Mode.
+- **Headless Web Inspector & Console Error Tool (`aios_web_inspect`)**: Enables agents to inspect web applications (`http://localhost:3000`, `127.0.0.1`, LAN IPs, remote URLs), capturing rendered page content, browser console errors (`console.error`, `console.warn`), JavaScript runtime exceptions, and failed HTTP requests (4xx/5xx/CORS), with automatic correlation to workspace source files and suggested code fixes.
+- **AIOS Workflow Execution History**: Added `action: 'history'` to `aios_workflow` allowing AI agents to inspect past workflow runs, execution statuses, duration timelines, and phase logs from `aios/runs/`.
+- **AIOS Constitution, Architecture Patterns & Templates Inspection**: Added `constitution`, `patterns`, and `templates` actions to `aios_registry`, allowing AI agents to retrieve the 15 immutable engineering laws, architectural patterns, and standard engineering templates (`PLAN.md`, `ADR_TEMPLATE.md`, `BUG_REPORT.md`, `SECURITY_REPORT.md`, `ROLLBACK_PLAN.md`, etc.).
+- **Enterprise Workspace Operations & Modernization Analyzer**: Added `aios_workspace` (`collect`, `read`, `write`, `copy`, `move`, `delete`, `rollback`, `analyze_upgrade`) with atomic writes, pre-image hashing, snapshot rollback journals, multi-file context collection, and tech-stack modernization analysis.
+- **Optimized Project Brain Indexing**: Codebase scanner with directory pruning (`vendor`, `node_modules`, `storage`, `target`, `dist`, `build`, etc.) and BLAKE3 incremental change caching for instant knowledge graph indexing without context overflow.
+
 ## [0.8.98] - 2026-09-11
 
 ### Fixed
@@ -2416,7 +2426,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.99...HEAD
+[0.8.99]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...v0.8.99
 [0.8.98]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.97...v0.8.98
 [0.8.97]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...v0.8.97
 [0.8.96]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.95...v0.8.96

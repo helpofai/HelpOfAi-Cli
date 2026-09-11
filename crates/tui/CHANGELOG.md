@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.99] - 2026-09-11
+
+### Added
+- **AIOS Full Platform Exposure to AI Agents**: Integrated all native AIOS subsystems, engines, and architectural catalogs as first-class tools for AI agents in Agent Mode and Plan Mode.
+- **Headless Web Inspector & Console Error Tool (`aios_web_inspect`)**: Enables agents to inspect web applications (`http://localhost:3000`, `127.0.0.1`, LAN IPs, remote URLs), capturing rendered page content, browser console errors (`console.error`, `console.warn`), JavaScript runtime exceptions, and failed HTTP requests (4xx/5xx/CORS), with automatic correlation to workspace source files and suggested code fixes.
+- **AIOS Workflow Execution History**: Added `action: 'history'` to `aios_workflow` allowing AI agents to inspect past workflow runs, execution statuses, duration timelines, and phase logs from `aios/runs/`.
+- **AIOS Constitution, Architecture Patterns & Templates Inspection**: Added `constitution`, `patterns`, and `templates` actions to `aios_registry`, allowing AI agents to retrieve the 15 immutable engineering laws, architectural patterns, and standard engineering templates (`PLAN.md`, `ADR_TEMPLATE.md`, `BUG_REPORT.md`, `SECURITY_REPORT.md`, `ROLLBACK_PLAN.md`, etc.).
+- **Enterprise Workspace Operations & Modernization Analyzer**: Added `aios_workspace` (`collect`, `read`, `write`, `copy`, `move`, `delete`, `rollback`, `analyze_upgrade`) with atomic writes, pre-image hashing, snapshot rollback journals, multi-file context collection, and tech-stack modernization analysis.
+- **Optimized Project Brain Indexing**: Codebase scanner with directory pruning (`vendor`, `node_modules`, `storage`, `target`, `dist`, `build`, etc.) and BLAKE3 incremental change caching for instant knowledge graph indexing without context overflow.
+
 ## [0.8.98] - 2026-09-11
 
 ### Fixed
@@ -133,12 +143,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **OmniRoute auto-router authentication**: Dynamically resolve the auto-routing classifier provider to OmniRoute (or DeepSeek China) when it is active, avoiding missing DeepSeek credential errors.
-
-## [0.8.74] - 2026-07-14
-
-### Fixed
-
-- **OmniRoute stream reasoning**: Treat OmniRoute as always-reasoning in the SSE stream parser to correctly capture and render thinking/reasoning blocks when using the `auto` routing model.
 
 ---
 
