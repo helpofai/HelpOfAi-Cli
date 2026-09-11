@@ -40,43 +40,68 @@ impl ProjectBrain {
         Ok((files, symbols))
     }
 
-    /// Perform a deep scan of the workspace, indexing code files into the SQLite Knowledge Graph.
+    /// Perform a high-performance deep scan of the workspace, indexing code files into
+    /// the SQLite Knowledge Graph with directory pruning and incremental hash caching.
     pub fn scan_and_index(&self, workspace_root: &Path) -> Result<usize> {
+        let existing_hashes = self.graph.get_indexed_file_hashes().unwrap_or_default();
+        let mut seen_paths = std::collections::HashSet::new();
         let mut indexed = 0;
 
-        for entry in walkdir::WalkDir::new(workspace_root)
+        let walker = walkdir::WalkDir::new(workspace_root)
+            .follow_links(false)
             .into_iter()
-            .filter_map(|e| e.ok())
-        {
+            .filter_entry(|entry| !is_ignored_entry(entry));
+
+        for entry in walker.filter_map(|e| e.ok()) {
+            if !entry.file_type().is_file() {
+                continue;
+            }
+
             let path = entry.path();
-            if path.is_file() && is_code_file(path) {
-                if let Ok(rel_path) = path.strip_prefix(workspace_root) {
-                    let rel_str = rel_path.to_string_lossy().to_string();
-                    if rel_str.contains(".git")
-                        || rel_str.contains("target")
-                        || rel_str.contains("node_modules")
-                    {
-                        continue;
-                    }
+            if !is_code_file(path) {
+                continue;
+            }
 
-                    if let Ok(content) = std::fs::read_to_string(path) {
-                        let hash = blake3::hash(content.as_bytes()).to_hex().to_string();
-                        let lang = detect_language(path);
-
-                        if let Ok(symbols) = AstParser::parse_file(&content, &rel_str, lang) {
-                            let _ = self.graph.persist_file_symbols(
-                                &rel_str,
-                                lang,
-                                &hash,
-                                content.lines().count(),
-                                &symbols,
-                            );
-                            indexed += 1;
-                        }
-                    }
+            // Skip oversized files (e.g. huge minified bundles, fixture dumps)
+            if let Ok(meta) = entry.metadata() {
+                if meta.len() > MAX_INDEXABLE_FILE_SIZE {
+                    continue;
                 }
             }
+
+            let Ok(rel_path) = path.strip_prefix(workspace_root) else {
+                continue;
+            };
+            let rel_str = rel_path.to_string_lossy().to_string();
+
+            let Ok(content) = std::fs::read_to_string(path) else {
+                continue;
+            };
+
+            let hash = blake3::hash(content.as_bytes()).to_hex().to_string();
+            seen_paths.insert(rel_str.clone());
+
+            // Incremental check: if file hash is unchanged, skip AST parsing and DB write
+            if existing_hashes.get(&rel_str) == Some(&hash) {
+                indexed += 1;
+                continue;
+            }
+
+            let lang = detect_language(path);
+            if let Ok(symbols) = AstParser::parse_file(&content, &rel_str, lang) {
+                let _ = self.graph.persist_file_symbols(
+                    &rel_str,
+                    lang,
+                    &hash,
+                    content.lines().count(),
+                    &symbols,
+                );
+                indexed += 1;
+            }
         }
+
+        // Clean up any files that were deleted or moved
+        let _ = self.graph.remove_stale_files(&seen_paths);
 
         Ok(indexed)
     }
@@ -170,21 +195,154 @@ impl ProjectBrain {
     }
 }
 
+const MAX_INDEXABLE_FILE_SIZE: u64 = 512 * 1024; // 512 KB
+
+fn is_ignored_entry(entry: &walkdir::DirEntry) -> bool {
+    let name = entry.file_name().to_string_lossy();
+
+    // Allow root directory
+    if entry.depth() == 0 {
+        return false;
+    }
+
+    // Prune known heavy dependency, build, cache, and artifact directories
+    if entry.file_type().is_dir() {
+        if name.starts_with('.') {
+            return true;
+        }
+        return matches!(
+            name.as_ref(),
+            "node_modules"
+                | "vendor"
+                | "storage"
+                | "target"
+                | "dist"
+                | "build"
+                | "out"
+                | "cache"
+                | "coverage"
+                | "venv"
+                | "env"
+                | "__pycache__"
+        );
+    }
+
+    // Skip minified or bundle/lock files
+    if name.ends_with(".min.js")
+        || name.ends_with(".min.css")
+        || name.ends_with(".map")
+        || name.ends_with(".lock")
+    {
+        return true;
+    }
+
+    false
+}
+
 fn is_code_file(path: &Path) -> bool {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
     matches!(
         ext,
-        "rs" | "ts" | "js" | "py" | "go" | "java" | "cpp" | "h" | "sql"
+        "rs" | "ts"
+            | "tsx"
+            | "js"
+            | "jsx"
+            | "py"
+            | "go"
+            | "java"
+            | "cpp"
+            | "c"
+            | "h"
+            | "hpp"
+            | "sql"
+            | "php"
+            | "cs"
+            | "rb"
+            | "swift"
+            | "kt"
     )
 }
 
 fn detect_language(path: &Path) -> &'static str {
     match path.extension().and_then(|e| e.to_str()).unwrap_or("") {
         "rs" => "rust",
-        "ts" | "js" => "typescript",
+        "ts" | "tsx" => "typescript",
+        "js" | "jsx" => "javascript",
         "py" => "python",
         "go" => "golang",
         "sql" => "sql",
+        "php" => "php",
+        "java" => "java",
+        "cpp" | "c" | "h" | "hpp" => "cpp",
+        "cs" => "csharp",
+        "rb" => "ruby",
+        "swift" => "swift",
+        "kt" => "kotlin",
         _ => "text",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_scan_and_index_prunes_ignored_directories_and_increments() {
+        let tmp = tempdir().unwrap();
+        let ws = tmp.path();
+
+        // Create app code
+        let app_dir = ws.join("app").join("Services");
+        std::fs::create_dir_all(&app_dir).unwrap();
+        std::fs::write(
+            app_dir.join("Client.php"),
+            "<?php\nclass Client {\n    public function run() {}\n}\n",
+        )
+        .unwrap();
+
+        // Create vendor code that must be ignored
+        let vendor_dir = ws.join("vendor").join("somepkg");
+        std::fs::create_dir_all(&vendor_dir).unwrap();
+        std::fs::write(
+            vendor_dir.join("VendorClass.php"),
+            "<?php\nclass VendorClass {}\n",
+        )
+        .unwrap();
+
+        // Create storage directory that must be ignored
+        let storage_dir = ws.join("storage").join("framework");
+        std::fs::create_dir_all(&storage_dir).unwrap();
+        std::fs::write(
+            storage_dir.join("cached.php"),
+            "<?php\nclass CachedView {}\n",
+        )
+        .unwrap();
+
+        // Initialize Brain
+        let aios_root = ws.join(".aios");
+        let brain = ProjectBrain::open(&aios_root).unwrap();
+
+        // First scan
+        let indexed = brain.scan_and_index(ws).unwrap();
+        assert_eq!(
+            indexed, 1,
+            "Only Client.php should be indexed; vendor and storage must be pruned"
+        );
+
+        let (files, symbols) = brain.stats().unwrap();
+        assert_eq!(files, 1);
+        assert_eq!(symbols, 2); // 1 class + 1 method
+
+        // Second scan (incremental)
+        let indexed_again = brain.scan_and_index(ws).unwrap();
+        assert_eq!(
+            indexed_again, 1,
+            "Incremental scan should see 1 cached file"
+        );
+
+        let (files2, symbols2) = brain.stats().unwrap();
+        assert_eq!(files2, 1);
+        assert_eq!(symbols2, 2);
     }
 }

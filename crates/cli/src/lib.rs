@@ -2441,9 +2441,12 @@ fn run_aios_command(
             let workspace_root = std::env::current_dir()?;
             let brain = helpofai_aios::ProjectBrain::open(&aios_root)?;
             println!("Scanning and indexing codebase into AIOS Project Brain...");
+            let start = std::time::Instant::now();
             let count = brain.scan_and_index(&workspace_root)?;
+            let elapsed = start.elapsed();
             println!(
-                "AIOS Brain indexing complete! Indexed {count} files into Code Knowledge Graph."
+                "AIOS Brain indexing complete! Indexed {count} files into Code Knowledge Graph in {:.2?}.",
+                elapsed
             );
         }
         AiosCommand::BrainQuery { query } => {

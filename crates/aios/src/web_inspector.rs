@@ -773,6 +773,8 @@ fn find_file_in_workspace(workspace: &Path, target_filename: &str) -> Option<Pat
             let name = e.file_name().to_string_lossy();
             !name.starts_with('.')
                 && name != "node_modules"
+                && name != "vendor"
+                && name != "storage"
                 && name != "target"
                 && name != "dist"
                 && name != "build"

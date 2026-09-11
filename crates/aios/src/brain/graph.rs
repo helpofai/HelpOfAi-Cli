@@ -1,5 +1,6 @@
 use anyhow::Result;
 use rusqlite::{Connection, params};
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use super::parser::ParsedSymbol;
@@ -27,6 +28,45 @@ impl CodebaseKnowledgeGraph {
         Ok(conn)
     }
 
+    /// Retrieve map of indexed relative paths to their blake3 hashes.
+    pub fn get_indexed_file_hashes(&self) -> Result<HashMap<String, String>> {
+        let conn = self.get_connection()?;
+        let mut stmt = conn.prepare("SELECT relative_path, blake3_hash FROM code_files")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut map = HashMap::new();
+        for r in rows {
+            let (path, hash) = r?;
+            map.insert(path, hash);
+        }
+        Ok(map)
+    }
+
+    /// Remove indexed files that no longer exist in the workspace.
+    pub fn remove_stale_files(&self, active_relative_paths: &HashSet<String>) -> Result<usize> {
+        let mut conn = self.get_connection()?;
+        let tx = conn.transaction()?;
+        let existing: Vec<String> = {
+            let mut stmt = tx.prepare("SELECT relative_path FROM code_files")?;
+            stmt.query_map([], |r| r.get(0))?
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        let mut removed = 0;
+        for path in existing {
+            if !active_relative_paths.contains(&path) {
+                tx.execute(
+                    "DELETE FROM code_files WHERE relative_path = ?1",
+                    params![path],
+                )?;
+                removed += 1;
+            }
+        }
+        tx.commit()?;
+        Ok(removed)
+    }
+
     pub fn persist_file_symbols(
         &self,
         relative_path: &str,
@@ -38,28 +78,39 @@ impl CodebaseKnowledgeGraph {
         let mut conn = self.get_connection()?;
         let tx = conn.transaction()?;
 
-        let file_id = uuid::Uuid::new_v4().to_string();
-
-        tx.execute(
-            "INSERT INTO code_files (file_id, relative_path, language, blake3_hash, line_count)
-             VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT(relative_path) DO UPDATE SET
-                blake3_hash = excluded.blake3_hash,
-                line_count = excluded.line_count,
-                last_indexed_at = CURRENT_TIMESTAMP",
-            params![
-                file_id,
-                relative_path,
-                language,
-                blake3_hash,
-                line_count as i64
-            ],
-        )?;
-
-        tx.execute(
-            "DELETE FROM code_symbols WHERE file_id = (SELECT file_id FROM code_files WHERE relative_path = ?1)",
+        // Retrieve existing file_id if present to preserve relationships and cascade cleanly
+        let file_id: String = match tx.query_row(
+            "SELECT file_id FROM code_files WHERE relative_path = ?1",
             params![relative_path],
-        )?;
+            |r| r.get(0),
+        ) {
+            Ok(existing_id) => {
+                tx.execute(
+                    "UPDATE code_files SET language = ?1, blake3_hash = ?2, line_count = ?3, last_indexed_at = CURRENT_TIMESTAMP WHERE file_id = ?4",
+                    params![language, blake3_hash, line_count as i64, existing_id],
+                )?;
+                tx.execute(
+                    "DELETE FROM code_symbols WHERE file_id = ?1",
+                    params![existing_id],
+                )?;
+                existing_id
+            }
+            Err(_) => {
+                let new_id = uuid::Uuid::new_v4().to_string();
+                tx.execute(
+                    "INSERT INTO code_files (file_id, relative_path, language, blake3_hash, line_count)
+                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    params![
+                        new_id,
+                        relative_path,
+                        language,
+                        blake3_hash,
+                        line_count as i64
+                    ],
+                )?;
+                new_id
+            }
+        };
 
         for sym in symbols {
             let symbol_id = uuid::Uuid::new_v4().to_string();

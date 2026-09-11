@@ -46,8 +46,13 @@ impl AstParser {
                 || trimmed.starts_with("struct ")
                 || trimmed.starts_with("pub class ")
                 || trimmed.starts_with("class ")
+                || trimmed.starts_with("abstract class ")
+                || trimmed.starts_with("final class ")
+                || trimmed.starts_with("readonly class ")
                 || trimmed.starts_with("export class ")
+                || trimmed.starts_with("export default class ")
                 || trimmed.starts_with("pub trait ")
+                || trimmed.starts_with("trait ")
                 || trimmed.starts_with("pub interface ")
                 || trimmed.starts_with("interface ")
                 || trimmed.starts_with("pub enum ")
@@ -67,17 +72,26 @@ impl AstParser {
 
                 let name = extract_symbol_name(trimmed, kind);
                 if !name.is_empty() {
-                    let visibility =
-                        if trimmed.starts_with("pub ") || trimmed.starts_with("export ") {
-                            "public"
-                        } else {
-                            "private"
-                        };
+                    let visibility = if trimmed.starts_with("pub ")
+                        || trimmed.starts_with("export ")
+                        || trimmed.starts_with("public ")
+                    {
+                        "public"
+                    } else if trimmed.starts_with("protected ") {
+                        "protected"
+                    } else {
+                        "private"
+                    };
 
                     let module_prefix = relative_path
                         .replace(['/', '\\'], "::")
                         .replace(".rs", "")
-                        .replace(".ts", "");
+                        .replace(".ts", "")
+                        .replace(".tsx", "")
+                        .replace(".js", "")
+                        .replace(".jsx", "")
+                        .replace(".php", "")
+                        .replace(".py", "");
                     let qualified_name = format!("{module_prefix}::{name}");
 
                     symbols.push(ParsedSymbol {
@@ -97,15 +111,34 @@ impl AstParser {
                 || trimmed.starts_with("pub async fn ")
                 || trimmed.starts_with("def ")
                 || trimmed.starts_with("func ")
+                || trimmed.starts_with("public function ")
+                || trimmed.starts_with("protected function ")
+                || trimmed.starts_with("private function ")
+                || trimmed.starts_with("public static function ")
+                || trimmed.starts_with("protected static function ")
+                || trimmed.starts_with("private static function ")
+                || trimmed.starts_with("static function ")
+                || trimmed.starts_with("function ")
             {
                 let name = extract_fn_name(trimmed);
                 if !name.is_empty() {
-                    let visibility = if trimmed.starts_with("pub ") {
-                        "public"
-                    } else {
-                        "private"
-                    };
-                    let module_prefix = relative_path.replace(['/', '\\'], "::").replace(".rs", "");
+                    let visibility =
+                        if trimmed.starts_with("pub ") || trimmed.starts_with("public ") {
+                            "public"
+                        } else if trimmed.starts_with("protected ") {
+                            "protected"
+                        } else {
+                            "private"
+                        };
+                    let module_prefix = relative_path
+                        .replace(['/', '\\'], "::")
+                        .replace(".rs", "")
+                        .replace(".ts", "")
+                        .replace(".tsx", "")
+                        .replace(".js", "")
+                        .replace(".jsx", "")
+                        .replace(".php", "")
+                        .replace(".py", "");
                     let qualified_name = format!("{module_prefix}::{name}");
 
                     symbols.push(ParsedSymbol {
@@ -145,7 +178,67 @@ fn extract_fn_name(line: &str) -> String {
         .replace("pub fn ", "")
         .replace("fn ", "")
         .replace("def ", "")
-        .replace("func ", "");
+        .replace("func ", "")
+        .replace("public static function ", "")
+        .replace("protected static function ", "")
+        .replace("private static function ", "")
+        .replace("public function ", "")
+        .replace("protected function ", "")
+        .replace("private function ", "")
+        .replace("static function ", "")
+        .replace("function ", "");
 
     cleaned.split('(').next().unwrap_or("").trim().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_php_symbols() {
+        let code = r#"<?php
+namespace App\Features\AI\Services;
+
+class OmniRouteClient {
+    public function routeRequest(string $prompt): string {
+        return "ok";
+    }
+
+    protected static function validateToken(): bool {
+        return true;
+    }
+}
+"#;
+        let symbols =
+            AstParser::parse_file(code, "app/Features/AI/Services/OmniRouteClient.php", "php")
+                .unwrap();
+        assert_eq!(symbols.len(), 3);
+        assert_eq!(symbols[0].short_name, "OmniRouteClient");
+        assert_eq!(symbols[0].symbol_kind, "class");
+        assert_eq!(symbols[1].short_name, "routeRequest");
+        assert_eq!(symbols[1].symbol_kind, "function");
+        assert_eq!(symbols[1].visibility, "public");
+        assert_eq!(symbols[2].short_name, "validateToken");
+        assert_eq!(symbols[2].symbol_kind, "function");
+        assert_eq!(symbols[2].visibility, "protected");
+    }
+
+    #[test]
+    fn test_parse_rust_symbols() {
+        let code = r#"
+pub struct EngineRunner {
+    pub id: String,
+}
+
+impl EngineRunner {
+    pub async fn run_task(&self) {
+    }
+}
+"#;
+        let symbols = AstParser::parse_file(code, "src/runner.rs", "rust").unwrap();
+        assert_eq!(symbols.len(), 2);
+        assert_eq!(symbols[0].short_name, "EngineRunner");
+        assert_eq!(symbols[1].short_name, "run_task");
+    }
 }
