@@ -2172,7 +2172,11 @@ fn run_aios_command(
                 .workspace
                 .clone()
                 .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-            base.join("aios")
+            if base.join(".helpofai").exists() {
+                base.join(".helpofai").join("aios")
+            } else {
+                base.join("aios")
+            }
         };
 
         if target.join("aios.json").exists() && !force {

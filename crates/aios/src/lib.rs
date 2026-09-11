@@ -67,6 +67,10 @@ pub fn unpack_embedded_aios(target: &Path) -> anyhow::Result<()> {
 pub fn resolve_aios_root(workspace_hint: Option<&Path>) -> anyhow::Result<PathBuf> {
     if let Some(ws) = workspace_hint {
         for ancestor in ws.ancestors() {
+            let dot_candidate = ancestor.join(".helpofai").join("aios");
+            if dot_candidate.join("aios.json").exists() {
+                return Ok(dot_candidate);
+            }
             let candidate = ancestor.join("aios");
             if candidate.join("aios.json").exists() {
                 return Ok(candidate);
@@ -76,6 +80,10 @@ pub fn resolve_aios_root(workspace_hint: Option<&Path>) -> anyhow::Result<PathBu
 
     if let Ok(cwd) = std::env::current_dir() {
         for ancestor in cwd.ancestors() {
+            let dot_candidate = ancestor.join(".helpofai").join("aios");
+            if dot_candidate.join("aios.json").exists() {
+                return Ok(dot_candidate);
+            }
             let candidate = ancestor.join("aios");
             if candidate.join("aios.json").exists() {
                 return Ok(candidate);
