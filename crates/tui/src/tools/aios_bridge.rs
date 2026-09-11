@@ -89,10 +89,15 @@ impl ToolSpec for AiosRunAndTraceTool {
             .map(|d| context.workspace.join(d))
             .unwrap_or_else(|| context.workspace.clone());
 
+        let default_timeout = if crate::tools::shell::is_long_running_command(command) {
+            300_000
+        } else {
+            120_000
+        };
         let timeout_ms = input
             .get("timeout_ms")
             .and_then(|v| v.as_u64())
-            .unwrap_or(120_000)
+            .unwrap_or(default_timeout)
             .clamp(1_000, 600_000);
 
         // ── 1. Execute command with timeout (PowerShell on Windows, sh on Unix) ──

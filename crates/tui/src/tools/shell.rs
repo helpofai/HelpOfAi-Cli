@@ -2301,7 +2301,21 @@ pub fn is_aios_command(command: &str) -> bool {
         || trimmed.starts_with("helpofai web-inspect")
         || trimmed.starts_with("helpofai ")
         || trimmed.contains("helpofai aios ")
-        || trimmed.contains("helpofai web-inspect ")
+}
+
+/// Check if a command is a test suite, build, or package-installation task
+/// that naturally requires a higher default timeout (e.g. 5 minutes instead of 2).
+pub fn is_long_running_command(command: &str) -> bool {
+    let lower = command.trim().to_lowercase();
+    lower.contains("test")
+        || lower.contains("phpunit")
+        || lower.contains("vitest")
+        || lower.contains("jest")
+        || lower.contains("pytest")
+        || lower.contains("build")
+        || lower.contains("compile")
+        || lower.contains("install")
+        || lower.contains("migrate")
 }
 
 /// Tool for executing shell commands.
@@ -2420,7 +2434,13 @@ impl ToolSpec for ExecShellTool {
             }
             ShellPolicy::ReadOnly | ShellPolicy::Full | ShellPolicy::None => {}
         }
-        let timeout_ms = optional_u64(&input, "timeout_ms", 120_000).min(600_000);
+
+        let default_timeout = if is_long_running_command(command) {
+            300_000 // 5 minutes for test suites, builds, and package installs
+        } else {
+            120_000 // 2 minutes for standard commands
+        };
+        let timeout_ms = optional_u64(&input, "timeout_ms", default_timeout).min(600_000);
         let background = optional_bool(&input, "background", false);
         let interactive = optional_bool(&input, "interactive", false);
         let combined_output = optional_bool(&input, "combined_output", false);
