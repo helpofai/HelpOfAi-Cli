@@ -315,6 +315,24 @@ The command prints the completion script to stdout; redirect it to a path your s
     Update(UpdateArgs),
     /// Inspect the AIOS module system (modules, capabilities, registry).
     Aios(AiosArgs),
+    /// Inspect a local or remote web application for runtime JavaScript & console errors.
+    #[command(alias = "inspect-web")]
+    WebInspect(WebInspectArgs),
+}
+
+#[derive(Debug, Args)]
+struct WebInspectArgs {
+    /// Target URL to inspect (e.g. http://localhost:3000, http://127.0.0.1:8080, or http://192.168.x.x:port).
+    url: String,
+    /// Milliseconds to wait after page load for client-side JavaScript hydration (default: 1500).
+    #[arg(long, default_value = "1500")]
+    wait_ms: u64,
+    /// Browser engine to use: auto, cdp, playwright, puppeteer, http.
+    #[arg(long, default_value = "auto")]
+    engine: String,
+    /// Output full report as JSON.
+    #[arg(long)]
+    json: bool,
 }
 
 #[derive(Debug, Args)]
@@ -392,6 +410,30 @@ enum AiosCommand {
     BrainImpact {
         /// Target class or function symbol name.
         symbol: String,
+    },
+    /// Initialize the AIOS architecture bundle into the current workspace or global directory.
+    Init {
+        /// Force overwrite existing aios bundle if it already exists.
+        #[arg(long, short)]
+        force: bool,
+        /// Initialize globally into ~/.helpofai/aios instead of local ./aios.
+        #[arg(long, short)]
+        global: bool,
+    },
+    /// Inspect a local or remote web page, capture console & network errors, and correlate to workspace files.
+    #[command(alias = "inspect")]
+    WebInspect {
+        /// Target URL (e.g. http://localhost:3000 or http://192.168.1.15:8080).
+        url: String,
+        /// Milliseconds to wait after page load (default: 1500).
+        #[arg(long, default_value = "1500")]
+        wait_ms: u64,
+        /// Browser engine: auto, cdp, playwright, puppeteer, http.
+        #[arg(long, default_value = "auto")]
+        engine: String,
+        /// Output full report as JSON.
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -850,6 +892,7 @@ fn run() -> Result<()> {
             let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
             run_aios_command(&cli, &resolved_runtime, args.command)
         }
+        Some(Commands::WebInspect(args)) => run_web_inspect_cli(&cli, args),
         None => {
             let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
             let forwarded = root_tui_passthrough(&cli)?;
@@ -2118,12 +2161,43 @@ fn run_aios_command(
         parse_all_registries, parse_capability_registry, parse_dependency_registry,
         parse_module_registry,
     };
+    if let AiosCommand::Init { force, global } = command {
+        let target = if global {
+            dirs::home_dir()
+                .ok_or_else(|| anyhow::anyhow!("Could not locate user home directory"))?
+                .join(".helpofai")
+                .join("aios")
+        } else {
+            let base = cli
+                .workspace
+                .clone()
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            base.join("aios")
+        };
+
+        if target.join("aios.json").exists() && !force {
+            println!(
+                "AIOS bundle already exists at `{}`. Use --force to overwrite.",
+                target.display()
+            );
+            return Ok(());
+        }
+
+        helpofai_aios::unpack_embedded_aios(&target)?;
+        println!(
+            "Successfully initialized AIOS architecture bundle at `{}`.",
+            target.display()
+        );
+        return Ok(());
+    }
+
     // Resolve AIOS root directory using global fallback strategies
-    let aios_root = helpofai_aios::resolve_aios_root(None)?;
+    let aios_root = helpofai_aios::resolve_aios_root(cli.workspace.as_deref())?;
 
     let registry_dir = aios_root.join("registry");
 
     match command {
+        AiosCommand::Init { .. } => unreachable!(),
         AiosCommand::ModuleList => {
             let modules = parse_module_registry(&registry_dir.join("modules.json"))?;
             println!(
@@ -2386,8 +2460,51 @@ fn run_aios_command(
                 println!("{md}");
             }
         }
+        AiosCommand::WebInspect {
+            url,
+            wait_ms,
+            engine,
+            json,
+        } => {
+            let options = helpofai_aios::WebInspectOptions {
+                url,
+                wait_ms,
+                engine: helpofai_aios::WebInspectEngine::from_str(&engine),
+                correlate_workspace: true,
+            };
+            let workspace = cli
+                .workspace
+                .clone()
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+            let report = helpofai_aios::inspect_web_page(&options, Some(&workspace))?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                println!("{}", report.summary);
+            }
+        }
     }
 
+    Ok(())
+}
+
+fn run_web_inspect_cli(cli: &Cli, args: WebInspectArgs) -> anyhow::Result<()> {
+    let options = helpofai_aios::WebInspectOptions {
+        url: args.url,
+        wait_ms: args.wait_ms,
+        engine: helpofai_aios::WebInspectEngine::from_str(&args.engine),
+        correlate_workspace: true,
+    };
+    let workspace = cli
+        .workspace
+        .clone()
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+    let report = helpofai_aios::inspect_web_page(&options, Some(&workspace))?;
+    if args.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        println!("{}", report.summary);
+    }
     Ok(())
 }
 

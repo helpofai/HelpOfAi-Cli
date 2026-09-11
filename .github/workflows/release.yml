@@ -353,6 +353,7 @@ jobs:
             fi
             cp "artifacts/${cli_src}/${cli_src}" "$dir/${cli_dst}"
             cp "artifacts/${tui_src}/${tui_src}" "$dir/${tui_dst}"
+            cp -r aios "$dir/aios"
 
             # Add install script (standard variant only)
             if [[ "$variant" != "portable" ]]; then

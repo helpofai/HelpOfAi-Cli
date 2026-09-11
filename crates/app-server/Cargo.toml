@@ -12,15 +12,15 @@ autobins = false
 anyhow.workspace = true
 axum.workspace = true
 clap.workspace = true
-helpofai-agent = { path = "../agent", version = "0.8.96" }
-helpofai-config = { path = "../config", version = "0.8.96" }
-helpofai-core = { path = "../core", version = "0.8.96" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.8.96" }
-helpofai-hooks = { path = "../hooks", version = "0.8.96" }
-helpofai-mcp = { path = "../mcp", version = "0.8.96" }
-helpofai-protocol = { path = "../protocol", version = "0.8.96" }
-helpofai-state = { path = "../state", version = "0.8.96" }
-helpofai-tools = { path = "../tools", version = "0.8.96" }
+helpofai-agent = { path = "../agent", version = "0.8.97" }
+helpofai-config = { path = "../config", version = "0.8.97" }
+helpofai-core = { path = "../core", version = "0.8.97" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.97" }
+helpofai-hooks = { path = "../hooks", version = "0.8.97" }
+helpofai-mcp = { path = "../mcp", version = "0.8.97" }
+helpofai-protocol = { path = "../protocol", version = "0.8.97" }
+helpofai-state = { path = "../state", version = "0.8.97" }
+helpofai-tools = { path = "../tools", version = "0.8.97" }
 serde.workspace = true
 serde_json.workspace = true
 rustls.workspace = true

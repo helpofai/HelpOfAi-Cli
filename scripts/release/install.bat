@@ -22,6 +22,12 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+if exist "%SCRIPT_DIR%aios" (
+    echo Installing AIOS architecture bundle to %USERPROFILE%\.helpofai\aios...
+    if not exist "%USERPROFILE%\.helpofai\aios" mkdir "%USERPROFILE%\.helpofai\aios"
+    xcopy /E /I /Y "%SCRIPT_DIR%aios" "%USERPROFILE%\.helpofai\aios" >nul
+)
+
 echo.
 echo Done. Both binaries installed to %BIN_DIR%.
 echo.

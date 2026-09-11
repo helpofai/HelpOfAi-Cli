@@ -19,15 +19,15 @@ path = "src/bin/hoa_legacy_shim.rs"
 anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true
-helpofai-agent = { path = "../agent", version = "0.8.96" }
-helpofai-app-server = { path = "../app-server", version = "0.8.96" }
-helpofai-config = { path = "../config", version = "0.8.96" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.8.96" }
-helpofai-mcp = { path = "../mcp", version = "0.8.96" }
-helpofai-aios = { path = "../aios", version = "0.8.96" }
-helpofai-release = { path = "../release", version = "0.8.96" }
-helpofai-secrets = { path = "../secrets", version = "0.8.96" }
-helpofai-state = { path = "../state", version = "0.8.96" }
+helpofai-agent = { path = "../agent", version = "0.8.97" }
+helpofai-app-server = { path = "../app-server", version = "0.8.97" }
+helpofai-config = { path = "../config", version = "0.8.97" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.8.97" }
+helpofai-mcp = { path = "../mcp", version = "0.8.97" }
+helpofai-aios = { path = "../aios", version = "0.8.97" }
+helpofai-release = { path = "../release", version = "0.8.97" }
+helpofai-secrets = { path = "../secrets", version = "0.8.97" }
+helpofai-state = { path = "../state", version = "0.8.97" }
 chrono.workspace = true
 dirs.workspace = true
 serde.workspace = true

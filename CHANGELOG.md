@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.97] - 2026-09-11
+
+### Added
+- **Embedded AIOS Distribution & Auto-Unpack**: The full AIOS bundle (`aios.json`, schemas, constitution, 28 modules, 34 capabilities, workflows, agents) is now embedded directly into the binary with compile-time zero-download guarantee. The binary automatically unpacks to `~/.helpofai/aios` on first run if not present, and official release packages and install scripts now ship the bundle out of the box. Added `helpofai aios init` command.
+- **Dual-Engine Headless Web Inspector (`web_inspect` & `helpofai web-inspect`)**: Native headless browser inspection via Chrome/Edge DevTools Protocol (CDP) using pre-installed system browsers with zero extra dependencies, along with Node.js/Playwright/Puppeteer runner support and HTTP fallback.
+- **Real-Time Console & Network Error Listener**: Automatically captures `console.error`, `console.warn`, and uncaught JavaScript runtime exceptions with file names, line numbers, column numbers, and stack traces, plus failed HTTP 4xx/5xx, CORS, and connection-refused network requests.
+- **Automated Workspace Correlation & Auto-Fix Loop**: Automatically correlates browser runtime errors to matching local workspace source files (`.jsx`, `.tsx`, `.vue`, `.svelte`, `.js`, `.html`), extracts code line context snippets, and generates targeted fix recommendations for the AI agent to patch code.
+- **AIOS Web Debug Workflow**: Added `WORKFLOW-000011-web-debug.json` (`hoa debug-web`) automating the inspect -> correlate -> auto-fix -> re-verify loop.
+
 ## [0.8.96] - 2026-09-11
 
 ### Added
@@ -2400,6 +2409,7 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
 [Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...HEAD
+[0.8.97]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...v0.8.97
 [0.8.96]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.95...v0.8.96
 [0.8.95]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.94...v0.8.95
 [0.8.73]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.72...v0.8.73

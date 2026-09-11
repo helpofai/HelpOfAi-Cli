@@ -741,11 +741,13 @@ impl ToolRegistryBuilder {
     #[must_use]
     pub fn with_web_tools(self) -> Self {
         use super::fetch_url::FetchUrlTool;
+        use super::web_inspect::WebInspectTool;
         use super::web_run::WebRunTool;
         use super::web_search::WebSearchTool;
         self.with_tool(Arc::new(WebSearchTool))
             .with_tool(Arc::new(FetchUrlTool))
             .with_tool(Arc::new(WebRunTool))
+            .with_tool(Arc::new(WebInspectTool))
     }
 
     /// Include the `finance` market-data tool.

@@ -16,3 +16,7 @@ rusqlite = { workspace = true }
 uuid = { workspace = true }
 walkdir = { workspace = true }
 blake3 = { workspace = true }
+include_dir = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

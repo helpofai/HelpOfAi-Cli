@@ -21,7 +21,7 @@ default-members = ["crates/cli", "crates/app-server", "crates/tui"]
 resolver = "2"
 
 [workspace.package]
-version = "0.8.96"
+version = "0.8.97"
 edition = "2024"
 # Rust 1.88 stabilized `let_chains` in `if`/`while` conditions, which the
 # codebase relies on extensively. Cargo enforces this so users on older
@@ -58,6 +58,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 uuid = { version = "1.11", features = ["v4"] }
 walkdir = "2.5"
 blake3 = "1.5"
+include_dir = "0.7.4"
 
 [profile.release]
 # lto = false: starlark 0.13.0 ships pre-compiled LLVM bitcode (.bc) in its

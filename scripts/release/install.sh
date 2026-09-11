@@ -98,6 +98,12 @@ for bin in helpofai helpofai-tui; do
     echo "  $dst"
 done
 
+if [[ -d "$SCRIPT_DIR/aios" ]]; then
+    echo "Installing AIOS architecture bundle to $HOME/.helpofai/aios..."
+    mkdir -p "$HOME/.helpofai/aios"
+    cp -r "$SCRIPT_DIR/aios/"* "$HOME/.helpofai/aios/"
+fi
+
 echo ""
 echo "Done. Both binaries installed to $BIN_DIR."
 

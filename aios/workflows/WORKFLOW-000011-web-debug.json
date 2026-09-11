@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schemas/SCHEMA-000013-workflow.json",
+  "id": "AIOS-WORKFLOW-000011",
+  "name": "web-debug",
+  "version": "1.0.0",
+  "description": "Full local web application debugging lifecycle: inspect (headless browser/CDP) -> capture errors (console/network) -> correlate -> auto-fix -> re-verify.",
+  "triggers": [
+    "hoa debug-web",
+    "hoa test-web",
+    "hoa inspect-web",
+    "hoa web-debug"
+  ],
+  "lifecycle": [
+    {
+      "phase": "inspect",
+      "order": 1,
+      "engine": "AIOS-MODULE-000024"
+    },
+    {
+      "phase": "correlate",
+      "order": 2,
+      "engine": "AIOS-MODULE-000002"
+    },
+    {
+      "phase": "fix",
+      "order": 3,
+      "engine": "AIOS-MODULE-000009"
+    },
+    {
+      "phase": "verify",
+      "order": 4,
+      "engine": "AIOS-MODULE-000010"
+    }
+  ],
+  "rollback_workflow": "AIOS-WORKFLOW-000002",
+  "estimated_duration": {
+    "min_minutes": 2,
+    "max_minutes": 15
+  }
+}
