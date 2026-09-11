@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.8.98] - 2026-09-11
+
+### Fixed
+- **YOLO Mode Shell Policy Enforcement**: Fixed an issue where `shell_policy_for_mode` returned `ShellPolicy::None` in YOLO mode if `allow_shell` was not explicitly configured in `config.toml`, which caused "Shell tools are disabled by the active permission profile" errors. YOLO mode now always grants `ShellPolicy::Full`.
+- **Unrestricted AIOS PowerShell & Shell Execution Across All Modes**: Removed `ShellPolicy::None` permission checks from `aios_run_and_trace`, allowing AIOS diagnostic tracing and PowerShell execution across Agent, Plan, and YOLO modes.
+- **AIOS Command Auto-Detection & Auto-Approval**: Added `is_aios_command` detection in `exec_shell` and `Engine::handle_run_shell_command` so `helpofai aios`, `hoa`, and AIOS workflows are permitted and auto-approved without manual confirmation prompts.
+- **Project-Local AIOS Bundle Resolution (`.helpofai/aios`)**: Extended `resolve_aios_root` to discover `.helpofai/aios` inside project folders, and updated `helpofai aios init` to initialize into `.helpofai/aios` when a project `.helpofai` directory is present.
+
 ## [0.8.97] - 2026-09-11
 
 ### Added
@@ -2408,7 +2416,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...HEAD
+[0.8.98]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.97...v0.8.98
 [0.8.97]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...v0.8.97
 [0.8.96]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.95...v0.8.96
 [0.8.95]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.94...v0.8.95

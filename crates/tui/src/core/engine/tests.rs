@@ -1794,9 +1794,7 @@ fn build_tool_context_uses_typed_shell_policy_per_mode() {
         crate::worker_profile::ShellPolicy::None
     );
     assert_eq!(
-        engine
-            .build_tool_context(AppMode::Yolo, false)
-            .shell_policy,
+        engine.build_tool_context(AppMode::Yolo, false).shell_policy,
         crate::worker_profile::ShellPolicy::Full
     );
 }
