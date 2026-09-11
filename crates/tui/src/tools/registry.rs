@@ -559,6 +559,18 @@ impl ToolRegistryBuilder {
             .with_tool(Arc::new(AiosWebInspectTool))
     }
 
+    /// Include read-only AIOS tools (Brain, Registry, WebInspect) safe for Plan mode.
+    #[must_use]
+    pub fn with_aios_read_only_tools(self) -> Self {
+        use super::aios_bridge::{
+            AiosBrainQueryTool, AiosBrainTool, AiosRegistryTool, AiosWebInspectTool,
+        };
+        self.with_tool(Arc::new(AiosBrainTool))
+            .with_tool(Arc::new(AiosBrainQueryTool))
+            .with_tool(Arc::new(AiosRegistryTool))
+            .with_tool(Arc::new(AiosWebInspectTool))
+    }
+
     /// Include search tools (`grep_files`).
     #[must_use]
     pub fn with_search_tools(self) -> Self {
