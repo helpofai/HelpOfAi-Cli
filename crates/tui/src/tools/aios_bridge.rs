@@ -8,10 +8,11 @@
 //! 2. `aios_brain`: Query the Project Knowledge Graph, scan & index the workspace, check stats,
 //!    or perform multi-file impact analysis for code changes.
 //! 3. `aios_brain_query`: Backwards-compatible symbol search tool.
-//! 4. `aios_workflow`: Full control over AIOS agentic workflows: list, inspect, diagnose, and run.
+//! 4. `aios_workflow`: Full control over AIOS agentic workflows: list, inspect, diagnose, run, and history.
 //! 5. `aios_trigger_workflow`: Backwards-compatible workflow triggering tool.
-//! 6. `aios_registry`: Inspect modules, capabilities, dependencies, and specialist agents.
+//! 6. `aios_registry`: Inspect modules, capabilities, dependencies, specialist agents, constitution, patterns, and templates.
 //! 7. `aios_workspace`: Safe atomic file operations (read, collect, write, copy, move, delete, rollback) and upgrade analysis.
+//! 8. `aios_web_inspect`: Headless browser page inspection, console/network error capture, and automatic workspace file correlation.
 
 use async_trait::async_trait;
 use serde_json::{Value, json};
@@ -506,7 +507,8 @@ impl ToolSpec for AiosWorkflowTool {
         'list': List all available workflows (build-feature, rollback, audit-project, fix-bug, review-code, refactor, upgrade, optimize, analyze, release). \
         'inspect': View detailed phase-by-phase breakdown for a workflow. \
         'diagnose': Perform dry-run diagnostics verifying engines and specialist agents for a task. \
-        'run': Execute the full multi-phase workflow lifecycle for a goal, tracking progress and logging execution journals."
+        'run': Execute the full multi-phase workflow lifecycle for a goal, tracking progress and logging execution journals. \
+        'history': Inspect past AIOS workflow execution runs, statuses (completed/failed), and phase execution logs."
     }
 
     fn input_schema(&self) -> Value {
@@ -515,17 +517,22 @@ impl ToolSpec for AiosWorkflowTool {
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["list", "inspect", "diagnose", "run"],
+                    "enum": ["list", "inspect", "diagnose", "run", "history"],
                     "description": "Workflow action to perform (default: 'run').",
                     "default": "run"
                 },
                 "workflow_name": {
                     "type": "string",
-                    "description": "Name or ID of the workflow (e.g., 'build-feature', 'review-code', 'fix-bug', 'analyze', 'audit-project', 'optimize', 'refactor', 'release', 'upgrade'). Required for inspect, diagnose, and run."
+                    "description": "Name or ID of the workflow (e.g., 'build-feature', 'review-code', 'fix-bug', 'analyze', 'audit-project', 'optimize', 'refactor', 'release', 'upgrade'). Required for inspect, diagnose, and run; optional filter for history."
                 },
                 "goal": {
                     "type": "string",
                     "description": "The specific objective or task description for the workflow. Required for diagnose and run."
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Max past workflow runs to retrieve in history (default: 15).",
+                    "default": 15
                 }
             },
             "additionalProperties": false
@@ -802,6 +809,129 @@ impl ToolSpec for AiosWorkflowTool {
                     "journal": run_file.to_string_lossy(),
                 })))
             }
+            "history" => {
+                let runs_dir = aios_root.join("runs");
+                if !runs_dir.exists() {
+                    return Ok(ToolResult::success(
+                        "No past AIOS workflow execution runs found (directory `aios/runs` does not exist yet).",
+                    )
+                    .with_metadata(json!({ "action": "history", "count": 0 })));
+                }
+
+                let mut entries = Vec::new();
+                if let Ok(read_dir) = std::fs::read_dir(&runs_dir) {
+                    for entry in read_dir.flatten() {
+                        let path = entry.path();
+                        if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                                    entries.push((path, val));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if entries.is_empty() {
+                    return Ok(ToolResult::success(
+                        "No AIOS workflow execution logs recorded yet.",
+                    )
+                    .with_metadata(json!({ "action": "history", "count": 0 })));
+                }
+
+                // Sort by started_at descending
+                entries.sort_by(|a, b| {
+                    let a_time = a.1.get("started_at").and_then(|v| v.as_u64()).unwrap_or(0);
+                    let b_time = b.1.get("started_at").and_then(|v| v.as_u64()).unwrap_or(0);
+                    b_time.cmp(&a_time)
+                });
+
+                let filter_wf = optional_str(&input, "workflow_name");
+                let limit = input.get("limit").and_then(|v| v.as_u64()).unwrap_or(15) as usize;
+
+                let filtered: Vec<_> = entries
+                    .into_iter()
+                    .filter(|(_, val)| {
+                        if let Some(target) = filter_wf {
+                            let name = val
+                                .get("workflow_name")
+                                .and_then(|s| s.as_str())
+                                .unwrap_or("");
+                            let id = val
+                                .get("workflow_id")
+                                .and_then(|s| s.as_str())
+                                .unwrap_or("");
+                            name.eq_ignore_ascii_case(target) || id.eq_ignore_ascii_case(target)
+                        } else {
+                            true
+                        }
+                    })
+                    .take(limit)
+                    .collect();
+
+                if filtered.is_empty() {
+                    return Ok(ToolResult::success(format!(
+                        "No runs found matching workflow filter: '{}'.",
+                        filter_wf.unwrap_or("")
+                    )));
+                }
+
+                let mut report = format!(
+                    "## AIOS Workflow Execution History ({})\n\n",
+                    filtered.len()
+                );
+                report.push_str("| Workflow | Status | Started | Phases | Goal |\n");
+                report.push_str("| --- | --- | --- | --- | --- |\n");
+
+                let mut history_json = Vec::new();
+                for (path, item) in &filtered {
+                    let name = item
+                        .get("workflow_name")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("unknown");
+                    let status = item
+                        .get("status")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("unknown");
+                    let start_str = if let Some(s) = item.get("started_at").and_then(|s| s.as_str())
+                    {
+                        s.to_string()
+                    } else if let Some(t) = item.get("started_at").and_then(|v| v.as_u64()) {
+                        format!("{t}")
+                    } else {
+                        "—".to_string()
+                    };
+                    let phases_cnt = item
+                        .get("phases")
+                        .and_then(|v| v.as_array())
+                        .map(|a| a.len())
+                        .unwrap_or(0);
+                    let goal = item.get("goal").and_then(|s| s.as_str()).unwrap_or("—");
+                    let short_goal = if goal.len() > 60 {
+                        format!("{}...", &goal[..57])
+                    } else {
+                        goal.to_string()
+                    };
+
+                    report.push_str(&format!(
+                        "| **{name}** | `{status}` | {start_str} | {phases_cnt} | {short_goal} |\n"
+                    ));
+
+                    history_json.push(json!({
+                        "file": path.file_name().and_then(|s| s.to_str()).unwrap_or(""),
+                        "workflow": name,
+                        "status": status,
+                        "started_at": start_str,
+                        "phases": phases_cnt,
+                        "goal": goal,
+                    }));
+                }
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "history",
+                    "runs": history_json,
+                })))
+            }
             other => Err(ToolError::invalid_input(format!("Unknown action: {other}"))),
         }
     }
@@ -878,13 +1008,16 @@ impl ToolSpec for AiosRegistryTool {
     }
 
     fn description(&self) -> &'static str {
-        "Inspect the AIOS architecture, catalogued modules, registered capabilities, and specialist agents. \
+        "Inspect the AIOS architecture, catalogued modules, registered capabilities, specialist agents, constitution, and engineering templates. \
         Actions: \
         'status': Overview of AIOS installation, modules count, capabilities count, and dependencies. \
         'list_modules': List all 28 AIOS architectural modules (ID, name, path, provider, version). \
         'list_capabilities': List all 34 capabilities, their IDs, and providing modules. \
         'list_agents': List all registered specialist agents (master, architect, backend, frontend, reviewer, qa, devops, security, database, api, etc.). \
-        'get_agent': Retrieve the complete prompt, domain, and capabilities of a specific agent role."
+        'get_agent': Retrieve the complete prompt, domain, and capabilities of a specific agent role. \
+        'constitution': Load the 15 immutable engineering laws and the golden rule governing all AIOS code changes. \
+        'patterns': List or inspect architectural and code patterns. \
+        'templates': List or inspect standard engineering templates (ADR, BUG_REPORT, PLAN, ROLLBACK_PLAN, SECURITY_REPORT, etc.)."
     }
 
     fn input_schema(&self) -> Value {
@@ -893,13 +1026,21 @@ impl ToolSpec for AiosRegistryTool {
             "properties": {
                 "action": {
                     "type": "string",
-                    "enum": ["status", "list_modules", "list_capabilities", "list_agents", "get_agent"],
+                    "enum": ["status", "list_modules", "list_capabilities", "list_agents", "get_agent", "constitution", "patterns", "templates"],
                     "description": "Registry inspection action (default: 'status').",
                     "default": "status"
                 },
                 "agent_role": {
                     "type": "string",
                     "description": "Specific agent role to inspect (e.g. 'reviewer', 'architect', 'backend', 'qa', 'devops', 'security', 'database', 'api'). Required for 'get_agent'."
+                },
+                "pattern_name": {
+                    "type": "string",
+                    "description": "Specific pattern name to view for 'patterns' action."
+                },
+                "template_name": {
+                    "type": "string",
+                    "description": "Specific template name to view for 'templates' action (e.g., 'PLAN', 'ADR_TEMPLATE', 'BUG_REPORT', 'SECURITY_REPORT', 'ROLLBACK_PLAN')."
                 }
             },
             "additionalProperties": false
@@ -1065,6 +1206,161 @@ impl ToolSpec for AiosRegistryTool {
                     "role": agent.spec.role,
                     "id": agent.spec.id,
                     "domain": agent.spec.domain,
+                })))
+            }
+            "constitution" => {
+                let constitution_md = match helpofai_aios::load_constitution_prompt(&aios_root) {
+                    Ok(prompt) => prompt,
+                    Err(e) => {
+                        let const_file = aios_root.join("constitution").join("CONSTITUTION.md");
+                        if const_file.exists() {
+                            std::fs::read_to_string(&const_file).unwrap_or_else(|_| e.to_string())
+                        } else {
+                            return Err(ToolError::execution_failed(format!(
+                                "Failed to load AIOS constitution: {e}"
+                            )));
+                        }
+                    }
+                };
+
+                Ok(ToolResult::success(constitution_md).with_metadata(json!({
+                    "action": "constitution",
+                })))
+            }
+            "patterns" => {
+                let patterns_dir = aios_root.join("patterns");
+                let pattern_name = optional_str(&input, "pattern_name");
+
+                if let Some(pname) = pattern_name {
+                    let target_file = if pname.ends_with(".md") || pname.ends_with(".json") {
+                        patterns_dir.join(pname)
+                    } else {
+                        patterns_dir.join(format!("{pname}.md"))
+                    };
+
+                    if target_file.exists() {
+                        let content = std::fs::read_to_string(&target_file).map_err(|e| {
+                            ToolError::execution_failed(format!("Failed to read pattern file: {e}"))
+                        })?;
+                        return Ok(ToolResult::success(format!(
+                            "## AIOS Architecture Pattern: `{pname}`\n\n{content}"
+                        ))
+                        .with_metadata(json!({
+                            "action": "patterns",
+                            "pattern": pname,
+                        })));
+                    } else {
+                        let spec = patterns_dir.join("patterns.spec.md");
+                        if spec.exists() {
+                            let content = std::fs::read_to_string(&spec).unwrap_or_default();
+                            return Ok(ToolResult::success(format!(
+                                "## AIOS Architecture Patterns Spec\n\nPattern '{pname}' was not found as a standalone file. Here is the AIOS pattern catalog specification:\n\n{content}"
+                            )));
+                        }
+                        return Err(ToolError::execution_failed(format!(
+                            "Pattern '{pname}' not found in `{}`.",
+                            patterns_dir.display()
+                        )));
+                    }
+                }
+
+                let mut files = Vec::new();
+                if let Ok(rd) = std::fs::read_dir(&patterns_dir) {
+                    for entry in rd.flatten() {
+                        let p = entry.path();
+                        if let Some(fname) = p.file_name().and_then(|s| s.to_str()) {
+                            let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                            files.push((fname.to_string(), size));
+                        }
+                    }
+                }
+                files.sort_by(|a, b| a.0.cmp(&b.0));
+
+                let mut report = format!("## AIOS Architecture Patterns ({})\n\n", files.len());
+                report.push_str("To view a specific pattern, call `aios_registry` with `action: 'patterns'` and `pattern_name: '<name>'`.\n\n");
+                report.push_str("| Pattern File | Size (Bytes) |\n");
+                report.push_str("| --- | --- |\n");
+                for (fname, size) in &files {
+                    report.push_str(&format!("| `{fname}` | {size} |\n"));
+                }
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "patterns",
+                    "count": files.len(),
+                })))
+            }
+            "templates" => {
+                let templates_dir = aios_root.join("templates");
+                let template_name = optional_str(&input, "template_name");
+
+                if let Some(tname) = template_name {
+                    let target_file = if tname.ends_with(".md") || tname.ends_with(".json") {
+                        templates_dir.join(tname)
+                    } else {
+                        templates_dir.join(format!("{tname}.md"))
+                    };
+
+                    if target_file.exists() {
+                        let content = std::fs::read_to_string(&target_file).map_err(|e| {
+                            ToolError::execution_failed(format!(
+                                "Failed to read template file: {e}"
+                            ))
+                        })?;
+                        return Ok(ToolResult::success(format!(
+                            "## AIOS Template: `{tname}`\n\n```markdown\n{content}\n```"
+                        ))
+                        .with_metadata(json!({
+                            "action": "templates",
+                            "template": tname,
+                        })));
+                    } else {
+                        return Err(ToolError::execution_failed(format!(
+                            "Template '{tname}' not found in `{}`.",
+                            templates_dir.display()
+                        )));
+                    }
+                }
+
+                let mut files = Vec::new();
+                if let Ok(rd) = std::fs::read_dir(&templates_dir) {
+                    for entry in rd.flatten() {
+                        let p = entry.path();
+                        if let Some(fname) = p.file_name().and_then(|s| s.to_str()) {
+                            let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                            files.push((fname.to_string(), size));
+                        }
+                    }
+                }
+                files.sort_by(|a, b| a.0.cmp(&b.0));
+
+                let mut report = format!(
+                    "## AIOS Standard Engineering Templates ({})\n\n",
+                    files.len()
+                );
+                report.push_str("To view or copy a specific template, call `aios_registry` with `action: 'templates'` and `template_name: '<name>'`.\n\n");
+                report.push_str("| Template | Size (Bytes) | Category |\n");
+                report.push_str("| --- | --- | --- |\n");
+                for (fname, size) in &files {
+                    let cat = match fname.as_str() {
+                        "ADR_TEMPLATE.md" => "Architecture Decision Record",
+                        "ARCHITECTURE_REPORT.md" => "Architecture Audit",
+                        "BUG_REPORT.md" => "Defect Investigation",
+                        "CHANGELOG.md" => "Release & Versions",
+                        "CHECKLIST.md" => "Pre-flight Verification",
+                        "EXECUTION_REPORT.md" => "Workflow Journal",
+                        "PERFORMANCE_REPORT.md" => "Benchmarking & Profiling",
+                        "PLAN.md" => "Strategic Implementation Plan",
+                        "RELEASE_NOTES.md" => "Deployment Summary",
+                        "ROLLBACK_PLAN.md" => "Disaster Recovery",
+                        "SECURITY_REPORT.md" => "Vulnerability Assessment",
+                        _ => "General Spec",
+                    };
+                    report.push_str(&format!("| **`{fname}`** | {size} | {cat} |\n"));
+                }
+
+                Ok(ToolResult::success(report).with_metadata(json!({
+                    "action": "templates",
+                    "count": files.len(),
                 })))
             }
             _ => Err(ToolError::invalid_input(format!(
@@ -1422,6 +1718,99 @@ impl ToolSpec for AiosWorkspaceTool {
     }
 }
 
+// ── 8. AIOS Web Inspector Tool ──────────────────────────────────────────────
+
+/// Headless web inspection and browser error diagnostics for local and remote websites.
+pub struct AiosWebInspectTool;
+
+#[async_trait]
+impl ToolSpec for AiosWebInspectTool {
+    fn name(&self) -> &'static str {
+        "aios_web_inspect"
+    }
+
+    fn description(&self) -> &'static str {
+        "Inspect a local web application (e.g., http://localhost:3000, http://127.0.0.1:8080, http://192.168.x.x) \
+        or remote website using a headless browser. Captures rendered page title/text, browser console errors \
+        (console.error, console.warn), JavaScript runtime exceptions, and failed HTTP requests (4xx/5xx, CORS). \
+        Automatically correlates errors with local workspace source files (.js, .jsx, .ts, .tsx, .vue, .svelte, .html) \
+        and extracts code snippets with suggested fixes for rapid auto-patching."
+    }
+
+    fn input_schema(&self) -> Value {
+        json!({
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The URL to inspect (e.g. 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://192.168.1.50:8080', or public URL)."
+                },
+                "wait_ms": {
+                    "type": "integer",
+                    "description": "Milliseconds to wait after page load for client-side JavaScript hydration and async requests (default: 1500).",
+                    "default": 1500
+                },
+                "engine": {
+                    "type": "string",
+                    "enum": ["auto", "cdp", "playwright", "puppeteer", "http"],
+                    "description": "Browser inspection engine: 'auto' (recommended), 'cdp' (native Chrome/Edge DevTools), 'playwright', 'puppeteer', or 'http' (lightweight HTTP probe).",
+                    "default": "auto"
+                },
+                "correlate_workspace": {
+                    "type": "boolean",
+                    "description": "Whether to correlate browser errors with local workspace source files (default: true).",
+                    "default": true
+                }
+            },
+            "required": ["url"],
+            "additionalProperties": false
+        })
+    }
+
+    fn capabilities(&self) -> Vec<ToolCapability> {
+        vec![ToolCapability::Network, ToolCapability::ReadOnly]
+    }
+
+    fn approval_requirement(&self) -> ApprovalRequirement {
+        ApprovalRequirement::Auto
+    }
+
+    fn supports_parallel(&self) -> bool {
+        false
+    }
+
+    async fn execute(&self, input: Value, context: &ToolContext) -> Result<ToolResult, ToolError> {
+        let url = required_str(&input, "url")?;
+        let wait_ms = input
+            .get("wait_ms")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(1500);
+        let engine_str = optional_str(&input, "engine").unwrap_or("auto");
+        let correlate_workspace = input
+            .get("correlate_workspace")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+
+        let options = helpofai_aios::WebInspectOptions {
+            url: url.to_string(),
+            wait_ms,
+            engine: helpofai_aios::WebInspectEngine::from(engine_str),
+            correlate_workspace,
+        };
+
+        let workspace = context.workspace.clone();
+
+        let report = tokio::task::spawn_blocking(move || {
+            helpofai_aios::inspect_web_page(&options, Some(&workspace))
+        })
+        .await
+        .map_err(|e| ToolError::execution_failed(format!("Task spawn failed: {e}")))?
+        .map_err(|e| ToolError::execution_failed(format!("Web inspection failed: {e}")))?;
+
+        Ok(ToolResult::success(report.summary.clone()).with_metadata(json!(report)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1559,5 +1948,62 @@ mod tests {
             .unwrap();
         assert!(del_res.success);
         assert!(del_res.content.contains("Successfully deleted"));
+
+        // Workflow history
+        let hist_res = wf_tool
+            .execute(json!({ "action": "history" }), &ctx)
+            .await
+            .unwrap();
+        assert!(hist_res.success);
+
+        // Registry constitution
+        let const_res = tool
+            .execute(json!({ "action": "constitution" }), &ctx)
+            .await
+            .unwrap();
+        assert!(const_res.success);
+        assert!(const_res.content.contains("AIOS Constitution"));
+
+        // Registry patterns
+        let patterns_res = tool
+            .execute(json!({ "action": "patterns" }), &ctx)
+            .await
+            .unwrap();
+        assert!(patterns_res.success);
+        assert!(patterns_res.content.contains("Patterns"));
+
+        // Registry templates
+        let templates_res = tool
+            .execute(json!({ "action": "templates" }), &ctx)
+            .await
+            .unwrap();
+        assert!(templates_res.success);
+        assert!(templates_res.content.contains("Templates"));
+
+        let plan_tpl_res = tool
+            .execute(
+                json!({
+                    "action": "templates",
+                    "template_name": "PLAN.md"
+                }),
+                &ctx,
+            )
+            .await
+            .unwrap();
+        assert!(plan_tpl_res.success);
+        assert!(plan_tpl_res.content.contains("PLAN.md"));
+
+        // AiosWebInspectTool Spec
+        let web_inspect_tool = AiosWebInspectTool;
+        assert_eq!(web_inspect_tool.name(), "aios_web_inspect");
+        assert_eq!(
+            web_inspect_tool.approval_requirement(),
+            ApprovalRequirement::Auto
+        );
+        assert!(
+            web_inspect_tool
+                .capabilities()
+                .contains(&ToolCapability::Network)
+        );
     }
 }
