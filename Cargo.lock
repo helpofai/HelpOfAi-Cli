@@ -4610,9 +4610,9 @@ dependencies = [
 
 [[package]]
 name = "schemaui"
-version = "0.12.2"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "251bcb2464e77bbf17143571ef6a765a45a21d487c407e2f8555015617f0d801"
+checksum = "cfd31406aa5c4778587e7d7ed82bada4131fbf1e69d0212fda60d6a2c5f5b5e6"
 dependencies = [
  "anyhow",
  "axum",
