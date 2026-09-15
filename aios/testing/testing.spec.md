@@ -17,3 +17,11 @@ Autodetects test framework and returns structured pass/fail/coverage.
 ## 3. Dependencies
 
 Requires: kernel, runtime, code. Load order: 21 (optional).
+### 4. Codebase Memory Integration
+When verifying behavior, use the codebase-memory graph to structurally verify:
+- callers
+- implementations
+- references
+- affected routes
+- affected tests
+- stale or orphaned relationships

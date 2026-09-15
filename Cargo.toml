@@ -16,6 +16,7 @@ members = [
     "crates/tools",
     "crates/tui",
     "crates/helpflow",
+    "crates/codebase-memory",
 ]
 default-members = ["crates/cli", "crates/app-server", "crates/tui"]
 resolver = "2"

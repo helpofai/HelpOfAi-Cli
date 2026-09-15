@@ -18,3 +18,6 @@ unrelated code.
 ## 3. Dependencies
 
 Requires: kernel, planner. Optional: brain, feature. Load order: 20 (optional).
+### 4. Codebase Memory Integration
+Before modifying large blocks of code, use targeted graph queries against the codebase-memory MCP engine (if available).
+Do not allow the agent to blindly edit files without understanding relevant relationships when graph information is accessible locally via search_graph or 	race_path.

@@ -20,3 +20,12 @@ and the review engine.
 ## 3. Dependencies
 
 Requires: kernel, runtime, brain. Load order: 10 (optional).
+### 4. Codebase Memory Integration
+When the codebase-memory MCP tool is available, use it to understand:
+- architecture and macro topological states
+- dependencies and imports
+- symbols and definitions
+- abstract call paths and semantic groupings
+- modules
+- existing patterns
+Use graph queries before manual GREP heuristics to preserve token bandwidth.

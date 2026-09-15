@@ -1,0 +1,22 @@
+[package]
+name = "helpofai-codebase-memory"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "HelpOfAi Codebase Memory — supervisor, installer, and graph lifecycle manager for the codebase-memory-mcp engine"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+flate2 = "1.1.10"
+reqwest = { workspace = true, features = ["blocking"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tar = "0.4.46"
+tempfile.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+zip = "0.6.3"

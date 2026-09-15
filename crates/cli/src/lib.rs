@@ -318,6 +318,57 @@ The command prints the completion script to stdout; redirect it to a path your s
     /// Inspect a local or remote web application for runtime JavaScript & console errors.
     #[command(alias = "inspect-web")]
     WebInspect(WebInspectArgs),
+    /// Manage the local Codebase Memory graph UI.
+    Graph(GraphArgs),
+    /// Interact with the Codebase Memory engine.
+    Codebase(CodebaseArgs),
+}
+
+#[derive(Debug, Args)]
+struct GraphArgs {
+    #[command(subcommand)]
+    command: Option<GraphCommand>,
+
+    /// Start the graph UI server on a specific port.
+    #[arg(long, default_value_t = 9749)]
+    port: u16,
+
+    /// Do not open the browser automatically.
+    #[arg(long)]
+    no_open: bool,
+}
+
+#[derive(Debug, Subcommand)]
+enum GraphCommand {
+    /// Start the local graph server.
+    Start,
+    /// Stop the local graph server.
+    Stop,
+    /// Restart the local graph server.
+    Restart,
+    /// Check the status of the local graph server.
+    Status,
+    /// Open the local graph server in a browser.
+    Open,
+}
+
+#[derive(Debug, Args)]
+struct CodebaseArgs {
+    #[command(subcommand)]
+    command: CodebaseCommand,
+}
+
+#[derive(Debug, Subcommand)]
+enum CodebaseCommand {
+    /// Install the Codebase Memory engine binary (skips if already installed).
+    Install,
+    /// Update the Codebase Memory engine to the latest release.
+    Update,
+    /// Check engine installation, binary health, and daemon status.
+    Doctor,
+    /// Run a raw engine subcommand (e.g. index, search, get_architecture).
+    #[command(external_subcommand)]
+    Passthrough(Vec<String>),
 }
 
 #[derive(Debug, Args)]
@@ -906,6 +957,8 @@ fn run() -> Result<()> {
             run_aios_command(&cli, &resolved_runtime, args.command)
         }
         Some(Commands::WebInspect(args)) => run_web_inspect_cli(&cli, args),
+        Some(Commands::Graph(args)) => run_graph_command(args.command, args.port, args.no_open),
+        Some(Commands::Codebase(args)) => run_codebase_command(args.command),
         None => {
             let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
             let forwarded = root_tui_passthrough(&cli)?;
@@ -4847,5 +4900,91 @@ mod tests {
 
         let resolved = locate_sibling_tui_binary().expect("override must resolve");
         assert_eq!(resolved, custom);
+    }
+}
+
+fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) -> Result<()> {
+    use helpofai_codebase_memory::graph::{
+        GraphSupervisor, open_browser, print_status, stop_by_pid,
+    };
+
+    let cmd = command.unwrap_or(GraphCommand::Start);
+
+    match cmd {
+        // Status and Stop work even when the binary is gone — they read the pid-file only.
+        GraphCommand::Status => {
+            print_status();
+            Ok(())
+        }
+        GraphCommand::Stop => stop_by_pid(),
+        GraphCommand::Open => open_browser(port),
+
+        GraphCommand::Start => {
+            let supervisor = GraphSupervisor::new()?;
+            println!("Starting Codebase Memory UI on port {port}…");
+            let mut child = supervisor.start(port)?;
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+            println!("Graph server ready → http://127.0.0.1:{port}");
+            if !no_open {
+                open_browser(port)?;
+            }
+            child.wait()?;
+            Ok(())
+        }
+        GraphCommand::Restart => {
+            stop_by_pid()?;
+            println!("Restarting…");
+            let supervisor = GraphSupervisor::new()?;
+            let mut child = supervisor.start(port)?;
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+            println!("Graph server ready → http://127.0.0.1:{port}");
+            if !no_open {
+                open_browser(port)?;
+            }
+            child.wait()?;
+            Ok(())
+        }
+    }
+}
+
+fn run_codebase_command(command: CodebaseCommand) -> Result<()> {
+    use helpofai_codebase_memory::installer::{Installer, probe_version};
+    use helpofai_codebase_memory::manager::CodebaseMemoryManager;
+    use helpofai_codebase_memory::platform::engine_binary_path;
+
+    match command {
+        CodebaseCommand::Install => {
+            let installer = Installer::new()?;
+            installer.install(false)?;
+            Ok(())
+        }
+        CodebaseCommand::Update => {
+            let installer = Installer::new()?;
+            installer.update()?;
+            Ok(())
+        }
+        CodebaseCommand::Doctor => {
+            let binary = engine_binary_path()?;
+            println!("Engine path:    {}", binary.display());
+            if binary.exists() {
+                match probe_version(&binary) {
+                    Ok(v) => println!("Engine version: {v}  ✓"),
+                    Err(e) => println!("Engine binary exists but failed to run: {e}"),
+                }
+            } else {
+                println!("Engine binary:  NOT FOUND");
+                println!("Run `helpofai codebase install` to download it.");
+            }
+            let manager = CodebaseMemoryManager::new()?;
+            println!("Daemon status check:");
+            let _ = manager.get_status();
+            Ok(())
+        }
+        CodebaseCommand::Passthrough(args) => {
+            let manager = CodebaseMemoryManager::new()?;
+            manager.run_passthrough(&args)
+        }
     }
 }

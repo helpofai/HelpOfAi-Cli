@@ -100,3 +100,12 @@ Per Engineering Law 11:
 - Gap demand → PLANNER_CAPABILITY_GAP emitted.
 
 Test entry: `aios/planner/tests/planner-selftest.json`.
+### 4. Codebase Memory Integration
+When planning, use the codebase-memory engine (if installed and exposed via MCP) to determine:
+- affected files
+- affected symbols
+- dependency impact
+- test impact
+- architecture boundaries
+- implementation risks
+Never guess cross-service impacts if the semantic or trace_path tooling is available.
