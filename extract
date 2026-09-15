@@ -1,0 +1,266 @@
+Do NOT remove advanced functionality.
+
+Do NOT replace mature implementations with toy implementations.
+
+The goal is to preserve the upstream project's powerful code-intelligence capabilities while transforming the product identity, integration layer, configuration, lifecycle management, CLI experience, and AIOS integration into a first-class HelpOfAi component.
+
+The final result must be suitable for a serious cross-platform developer tool.
+
+---
+
+# 0. CORE OBJECTIVE
+
+Build:
+
+**HelpOfAi Codebase Memory**
+
+A local-first, high-performance code intelligence and persistent codebase knowledge-graph engine for HelpOfAi AIOS.
+
+It must provide:
+
+- fast repository indexing
+- persistent knowledge graph
+- AST-based code intelligence
+- Tree-sitter language support
+- symbol extraction
+- relationship extraction
+- call graph analysis
+- type/semantic resolution
+- dependency analysis
+- structural search
+- code search
+- semantic search
+- BM25/full-text search
+- impact analysis
+- dead-code detection
+- architecture analysis
+- cross-service linking
+- cross-repository intelligence
+- infrastructure-as-code indexing
+- incremental indexing
+- filesystem/git-aware watching
+- persistent storage
+- MCP server
+- CLI access
+- graph query capability
+- built-in 3D graph visualization
+- graph UI server
+- session/daemon coordination
+- HelpOfAi integration
+- Windows/Linux/macOS support
+
+The engine must remain useful even without an LLM.
+
+The LLM/agent is a consumer of the structured code intelligence.
+
+---
+
+# 1. FIRST RULE — AUDIT BEFORE MODIFYING
+
+Before changing ANY source file:
+
+1. Inspect the entire repository.
+2. Read README and all architecture documentation.
+3. Inspect Cargo/build configuration.
+4. Inspect source directories.
+5. Inspect graph-ui.
+6. Inspect vendored dependencies.
+7. Inspect tests.
+8. Inspect installation scripts.
+9. Inspect platform-specific code.
+10. Inspect MCP implementation.
+11. Inspect daemon/session coordination.
+12. Inspect persistence/storage.
+13. Inspect indexing pipeline.
+14. Inspect semantic search implementation.
+15. Inspect LSP/type-resolution implementation.
+16. Inspect graph visualization implementation.
+17. Inspect configuration system.
+18. Inspect CLI commands.
+19. Inspect packaging/release infrastructure.
+20. Inspect LICENSE.
+21. Inspect THIRD_PARTY.md.
+22. Inspect SECURITY.md.
+23. Identify all upstream attribution obligations.
+
+Do not modify anything during this audit phase.
+
+Produce:
+
+`docs/helpofai-codebase-memory/AUDIT.md`
+
+containing:
+
+- current architecture
+- module map
+- dependency map
+- build system
+- runtime model
+- data flow
+- indexing pipeline
+- graph architecture
+- UI architecture
+- MCP architecture
+- daemon architecture
+- persistence model
+- platform support
+- test architecture
+- third-party components
+- licenses
+- attribution requirements
+- potential conflicts with HelpOfAi-Cli
+- integration risks
+- proposed migration strategy
+
+---
+
+# 2. CREATE AN UPSTREAM BASELINE
+
+Before rebranding, create a reproducible baseline.
+
+Record:
+
+- upstream repository URL
+- upstream commit SHA
+- upstream version/tag if applicable
+- source tree checksum where practical
+- build result
+- test result
+- graph UI result
+- MCP result
+- CLI result
+- indexing result
+- semantic-search result
+
+Create:
+
+`docs/helpofai-codebase-memory/UPSTREAM_BASELINE.md`
+
+The baseline must allow future maintainers to determine exactly which upstream implementation was incorporated.
+
+Never lose the upstream commit identity.
+
+---
+
+# 3. LICENSE AND THIRD-PARTY COMPLIANCE
+
+This is mandatory but as a AI you can not do it, i will my self after completely done and working mode.
+
+Do NOT blindly replace:
+
+- copyright notices
+- LICENSE files
+- third-party attribution
+- dependency notices
+- source attribution
+
+Create a dedicated:
+
+`THIRD_PARTY_NOTICES.md`
+
+or an equivalent existing HelpOfAi third-party notice mechanism.
+
+Document:
+/_
+|--------------------------------------------------------------------------
+| HelpOfAi (HOA) Professional Software
+|--------------------------------------------------------------------------
+|
+| Copyright (c) 2026 Rajib Adhikary. All Rights Reserved.
+|
+| This file is part of the HelpOfAi Professional Software Suite.
+| Unauthorized copying, modification, redistribution, reverse engineering,
+| decompilation, or commercial use of this source code, in whole or in part,
+| is strictly prohibited without prior written permission from the copyright owner.
+|
+| Author : Rajib Adhikary
+| Organization: HelpOfAi (HOA)
+| Website : https://helpofai.com
+| Location : Basta Purba Para, Aranghata, Nadia, West Bengal, India
+|
+| This source code contains proprietary and confidential information.
+| Any unauthorized access or distribution may violate applicable copyright laws.
+|
+|--------------------------------------------------------------------------
+_/
+
+- DeusData/codebase-memory-mcp
+- upstream license
+- upstream commit/version
+- modifications made by HelpOfAi
+- important third-party dependencies
+- their licenses
+- bundled assets
+- graph UI dependencies
+- Tree-sitter grammars
+- embedding models/assets
+- other vendored code
+
+Do not claim that all code is originally written by HelpOfAi.
+
+Brand the PRODUCT as HelpOfAi while maintaining legally required attribution.
+
+If an attribution requirement is unclear, STOP and report it instead of guessing.
+
+---
+
+# 4. DO NOT DESTROY UPSTREAM FUNCTIONALITY
+
+The following are considered protected capabilities.
+
+The implementation must retain or provide equivalent functionality for:
+
+## Indexing
+
+- full repository indexing
+- incremental indexing
+- changed-file detection
+- git-aware change detection
+- filesystem watching
+- package/module discovery
+- manifest scanning
+- large repository handling
+- memory-efficient indexing
+
+## Parsing
+
+- Tree-sitter AST parsing
+- all upstream supported grammars
+- language detection
+- syntax extraction
+
+Do not arbitrarily reduce the language count.
+
+## Semantic resolution
+
+Preserve the upstream semantic/type-resolution capabilities.
+
+Do not replace a real resolver with:
+
+- regex-only parsing
+- simplistic string matching
+- fake symbol resolution
+- LLM guesses
+
+## Knowledge graph
+
+Preserve graph persistence and relationships.
+
+Support nodes and relationships such as:
+
+- files
+- directories
+- modules
+- packages
+- functions
+- methods
+- classes
+- interfaces
+- traits
+- structs
+- enums
+- variables
+- routes
+- resources
+- services
+- tests

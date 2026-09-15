@@ -1,0 +1,298 @@
+# Vendored tree-sitter Grammar Manifest
+
+**Provenance + version record for the tree-sitter grammars under this directory.**
+
+The grammars were originally vendored as bare `parser.c`+`scanner.c` with **no recorded upstream version or commit**. This manifest reconstructs that provenance and pins each vendored grammar to a specific upstream commit, cross-verified against two independent registries (nvim-treesitter `parsers.lua` + Helix `languages.toml`).
+
+## How generated
+`private/grammar_audit/{discover,resolve_stragglers}.sh` (upstream + tag) → `verify_sources.py` (cross-verify vs nvim-treesitter + Helix, capture pinned commit) → `gen_manifest.py`. Captured 2026-06-02.
+
+## Summary
+
+- Grammars: **162** — vendored-from-upstream: **143**, first-party/self-maintained: **14**, registry-disagreement: **5** (nim removed 2026-06-12; objectscript_udl + objectscript_routine added 2026-06-24; mojo added 2026-07-01; arkts added 2026-08-26; plsql added 2026-08-27; chialisp added 2026-08-28 — see notes below)
+- ABI distribution: **9×** ABI-13 **79×** ABI-14 **74×** ABI-15 (runtime ceiling is ABI 15; never vendor ABI 16 without a runtime upgrade)
+  — recounted from the tree 2026-08-30 after the perl v1.2.1 refresh moved `perl` from ABI 14 to ABI 15 (was `9×/80×/73×`). Neither side of the rebase had this right: main's line was correct for main, and this branch still carried the pre-2026-08-28 `7×/84×/65×`. Regenerate, never increment.
+  — recounted from the tree 2026-08-28. This line had drifted: it read `7×/86×/65×`, which sums to 158 against 161 vendored grammars, so it was wrong before Chialisp was added and incrementing it would have carried the error forward. Regenerate with:
+  `grep -h '#define LANGUAGE_VERSION' internal/cbm/vendored/grammars/*/parser.c | sort | uniq -c`
+- Vendored copies missing LICENSE: **0** — all upstream LICENSE files restored 2026-06-11 (first-party grammars carry the project MIT license; `move` uses the Helix-listed upstream tzakian/tree-sitter-move MIT text, `zsh` uses georgeharker/tree-sitter-zsh MIT)
+- `verdict`: VERIFIED-BOTH = our source matches *both* registries; VERIFIED-NVIM/HELIX = matches one; registry-disagreement = registries name a different repo (listed separately); `vendor-maintained` = the language vendor's own grammar, not in nvim/Helix; `community-niche` = an individual/community-maintained grammar for a niche language, not in nvim/Helix — provenance hand-verified against the upstream repository instead of a registry.
+- **perl** (refreshed 2026-08-27): byte-for-byte generated bundle from
+  [tree-sitter-perl/tree-sitter-perl](https://github.com/tree-sitter-perl/tree-sitter-perl)
+  tag `v1.2.1`, full commit `c3e17b31179bf8f658c9f37c7a3ea6a202212d5a` (ABI 15).
+  The upstream GitHub source asset SHA-256 is
+  `95c5fa0966dd431eb2f96b941c37b413ae7e9083729433f4d3d41fbc2a4f14a6`; the
+  screened ordered source-manifest SHA-256 is
+  `4e7bf02e8bd14b410309ce12bab80edb730826db79e1139434c1459a3117b900`.
+  The existing MIT `LICENSE` was preserved byte-for-byte at SHA-256
+  `68a9a526ae357ed5a2f8ca5dabb14131b283554b69639bb04816088d4b1f2fa0`.
+  Exact per-file SHA-256 values are pinned in `scripts/vendored-checksums.txt`.
+  The table uses `UPSTREAM-RELEASE` because this refresh verified the tagged
+  upstream release itself but did not independently verify a current registry
+  pin; it intentionally does not claim `VERIFIED-NVIM` or `VERIFIED-BOTH`.
+- **objectscript_udl / objectscript_routine** (added 2026-06-24): vendored from [intersystems/tree-sitter-objectscript](https://github.com/intersystems/tree-sitter-objectscript) @ `a7ffcdf` — MIT, the InterSystems-official grammars (a niche vendor language, hence `vendor-maintained`, not in nvim-treesitter/Helix). **Re-vendor note:** each `scanner.c`'s upstream `#include "../../common/scanner.h"` is repointed to a per-directory `objectscript_common.h` (a verbatim copy of upstream `common/scanner.h`), because this repo's shared `vendored/common/scanner.h` belongs to the cfml/fsharp grammars and differs. The generated `parser.c`/`scanner.c` are otherwise byte-for-byte upstream — on re-vendor, re-apply only that single include rename. **Local modification (2026-07-16):** in `objectscript_common.h`, two loop counters `uint8_t i` were widened to `int i` (the `reverse_marker` scan and the `html_marker_buffer` reversal) to clear CodeQL `cpp/comparison-with-wider-type` — a false positive in practice (both lengths are hard-bounded by `MARKER_BUFFER_MAX_LEN = 30`, so `uint8_t` could never wrap), fixed for cleanliness. On re-vendor, re-apply this widening too (or upstream it at intersystems/tree-sitter-objectscript).
+- **mojo** (added 2026-07-01): vendored from [lsh/tree-sitter-mojo](https://github.com/lsh/tree-sitter-mojo) @ `33193a99afe6` — MIT, ABI 15. Helix tracks `lsh/tree-sitter-mojo` as its Mojo grammar source, but the Helix-pinned commit (`3d7c53b8038f`) no longer resolves in the upstream repository after a force-push, so this vendor uses current upstream `main` rather than the stale registry SHA. Security review covered only the vendored C surface (`parser.c`, `scanner.c`, `tree_sitter/*.h`) plus upstream license/provenance metadata; no package manager hooks, workflow files, prompt/agent instruction files, or generated lockfiles were vendored.
+- **arkts** (added 2026-08-26): **first-party derivative** — a fork of [tree-sitter/tree-sitter-typescript](https://github.com/tree-sitter/tree-sitter-typescript)'s `typescript` dialect pinned @ `75b3874edb2d` (v0.23.2, the same commit our vendored typescript/tsx come from), on the tree-sitter-javascript base @ `3a837b6f3658` (v0.23.1, the version upstream's own package-lock pins), extended with ArkTS/ArkUI syntax (`@Component struct` declarations, UI-DSL trailing-closure calls with post-block attribute chains, decorated function declarations, `import lazy`, `@Extend`/`@Styles` leading-dot attribute chains, anonymous `stateStyles` style blocks). Grammar source + corpus tests live in `tools/tree-sitter-arkts/`; regenerate with `npx tree-sitter-cli@0.25.10 generate` (ABI 15). **External scanner:** `scanner.c` is a symbol-rename trampoline; `_common_scanner.h` is byte-identical (same SHA-256) to the reviewed `typescript/_common_scanner.h` already shipped. **LICENSE:** tree-sitter-typescript's MIT text **verbatim and byte-identical** (© 2017 Max Brunsfeld) — which is what MIT requires of a derivative work, and what lets the provenance audit byte-verify it against upstream rather than take a note on trust. The fork is registered in the audit's `FORKS` map. Our own copyright for the ArkTS additions, and the tree-sitter-javascript attribution (© 2014 Max Brunsfeld), live with the SOURCE in `tools/tree-sitter-arkts/grammar.js` and in `THIRD_PARTY.md`, which is what ships in the release archives.
+- **plsql** (added 2026-08-27): vendored from [AndreasMaierDe/tree-sitter-plsql](https://github.com/AndreasMaierDe/tree-sitter-plsql) @ `28aebef209be` (full: `28aebef209be57169600e1aa41ca1431cc6c916f`, upstream tip; repo dormant since 2023-02) — MIT, ABI 14, **no external scanner** (`EXTERNAL_TOKEN_COUNT 0`). Not listed in nvim-treesitter/Helix (`community-niche`, an individual-maintained grammar); provenance verified directly against upstream (pin = `git ls-remote` HEAD; vendored `parser.c` byte-identical to the pinned clone apart from the include-quote local patch below; 0 non-ASCII bytes; 0 dangerous calls). Security review covered only the vendored C surface (`parser.c`, `tree_sitter/parser.h`) plus upstream license/provenance metadata; no package manager hooks, workflow files, prompt/agent instruction files, or generated lockfiles were vendored. Known upstream limitation: `CREATE TYPE ... AS OBJECT` currently yields ERROR nodes (pinned by `plsql_create_type_as_object_limitation` in `tests/test_extraction.c` + `tests/fixtures/plsql/create_type_as_object_limitation.tps`). Originally contributed as PR #1033 by Oğuz (@ouzsrcm); re-vendored from upstream per vendoring policy with the PR's language wiring distilled on top.
+
+- **chialisp** (added 2026-08-28): **first-party** — authored in this repository, not vendored from anywhere. Grammar source + corpus tests live in `tools/tree-sitter-chialisp/`; regenerate with `npx tree-sitter-cli@0.25.10 generate --abi 14` and copy `src/parser.c` + `src/tree_sitter/*.h` here. ABI 14, **no external scanner** (`EXTERNAL_TOKEN_COUNT 0`), 0 non-ASCII bytes. It is a deliberately GENERIC s-expression grammar (`source_file`/`list`/`symbol`/`string`/`number`/`hex`/`dot`/`comment`) modelling the clvm_tools reader rather than the Chialisp form vocabulary: `mod`/`defun`/`defconstant`/`include` are ordinary head symbols, and which lists are definitions is decided in `internal/cbm/extract_defs.c`, so a dialect that adds a form does not need a regenerated parser. Written because the only public grammar (`Quexington/tree-sitter-chialisp`) cannot parse the language: it required CRLF to terminate a comment (`/;.*\r\n/`) while real files are LF, rejected the `.` in `(include foo.clib)`, and accepted only a primitive after `(defconstant NAME …)` — each of which desynchronised the rest of the file. Acceptance gate: all five `chia-blockchain@main` reference files parse with **zero ERROR and zero MISSING nodes**. **LICENSE:** the project's own LICENSE, byte-identical to the repository root — no third-party copyright is carried, because there is no third party.
+
+> ⚠️ **Pinned commit = the revision nvim-treesitter/Helix vendor** (battle-tested, canonical source), not bleeding-edge HEAD. When re-vendoring, update the pinned commit here.
+
+## Custom extraction handling (definition extraction)
+
+The grammars below carry **custom definition-extraction support** in
+`internal/cbm/extract_defs.c` (and `internal/cbm/lang_specs.c`). Their function /
+definition nodes do **not** expose a `name` field that the generic extractor reads
+— the name lives on a nested/child/parent node, or (for the Lisp family) a
+definition is a macro form inside a generic `list` node with no dedicated def
+node. Without this handling these grammars produce only a file-level `Module`
+node and **zero functions/types**. A future grammar refresh that changes these
+node shapes must update the corresponding branch.
+
+Guarded by the `contract_all_grammars_in_graph` graph-breadth test in
+`tests/test_lang_contract.c` (each was reproduced as a failing case before the fix).
+
+| grammar | custom handling |
+|---|---|
+| ada      | `resolve_func_name`: `subprogram_body`/`subprogram_declaration` → `procedure_specification`/`function_specification` child's `name` field |
+| cairo    | `resolve_func_name`: `function_definition`/`function_signature` → `identifier` child |
+| chialisp | `extract_lisp_def`: `(mod/defun/defun-inline/defmacro/defmac/defconstant/defconst …)` head-symbol forms in `list`; `mod` named by filename; `defconstant` → `Constant`; CLVM operators, quoted data and dialect sigils filtered out of calls/imports |
+| clojure  | `extract_lisp_def`: `(defn …)` / `(def …)` head-symbol forms in `list_lit` |
+| d        | `resolve_func_name`: `function_declaration` → `identifier` child |
+| fortran  | `resolve_func_name`: `subroutine`/`function` → inner `*_statement`'s `name` field |
+| fsharp   | `func_types` += `function_or_value_defn`; `resolve_func_name` → `function_declaration_left`/`value_declaration_left` identifier |
+| haskell  | `func_types` += `bind` (nullary value bindings; `signature` suppressed) |
+| hlsl     | added to the C-family declarator-name gate (tree-sitter-cpp derivative) |
+| ispc     | added to the C-family declarator-name gate (extends tree-sitter-c) |
+| odin     | `resolve_func_name`: `procedure_declaration` → `identifier` child |
+| pascal   | `resolve_func_name`: `defProc` → `header` (`declProc`) child's `name` field |
+| plsql    | `resolve_func_name`: `fnc_name`/`prc_name` fields; `extract_class_def`: `package_name`/`type_name`/`trigger_name` fields; `extract_plsql_callee` (extract_calls.c): `ref_call` → `referenced_element`, package-qualified `ref_name_parent.ref_name`; usage vocabulary (extract_usages.c): `identifier`, with the upstream `parameter` kind (a ref_call ARGUMENT wrapper) carved out of the whole-binding rule |
+| racket   | `extract_lisp_def`: `(define …)` head-symbol forms in `list` |
+| rescript | `resolve_func_name`: `function` (arrow) → enclosing `let_binding`'s `pattern` field |
+| scheme   | `extract_lisp_def`: `(define …)` head-symbol forms in `list` |
+| slang    | added to the C-family declarator-name gate (tree-sitter-cpp/hlsl fork) |
+| squirrel | `resolve_func_name`: `function_declaration` → `identifier` child |
+
+## Local source patches (applied atop pinned upstream)
+
+The grammars below carry a small local patch to their vendored sources, on
+top of the pinned upstream commit recorded in the vendoring table below.
+Re-vendoring from upstream must re-apply these, unless the reason column
+names an upstream commit that already carries the change — then drop the
+row instead.
+
+| grammar | location | patch | reason |
+|---|---|---|---|
+| crystal    | `crystal/scanner.c`, serialize    | guard `memcpy(&buffer[offset], state->literals.contents, literal_content_size)` with `if (literal_content_size > 0)` | UBSan: zero-length `memcpy` with a NULL/0-size source on the empty-state serialize round-trip (formal UB, harmless) |
+| rescript   | `rescript/scanner.c`, deserialize | guard `memcpy(state, buffer, n_bytes)` with `if (n_bytes > 0)` | UBSan: zero-length `memcpy` with a NULL `buffer` / `n_bytes == 0` on empty-state deserialize (formal UB, harmless). The sibling serialize copies a fixed `sizeof(ScannerState)` (always > 0, non-NULL src) and needs no guard. |
+| purescript | `purescript/scanner.c`, serialize | guard `memcpy(buffer, indents->data, to_copy)` with `if (to_copy > 0)` | UBSan: zero-length `memcpy` with a NULL/0-size source when the indent vector is empty (formal UB, harmless) |
+| plsql      | `plsql/parser.c`, include         | `#include <tree_sitter/parser.h>` → `#include "tree_sitter/parser.h"` | The older ABI-14 generator emits angle brackets; every other vendored grammar uses the quoted form, which resolves the per-grammar `tree_sitter/` header from the including file's directory |
+| swift      | `swift/scanner.c`, `OP_SYMBOL_SUPPRESSOR` + `eat_operators` | `1UL <<` / `1 <<` → `1ULL <<` | UBSan: `1 << suppressor` shifts an `int` by up to `TOKEN_COUNT` bits, undefined once the index reaches 31, while the mask it feeds is `uint64_t`. `1UL << FAKE_TRY_BANG` is the same defect on Windows, where `unsigned long` is 32 bits and `FAKE_TRY_BANG` is 32; the CLANGARM64 leg runs UBSan in trap mode, so there it is an illegal instruction rather than a log line. Upstream already carries both changes: `fb63a7004f07` (2026-04-06, upstream #558) for `eat_operators`, `6ab8d1d74ebd` (2026-08-10) for the `OP_SYMBOL_SUPPRESSOR` entry. Our pin `8abb3e8b3325` (2026-03-20) predates both, so this is a backport rather than a local invention — a re-vendor past 2026-08-10 should delete this row, not re-apply it |
+
+## Vendored from verified upstream
+
+| grammar | cur ABI | upstream repo | pinned commit | verdict | LICENSE |
+|---|:---:|---|---|---|:---:|
+| ada | 14 | briot/tree-sitter-ada | `6b58259a08b1` | VERIFIED-BOTH | ✅ |
+| agda | 14 | tree-sitter/tree-sitter-agda | `e8d47a6987ef` | VERIFIED-BOTH | ✅ |
+| apex | 14 | aheber/tree-sitter-sfapex | `3597575a4297` | VERIFIED-NVIM | ✅ |
+| astro | 14 | virchau13/tree-sitter-astro | `213f6e6973d9` | VERIFIED-BOTH | ✅ |
+| awk | 14 | Beaglefoot/tree-sitter-awk | `34bbdc7cce8e` | VERIFIED-BOTH | ✅ |
+| bash | 15 | tree-sitter/tree-sitter-bash | `a06c2e4415e9` | VERIFIED-BOTH | ✅ |
+| beancount | 15 | polarmutex/tree-sitter-beancount | `429cff869513` | VERIFIED-BOTH | ✅ |
+| bibtex | 15 | latex-lsp/tree-sitter-bibtex | `8d04ed27b3bc` | VERIFIED-BOTH | ✅ |
+| bicep | 14 | tree-sitter-grammars/tree-sitter-bicep | `bff59884307c` | VERIFIED-BOTH | ✅ |
+| bitbake | 14 | tree-sitter-grammars/tree-sitter-bitbake | `a5d04fdb5a69` | VERIFIED-BOTH | ✅ |
+| blade | 15 | EmranMR/tree-sitter-blade | `b9436b7b9369` | VERIFIED-BOTH | ✅ |
+| c | 15 | tree-sitter/tree-sitter-c | `ae19b676b13b` | VERIFIED-BOTH | ✅ |
+| c_sharp | 15 | tree-sitter/tree-sitter-c-sharp | `88366631d598` | VERIFIED-BOTH | ✅ |
+| cairo | 14 | tree-sitter-grammars/tree-sitter-cairo | `6238f609bea2` | VERIFIED-NVIM | ✅ |
+| capnp | 14 | tree-sitter-grammars/tree-sitter-capnp | `7b0883c03e5e` | VERIFIED-BOTH | ✅ |
+| clojure | 14 | sogaiu/tree-sitter-clojure | `e43eff80d17c` | VERIFIED-BOTH | ✅ |
+| cmake | 14 | uyha/tree-sitter-cmake | `c7b2a71e7f8e` | VERIFIED-BOTH | ✅ |
+| commonlisp | 14 | tree-sitter-grammars/tree-sitter-commonlisp | `32323509b3d9` | VERIFIED-BOTH | ✅ |
+| cpp | 14 | tree-sitter/tree-sitter-cpp | `8b5b49eb196b` | VERIFIED-BOTH | ✅ |
+| crystal | 14 | crystal-lang-tools/tree-sitter-crystal | `50ca9e6fcfb1` | VERIFIED-HELIX | ✅ |
+| css | 15 | tree-sitter/tree-sitter-css | `dda5cfc5722c` | VERIFIED-BOTH | ✅ |
+| csv | 15 | tree-sitter-grammars/tree-sitter-csv | `f6bf6e35eb0b` | VERIFIED-NVIM | ✅ |
+| cuda | 15 | tree-sitter-grammars/tree-sitter-cuda | `48b066f334f4` | VERIFIED-NVIM | ✅ |
+| d | 14 | gdamore/tree-sitter-d | `fb028c8f14f4` | VERIFIED-BOTH | ✅ |
+| dart | 15 | UserNobody14/tree-sitter-dart | `0fc19c3a57b1` | VERIFIED-BOTH | ✅ |
+| devicetree | 15 | joelspadin/tree-sitter-devicetree | `e685f1f6ac17` | VERIFIED-BOTH | ✅ |
+| diff | 15 | tree-sitter-grammars/tree-sitter-diff | `2520c3f934b3` | VERIFIED-NVIM | ✅ |
+| dockerfile | 14 | camdencheek/tree-sitter-dockerfile | `971acdd90856` | VERIFIED-BOTH | ✅ |
+| elisp | 15 | Wilfred/tree-sitter-elisp | `32323509b3d9` | VERIFIED-HELIX | ✅ |
+| elixir | 14 | elixir-lang/tree-sitter-elixir | `7937d3b4d65f` | VERIFIED-BOTH | ✅ |
+| elm | 15 | elm-tooling/tree-sitter-elm | `6d9511c28181` | VERIFIED-BOTH | ✅ |
+| erlang | 14 | WhatsApp/tree-sitter-erlang | `1d78195c4fbb` | VERIFIED-NVIM | ✅ |
+| fennel | 14 | alexmozaidze/tree-sitter-fennel | `3f0f6b24d599` | MISMATCH | ✅ |
+| fish | 14 | ram02z/tree-sitter-fish | `fa2143f5d66a` | VERIFIED-BOTH | ✅ |
+| fortran | 15 | stadelmanma/tree-sitter-fortran | `be30d90dc7df` | VERIFIED-BOTH | ✅ |
+| fsharp | 15 | ionide/tree-sitter-fsharp | `1c2d9351d1f7` | VERIFIED-BOTH | ✅ |
+| func | 14 | tree-sitter-grammars/tree-sitter-func | `f780ca55e65e` | VERIFIED-NVIM | ✅ |
+| gdscript | 14 | PrestonKnopp/tree-sitter-gdscript | `9686853b696d` | VERIFIED-BOTH | ✅ |
+| gitattributes | 14 | tree-sitter-grammars/tree-sitter-gitattributes | `1b7af09d45b5` | VERIFIED-NVIM | ✅ |
+| gitignore | 13 | shunsambongi/tree-sitter-gitignore | `f4685bf11ac4` | VERIFIED-BOTH | ✅ |
+| gleam | 15 | gleam-lang/tree-sitter-gleam | `0bb1b0ae1a35` | VERIFIED-BOTH | ✅ |
+| glsl | 14 | tree-sitter-grammars/tree-sitter-glsl | `24a6c8ef698e` | VERIFIED-NVIM | ✅ |
+| gn | 14 | tree-sitter-grammars/tree-sitter-gn | `bc06955bc1e3` | VERIFIED-NVIM | ✅ |
+| go | 15 | tree-sitter/tree-sitter-go | `2346a3ab1bb3` | VERIFIED-BOTH | ✅ |
+| gomod | 15 | camdencheek/tree-sitter-go-mod | `2e886870578e` | VERIFIED-BOTH | ✅ |
+| gotemplate | 15 | ngalaiko/tree-sitter-go-template | `aa71f63de226` | VERIFIED-BOTH | ✅ |
+| graphql | 13 | bkegley/tree-sitter-graphql | `5e66e961eee4` | VERIFIED-BOTH | ✅ |
+| groovy | 15 | murtaza64/tree-sitter-groovy | `781d9cd1b482` | VERIFIED-BOTH | ✅ |
+| hare | 15 | tree-sitter-grammars/tree-sitter-hare | `eed7ddf6a66b` | VERIFIED-NVIM | ✅ |
+| haskell | 15 | tree-sitter/tree-sitter-haskell | `7fa19f195803` | VERIFIED-HELIX | ✅ |
+| hcl | 15 | tree-sitter-grammars/tree-sitter-hcl | `64ad62785d44` | MISMATCH | ✅ |
+| hlsl | 14 | tree-sitter-grammars/tree-sitter-hlsl | `bab9111922d5` | VERIFIED-NVIM | ✅ |
+| html | 14 | tree-sitter/tree-sitter-html | `73a3947324f6` | VERIFIED-BOTH | ✅ |
+| hyprlang | 15 | tree-sitter-grammars/tree-sitter-hyprlang | `cecd6b748107` | VERIFIED-BOTH | ✅ |
+| ini | 15 | justinmk/tree-sitter-ini | `e4018b517613` | VERIFIED-BOTH | ✅ |
+| ispc | 14 | tree-sitter-grammars/tree-sitter-ispc | `9b2f9aec2106` | VERIFIED-NVIM | ✅ |
+| java | 14 | tree-sitter/tree-sitter-java | `e10607b45ff7` | VERIFIED-BOTH | ✅ |
+| javascript | 15 | tree-sitter/tree-sitter-javascript | `58404d8cf191` | VERIFIED-BOTH | ✅ |
+| jsdoc | 15 | tree-sitter/tree-sitter-jsdoc | `658d18dcdddb` | VERIFIED-BOTH | ✅ |
+| json | 14 | tree-sitter/tree-sitter-json | `001c28d7a298` | VERIFIED-BOTH | ✅ |
+| json5 | 15 | Joakker/tree-sitter-json5 | `aa630ef48903` | VERIFIED-BOTH | ✅ |
+| jsonnet | 14 | sourcegraph/tree-sitter-jsonnet | `ddd075f1939a` | VERIFIED-BOTH | ✅ |
+| julia | 15 | tree-sitter/tree-sitter-julia | `8454f2667172` | VERIFIED-HELIX | ✅ |
+| kconfig | 14 | tree-sitter-grammars/tree-sitter-kconfig | `9ac99fe4c0c2` | VERIFIED-BOTH | ✅ |
+| kdl | 14 | tree-sitter-grammars/tree-sitter-kdl | `b37e3d58e5c5` | VERIFIED-NVIM | ✅ |
+| kotlin | 14 | fwcd/tree-sitter-kotlin | `93bfeee1555d` | VERIFIED-BOTH | ✅ |
+| lean | 13 | Julian/tree-sitter-lean | `d98426109258` | VERIFIED-HELIX | ✅ |
+| linkerscript | 14 | tree-sitter-grammars/tree-sitter-linkerscript | `f99011a35542` | VERIFIED-NVIM | ✅ |
+| liquid | 14 | hankthetank27/tree-sitter-liquid | `9566ca799110` | VERIFIED-NVIM | ✅ |
+| llvm | 15 | benwilliamgraham/tree-sitter-llvm | `2914786ae677` | VERIFIED-BOTH | ✅ |
+| lua | 15 | tree-sitter-grammars/tree-sitter-lua | `10fe0054734e` | VERIFIED-BOTH | ✅ |
+| luau | 14 | tree-sitter-grammars/tree-sitter-luau | `a8914d6c1fc5` | VERIFIED-NVIM | ✅ |
+| make | 15 | tree-sitter-grammars/tree-sitter-make | `70613f3d812c` | VERIFIED-NVIM | ✅ |
+| markdown | 15 | tree-sitter-grammars/tree-sitter-markdown | `f969cd3ae3f9` | VERIFIED-BOTH | ✅ |
+| matlab | 15 | acristoffers/tree-sitter-matlab | `c2390a59016f` | VERIFIED-BOTH | ✅ |
+| mermaid | 14 | monaqa/tree-sitter-mermaid | `90ae195b3193` | VERIFIED-BOTH | ✅ |
+| meson | 15 | tree-sitter-grammars/tree-sitter-meson | `c84f3540624b` | VERIFIED-BOTH | ✅ |
+| mojo | 15 | lsh/tree-sitter-mojo | `33193a99afe6` | VERIFIED-HELIX-SOURCE | ✅ |
+| nasm | 14 | naclsn/tree-sitter-nasm | `d1b3638d017f` | VERIFIED-BOTH | ✅ |
+| nickel | 15 | nickel-lang/tree-sitter-nickel | `b5b6cc3bc7b9` | VERIFIED-BOTH | ✅ |
+| nix | 13 | nix-community/tree-sitter-nix | `eabf96807ea4` | VERIFIED-BOTH | ✅ |
+| objc | 14 | tree-sitter-grammars/tree-sitter-objc | `181a81b8f23a` | VERIFIED-NVIM | ✅ |
+| objectscript_routine | 15 | intersystems/tree-sitter-objectscript | `a7ffcdf2de8e` | vendor-maintained | ✅ |
+| objectscript_udl | 15 | intersystems/tree-sitter-objectscript | `a7ffcdf2de8e` | vendor-maintained | ✅ |
+| ocaml | 14 | tree-sitter/tree-sitter-ocaml | `5a979b3ec7f1` | VERIFIED-BOTH | ✅ |
+| odin | 14 | tree-sitter-grammars/tree-sitter-odin | `d2ca8efb4487` | VERIFIED-BOTH | ✅ |
+| pascal | 14 | Isopod/tree-sitter-pascal | `042119eca2e1` | VERIFIED-BOTH | ✅ |
+| perl | 15 | tree-sitter-perl/tree-sitter-perl | `c3e17b31179b` | UPSTREAM-RELEASE | ✅ |
+| php | 15 | tree-sitter/tree-sitter-php | `3f2465c217d0` | VERIFIED-BOTH | ✅ |
+| pkl | 15 | apple/tree-sitter-pkl | `f5beed1da8e5` | VERIFIED-BOTH | ✅ |
+| plsql | 14 | AndreasMaierDe/tree-sitter-plsql | `28aebef209be` | community-niche | ✅ |
+| po | 14 | tree-sitter-grammars/tree-sitter-po | `bd860a0f57f6` | VERIFIED-NVIM | ✅ |
+| pony | 14 | tree-sitter-grammars/tree-sitter-pony | `73ff874ae4c9` | VERIFIED-NVIM | ✅ |
+| powershell | 15 | airbus-cert/tree-sitter-powershell | `73800ecc8bdd` | VERIFIED-BOTH | ✅ |
+| prisma | 15 | victorhqc/tree-sitter-prisma | `3556b2c1f20e` | VERIFIED-BOTH | ✅ |
+| properties | 14 | tree-sitter-grammars/tree-sitter-properties | `6310671b24d4` | VERIFIED-BOTH | ✅ |
+| puppet | 14 | tree-sitter-grammars/tree-sitter-puppet | `15f192929b7d` | VERIFIED-NVIM | ✅ |
+| purescript | 15 | postsolar/tree-sitter-purescript | `f541f95ffd68` | VERIFIED-BOTH | ✅ |
+| python | 15 | tree-sitter/tree-sitter-python | `v0.25.0` | VERIFIED-BOTH | ✅ |
+| r | 14 | r-lib/tree-sitter-r | `0e6ef7741712` | VERIFIED-BOTH | ✅ |
+| racket | 14 | 6cdh/tree-sitter-racket | `54649be8b939` | VERIFIED-NVIM | ✅ |
+| regex | 15 | tree-sitter/tree-sitter-regex | `b2ac15e27fce` | VERIFIED-BOTH | ✅ |
+| requirements | 14 | tree-sitter-grammars/tree-sitter-requirements | `caeb2ba854de` | VERIFIED-BOTH | ✅ |
+| rescript | 15 | rescript-lang/tree-sitter-rescript | `43c2f1f35024` | VERIFIED-BOTH | ✅ |
+| ron | 14 | tree-sitter-grammars/tree-sitter-ron | `78938553b930` | VERIFIED-BOTH | ✅ |
+| rst | 14 | stsewd/tree-sitter-rst | `4e562e1598b9` | VERIFIED-BOTH | ✅ |
+| ruby | 14 | tree-sitter/tree-sitter-ruby | `ad907a69da0c` | VERIFIED-BOTH | ✅ |
+| rust | 15 | tree-sitter/tree-sitter-rust | `77a3747266f4` | VERIFIED-BOTH | ✅ |
+| scala | 15 | tree-sitter/tree-sitter-scala | `14c5cfd2b8e0` | VERIFIED-BOTH | ✅ |
+| scheme | 14 | 6cdh/tree-sitter-scheme | `c6cb7c7d7a04` | VERIFIED-BOTH | ✅ |
+| scss | 14 | serenadeai/tree-sitter-scss | `c478c6868648` | MISMATCH | ✅ |
+| slang | 15 | tree-sitter-grammars/tree-sitter-slang | `1dbcc4abc7b3` | VERIFIED-BOTH | ✅ |
+| smali | 14 | tree-sitter-grammars/tree-sitter-smali | `fdfa6a1febc4` | VERIFIED-BOTH | ✅ |
+| smithy | 14 | indoorvivants/tree-sitter-smithy | `ec4fe14586f2` | VERIFIED-BOTH | ✅ |
+| solidity | 15 | JoranHonig/tree-sitter-solidity | `048fe686cb1f` | VERIFIED-BOTH | ✅ |
+| soql | 14 | aheber/tree-sitter-sfapex | `3597575a4297` | VERIFIED-NVIM | ✅ |
+| sosl | 14 | aheber/tree-sitter-sfapex | `3597575a4297` | VERIFIED-NVIM | ✅ |
+| sql | 15 | DerekStride/tree-sitter-sql | `851e9cb257ba` | VERIFIED-BOTH | ✅ |
+| squirrel | 14 | tree-sitter-grammars/tree-sitter-squirrel | `072c969749e6` | VERIFIED-NVIM | ✅ |
+| starlark | 14 | tree-sitter-grammars/tree-sitter-starlark | `a453dbf3ba43` | VERIFIED-NVIM | ✅ |
+| svelte | 14 | tree-sitter-grammars/tree-sitter-svelte | `ae5199db4775` | VERIFIED-NVIM | ✅ |
+| sway | 14 | FuelLabs/tree-sitter-sway | `9b7845ce06ec` | VERIFIED-BOTH | ✅ |
+| swift | 14 | alex-pinkus/tree-sitter-swift | `8abb3e8b3325` | VERIFIED-BOTH | ✅ |
+| systemverilog | 15 | gmlarumbe/tree-sitter-systemverilog | `293928578cb2` | VERIFIED-BOTH | ✅ |
+| tablegen | 14 | tree-sitter-grammars/tree-sitter-tablegen | `b1170880c613` | VERIFIED-NVIM | ✅ |
+| tcl | 15 | tree-sitter-grammars/tree-sitter-tcl | `8f11ac7206a5` | VERIFIED-BOTH | ✅ |
+| teal | 15 | euclidianAce/tree-sitter-teal | `05d276e73705` | VERIFIED-BOTH | ✅ |
+| templ | 15 | vrischmann/tree-sitter-templ | `1c6db04effbc` | VERIFIED-BOTH | ✅ |
+| thrift | 14 | tree-sitter-grammars/tree-sitter-thrift | `68fd0d80943a` | VERIFIED-BOTH | ✅ |
+| tlaplus | 14 | tlaplus-community/tree-sitter-tlaplus | `add40814fda3` | VERIFIED-BOTH | ✅ |
+| toml | 14 | tree-sitter-grammars/tree-sitter-toml | `64b56832c2cf` | MISMATCH | ✅ |
+| tsx | 14 | tree-sitter/tree-sitter-typescript | `75b3874edb2d` | VERIFIED-BOTH | ✅ |
+| typescript | 14 | tree-sitter/tree-sitter-typescript | `75b3874edb2d` | VERIFIED-BOTH | ✅ |
+| typst | 14 | uben0/tree-sitter-typst | `46cf4ded12ee` | VERIFIED-BOTH | ✅ |
+| verilog | 14 | tree-sitter/tree-sitter-verilog | `4457145e795b` | VERIFIED-HELIX | ✅ |
+| vhdl | 15 | jpt13653903/tree-sitter-vhdl | `c2d9be3d5ab7` | MISMATCH | ✅ |
+| vim | 15 | tree-sitter-grammars/tree-sitter-vim | `3092fcd99eb8` | VERIFIED-BOTH | ✅ |
+| vue | 15 | tree-sitter-grammars/tree-sitter-vue | `ce8011a414fd` | VERIFIED-NVIM | ✅ |
+| wgsl | 13 | szebniok/tree-sitter-wgsl | `40259f3c77ea` | VERIFIED-BOTH | ✅ |
+| wit | 15 | bytecodealliance/tree-sitter-wit | `v1.3.0` | VERIFIED-NVIM | ✅ |
+| xml | 14 | tree-sitter-grammars/tree-sitter-xml | `5000ae8f22d1` | VERIFIED-NVIM | ✅ |
+| yaml | 14 | tree-sitter-grammars/tree-sitter-yaml | `4463985dfccc` | VERIFIED-NVIM | ✅ |
+| zig | 14 | tree-sitter-grammars/tree-sitter-zig | `6479aa13f32f` | VERIFIED-BOTH | ✅ |
+
+## First-party / self-maintained
+
+These grammars are not tracked by nvim-treesitter or Helix and are **not**
+swept from any upstream. Treat them as owned source; do not overwrite from a
+public repo. **Corrected during the byte-identity license audit 2026-06-12:**
+the original "authored in-house" classification was too coarse — six of the
+twelve are self-maintained **forks** whose vendored LICENSE names the original
+upstream author (correctly retained). The table now records the true origin.
+
+### Authored in-house (project MIT, (c) DeusData)
+
+| grammar | cur ABI | LICENSE |
+|---|:---:|:---:|
+| cobol | 14 | ✅ project MIT |
+| form | 15 | ✅ project MIT |
+| janet | 14 | ✅ project MIT |
+| magma | 15 | ✅ project MIT |
+| protobuf | 13 | ✅ project MIT |
+| wolfram | 13 | ✅ project MIT |
+| chialisp | 14 | ✅ project MIT |
+
+### Self-maintained forks (upstream license retained, byte-verified 2026-06-12)
+
+| grammar | cur ABI | original upstream | license |
+|---|:---:|---|---|
+| arkts | 15 | **self-maintained fork** of tree-sitter/tree-sitter-typescript @ `75b3874edb2d` (v0.23.2; javascript base @ `3a837b6f3658` v0.23.1); grammar source in `tools/tree-sitter-arkts/` | MIT, (c) 2017 Max Brunsfeld — byte-identical to upstream; ArkTS additions (c) 2026 DeusData, see grammar.js + THIRD_PARTY.md |
+| assembly | 14 | RubixDev/tree-sitter-assembly (**repo deleted from GitHub** — our retained MIT copy, (c) 2023 RubixDev, is the surviving grant) | MIT |
+| cfml | 15 | cfmleditor/tree-sitter-cfml | MIT, (c) 2014 Gareth Edwards & Gavin Baumanis — byte-identical |
+| cfscript | 15 | cfmleditor/tree-sitter-cfml | MIT, same — byte-identical |
+| dotenv | 15 | pnx/tree-sitter-dotenv | MIT, (c) 2024 Henrik Hautakoski — byte-identical |
+| pine | 14 | kvarenzn/tree-sitter-pine | ISC declared in upstream package.json only (upstream publishes NO license text file); our LICENSE is a provenance notice recording that declaration |
+| qml | 14 | yuja/tree-sitter-qmljs | MIT, (c) 2021 Yuya Nishihara — byte-identical |
+
+## Registry disagreement — RESOLVED (license audit 2026-06-12)
+
+Our resolved repo differs from what the registries list, and the two registries disagree with each other (or only one lists it). **Maintainer decision recorded 2026-06-12** during the license re-audit: each grammar is pinned to the canonical source below, its license was verified against that repo via the GitHub API, and the matching LICENSE file is vendored in the grammar directory. When re-vendoring, use the canonical source column.
+
+| grammar | canonical source (decided) | license (verified) | nvim-treesitter | Helix |
+|---|---|---|---|---|
+| jinja2 | dbt-labs/tree-sitter-jinja2 | Apache-2.0 | - | varpeti/tree-sitter-jinja2 |
+| just | casey/tree-sitter-just | Apache-2.0 | IndianBoy42/tree-sitter-just | poliorcetics/tree-sitter-just |
+| move | tzakian/tree-sitter-move | MIT | - | tzakian/tree-sitter-move |
+| sshconfig | ObserverOfTime/tree-sitter-ssh-config | MIT | tree-sitter-grammars/tree-sitter-ssh-config | - |
+| zsh | georgeharker/tree-sitter-zsh | MIT | tree-sitter-grammars/tree-sitter-zsh (404, gone) | - |
+
+Notes: the previously-resolved `tree-sitter-grammars/tree-sitter-move` and
+`tree-sitter-grammars/tree-sitter-zsh` repos no longer exist on GitHub (404),
+so `move` and `zsh` pin to the surviving registry-listed upstreams.
+
+## License re-audit conclusion (2026-06-12)
+
+Every grammar directory carries a LICENSE/COPYING file; every non-first-party
+grammar has a verified upstream with a permissive license (MIT except:
+clojure CC0-1.0, jinja2 + just Apache-2.0). First-party grammars carry the
+project MIT license. **Removal rule applied: the `nim` grammar
+(alaviss/tree-sitter-nim, MPL-2.0) was removed 2026-06-12 — MPL-2.0 is
+outside the permissive-only vendoring policy; it was also the largest
+vendored grammar (66 MB). All remaining grammars are permissive.**
+The CI ScanCode license gate enforces this state going forward.
