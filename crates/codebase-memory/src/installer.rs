@@ -108,14 +108,34 @@ impl Installer {
         self.verify_file_hash(&archive_path, &expected_hash)?;
         println!("  Checksum OK.");
 
-        // 4 ── extract
+        // 4 ── extract safely (atomic replacement with rollback)
         let engine_dest_dir = engine_dir()?;
+        let rollback_dir = engine_dest_dir.with_file_name("codebase-memory-rollback");
+        
+        if engine_dest_dir.exists() {
+            // Backup old version
+            if rollback_dir.exists() {
+                std::fs::remove_dir_all(&rollback_dir).ok();
+            }
+            std::fs::rename(&engine_dest_dir, &rollback_dir)?;
+        }
+        
         std::fs::create_dir_all(&engine_dest_dir)?;
         println!("Extracting to {}…", engine_dest_dir.display());
-        if platform == "windows" {
-            self.extract_zip(&archive_path, &engine_dest_dir)?;
+        let extract_result = if platform == "windows" {
+            self.extract_zip(&archive_path, &engine_dest_dir)
         } else {
-            self.extract_tar_gz(&archive_path, &engine_dest_dir)?;
+            self.extract_tar_gz(&archive_path, &engine_dest_dir)
+        };
+
+        if let Err(e) = extract_result {
+            println!("Extraction failed: {}", e);
+            std::fs::remove_dir_all(&engine_dest_dir).ok();
+            if rollback_dir.exists() {
+                println!("Rolling back to previous version…");
+                std::fs::rename(&rollback_dir, &engine_dest_dir).ok();
+            }
+            bail!("Extraction failed and was rolled back.");
         }
 
         // 5 ── make executable on Unix
