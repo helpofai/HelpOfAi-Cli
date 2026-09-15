@@ -18,7 +18,7 @@ fn main() {
     let status = Command::new("make")
         .arg("-f")
         .arg("Makefile.cbm")
-        .arg("cbm")
+        .arg("cbm-with-ui")
         // Pass rebranding definitions via CFLAGS overlay
         .env("CFLAGS_COMMON", "-DPRODUCT_NAME=\"helpofai-codebase-memory\" -DCBM_VERSION=\"0.10.8-helpofai\" -include src/helpofai_rebrand.h")
         .current_dir(&upstream_dir)

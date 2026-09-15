@@ -282,7 +282,7 @@ fn register_in_mcp_json(binary: &Path) -> Result<()> {
     // Upsert the codebase-memory entry (stdio MCP server)
     root["codebase-memory"] = json!({
         "command": binary.to_string_lossy(),
-        "args": ["--tool-profile", "analysis"],
+        "args": ["--tool-profile", "analysis", "--ui=true", "--port=9749"],
         "env": {}
     });
 
