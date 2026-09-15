@@ -51,7 +51,8 @@ impl GraphSupervisor {
         cmd.arg("--port").arg(port.to_string());
         cmd.env("CBM_CACHE_DIR", &cache_dir);
         cmd.env("CBM_RUNTIME_DIR", &runtime_dir);
-        cmd.stdin(Stdio::null());
+        // pipe stdin so we can hold the other end open, preventing the child from seeing EOF immediately
+        cmd.stdin(Stdio::piped());
         cmd.stdout(Stdio::inherit());
         cmd.stderr(Stdio::inherit());
 
@@ -67,7 +68,7 @@ impl GraphSupervisor {
 
     /// Poll `http://127.0.0.1:<port>/` until it responds or we time out (~10 s).
     pub async fn wait_until_ready(&self, port: u16) -> Result<()> {
-        let url = format!("http://127.0.0.1:{}/", port);
+        let url = format!("http://localhost:{}/", port);
         let client = reqwest::Client::builder()
             .timeout(Duration::from_millis(500))
             .build()?;
@@ -128,7 +129,7 @@ pub fn print_status() {
             if pid_is_alive(pid) {
                 println!(
                     "Graph server: running (PID {pid}, port {port})\n\
-                     URL: http://127.0.0.1:{port}"
+                     URL: http://localhost:{port}"
                 );
             } else {
                 println!("Graph server: stopped (stale PID {pid})");
@@ -214,7 +215,7 @@ fn kill_pid(pid: u32) -> Result<()> {
 
 /// Open the user's default browser to the graph UI URL.
 pub fn open_browser(port: u16) -> Result<()> {
-    let url = format!("http://127.0.0.1:{}", port);
+    let url = format!("http://localhost:{}", port);
     println!("Opening browser: {}", url);
 
     #[cfg(target_os = "windows")]

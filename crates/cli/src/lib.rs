@@ -4925,7 +4925,7 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
             let mut child = supervisor.start(port)?;
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://127.0.0.1:{port}");
+            println!("Graph server ready → http://localhost:{port}");
             if !no_open {
                 open_browser(port)?;
             }
@@ -4939,7 +4939,7 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
             let mut child = supervisor.start(port)?;
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://127.0.0.1:{port}");
+            println!("Graph server ready → http://localhost:{port}");
             if !no_open {
                 open_browser(port)?;
             }
