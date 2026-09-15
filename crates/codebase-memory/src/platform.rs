@@ -18,6 +18,7 @@ pub fn helpofai_data_dir() -> anyhow::Result<PathBuf> {
     }
 }
 
+
 /// Directory where the engine binary and its data live.
 pub fn engine_dir() -> anyhow::Result<PathBuf> {
     Ok(helpofai_data_dir()?.join("engines").join("codebase-memory"))
@@ -32,6 +33,7 @@ pub fn engine_binary_path() -> anyhow::Result<PathBuf> {
         Ok(dir.join("helpofai-codebase-memory"))
     }
 }
+
 
 /// CPU architecture string used in GitHub release artifact names.
 /// Fails at compile time for targets with no pre-built upstream binary.
@@ -62,3 +64,7 @@ pub fn get_platform() -> &'static str {
         "linux"
     }
 }
+
+#[cfg(test)]
+#[path = "platform_tests.rs"]
+mod tests;
