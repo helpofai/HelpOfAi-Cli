@@ -738,6 +738,17 @@ impl HarnessProfile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CodebaseMemoryToml {
+    pub enabled: Option<bool>,
+    pub auto_index: Option<bool>,
+    pub auto_watch: Option<bool>,
+    pub semantic_search: Option<bool>,
+    pub cross_repository: Option<bool>,
+    pub graph_ui: Option<bool>,
+}
+
 pub struct ConfigToml {
     /// TUI-compatible DeepSeek API key. Kept at the root so both `deepseek`
     /// and `helpofai-tui` can share a single config file.
@@ -801,7 +812,11 @@ pub struct ConfigToml {
     /// Agent Fleet trust and security policy (#3165). When absent, fleet
     /// workers inherit conservative Sandbox defaults.
     #[serde(default)]
+    #[serde(default)]
     pub fleet: Option<FleetConfigToml>,
+    #[serde(default)]
+    pub codebase_memory: Option<CodebaseMemoryToml>,
+
     #[serde(flatten)]
     pub extras: BTreeMap<String, toml::Value>,
 }

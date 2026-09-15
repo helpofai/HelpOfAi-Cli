@@ -149,7 +149,16 @@ impl Installer {
             }
         }
 
-        // 6 ── confirm
+        // 8 ── initialize storage directory structure
+        let engine_dest_dir = engine_dir()?;
+        let data_dir = engine_dest_dir.parent().unwrap().parent().unwrap().join("codebase-memory");
+        std::fs::create_dir_all(data_dir.join("repositories"))?;
+        std::fs::create_dir_all(data_dir.join("global"))?;
+        std::fs::create_dir_all(data_dir.join("indexes"))?;
+        std::fs::create_dir_all(data_dir.join("runtime"))?;
+        std::fs::create_dir_all(data_dir.join("logs"))?;
+        
+        // 9 ── confirm
         let binary = engine_binary_path()?;
         let ver = probe_version(&binary).unwrap_or_else(|_| "unknown".into());
         println!("✓ Codebase Memory engine installed: {}", ver);
