@@ -138,14 +138,25 @@ impl Installer {
             bail!("Extraction failed and was rolled back.");
         }
 
-        // 5 ── make executable on Unix
+        // 5 ── rebrand executable to helpofai naming scheme
+        #[cfg(target_os = "windows")]
+        let (old_name, new_name) = ("codebase-memory-mcp.exe", "helpofai-codebase-memory.exe");
+        #[cfg(not(target_os = "windows"))]
+        let (old_name, new_name) = ("codebase-memory-mcp", "helpofai-codebase-memory");
+        
+        let old_bin = engine_dest_dir.join(old_name);
+        let new_bin = engine_dest_dir.join(new_name);
+        if old_bin.exists() {
+            std::fs::rename(&old_bin, &new_bin)?;
+        }
+
+        // 6 ── make executable on Unix
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let bp = engine_dest_dir.join("codebase-memory-mcp");
-            if let Ok(mut perms) = std::fs::metadata(&bp).map(|m| m.permissions()) {
+            if let Ok(mut perms) = std::fs::metadata(&new_bin).map(|m| m.permissions()) {
                 perms.set_mode(0o755);
-                std::fs::set_permissions(&bp, perms).ok();
+                std::fs::set_permissions(&new_bin, perms).ok();
             }
         }
 

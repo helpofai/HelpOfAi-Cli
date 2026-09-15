@@ -27,9 +27,9 @@ pub fn engine_dir() -> anyhow::Result<PathBuf> {
 pub fn engine_binary_path() -> anyhow::Result<PathBuf> {
     let dir = engine_dir()?;
     if cfg!(target_os = "windows") {
-        Ok(dir.join("codebase-memory-mcp.exe"))
+        Ok(dir.join("helpofai-codebase-memory.exe"))
     } else {
-        Ok(dir.join("codebase-memory-mcp"))
+        Ok(dir.join("helpofai-codebase-memory"))
     }
 }
 
