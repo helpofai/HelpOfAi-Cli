@@ -2666,6 +2666,92 @@ fn run_web_inspect_cli(cli: &Cli, args: WebInspectArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) -> Result<()> {
+    use helpofai_codebase_memory::graph::{
+        GraphSupervisor, open_browser, print_status, stop_by_pid,
+    };
+
+    let cmd = command.unwrap_or(GraphCommand::Start);
+
+    match cmd {
+        // Status and Stop work even when the binary is gone — they read the pid-file only.
+        GraphCommand::Status => {
+            print_status();
+            Ok(())
+        }
+        GraphCommand::Stop => stop_by_pid(),
+        GraphCommand::Open => open_browser(port),
+
+        GraphCommand::Start => {
+            let supervisor = GraphSupervisor::new()?;
+            println!("Starting Codebase Memory UI on port {port}…");
+            let mut child = supervisor.start(port)?;
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+            println!("Graph server ready → http://localhost:{port}");
+            if !no_open {
+                open_browser(port)?;
+            }
+            child.wait()?;
+            Ok(())
+        }
+        GraphCommand::Restart => {
+            stop_by_pid()?;
+            println!("Restarting…");
+            let supervisor = GraphSupervisor::new()?;
+            let mut child = supervisor.start(port)?;
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+            println!("Graph server ready → http://localhost:{port}");
+            if !no_open {
+                open_browser(port)?;
+            }
+            child.wait()?;
+            Ok(())
+        }
+    }
+}
+
+fn run_codebase_command(command: CodebaseCommand) -> Result<()> {
+    use helpofai_codebase_memory::installer::{Installer, probe_version};
+    use helpofai_codebase_memory::manager::CodebaseMemoryManager;
+    use helpofai_codebase_memory::platform::engine_binary_path;
+
+    match command {
+        CodebaseCommand::Install => {
+            let installer = Installer::new()?;
+            installer.install(false)?;
+            Ok(())
+        }
+        CodebaseCommand::Update => {
+            let installer = Installer::new()?;
+            installer.update()?;
+            Ok(())
+        }
+        CodebaseCommand::Doctor => {
+            let binary = engine_binary_path()?;
+            println!("Engine path:    {}", binary.display());
+            if binary.exists() {
+                match probe_version(&binary) {
+                    Ok(v) => println!("Engine version: {v}  ✓"),
+                    Err(e) => println!("Engine binary exists but failed to run: {e}"),
+                }
+            } else {
+                println!("Engine binary:  NOT FOUND");
+                println!("Run `helpofai codebase install` to download it.");
+            }
+            let manager = CodebaseMemoryManager::new()?;
+            println!("Daemon status check:");
+            let _ = manager.get_status();
+            Ok(())
+        }
+        CodebaseCommand::Passthrough(args) => {
+            let manager = CodebaseMemoryManager::new()?;
+            manager.run_passthrough(&args)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4900,91 +4986,5 @@ mod tests {
 
         let resolved = locate_sibling_tui_binary().expect("override must resolve");
         assert_eq!(resolved, custom);
-    }
-}
-
-fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) -> Result<()> {
-    use helpofai_codebase_memory::graph::{
-        GraphSupervisor, open_browser, print_status, stop_by_pid,
-    };
-
-    let cmd = command.unwrap_or(GraphCommand::Start);
-
-    match cmd {
-        // Status and Stop work even when the binary is gone — they read the pid-file only.
-        GraphCommand::Status => {
-            print_status();
-            Ok(())
-        }
-        GraphCommand::Stop => stop_by_pid(),
-        GraphCommand::Open => open_browser(port),
-
-        GraphCommand::Start => {
-            let supervisor = GraphSupervisor::new()?;
-            println!("Starting Codebase Memory UI on port {port}…");
-            let mut child = supervisor.start(port)?;
-            let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://localhost:{port}");
-            if !no_open {
-                open_browser(port)?;
-            }
-            child.wait()?;
-            Ok(())
-        }
-        GraphCommand::Restart => {
-            stop_by_pid()?;
-            println!("Restarting…");
-            let supervisor = GraphSupervisor::new()?;
-            let mut child = supervisor.start(port)?;
-            let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://localhost:{port}");
-            if !no_open {
-                open_browser(port)?;
-            }
-            child.wait()?;
-            Ok(())
-        }
-    }
-}
-
-fn run_codebase_command(command: CodebaseCommand) -> Result<()> {
-    use helpofai_codebase_memory::installer::{Installer, probe_version};
-    use helpofai_codebase_memory::manager::CodebaseMemoryManager;
-    use helpofai_codebase_memory::platform::engine_binary_path;
-
-    match command {
-        CodebaseCommand::Install => {
-            let installer = Installer::new()?;
-            installer.install(false)?;
-            Ok(())
-        }
-        CodebaseCommand::Update => {
-            let installer = Installer::new()?;
-            installer.update()?;
-            Ok(())
-        }
-        CodebaseCommand::Doctor => {
-            let binary = engine_binary_path()?;
-            println!("Engine path:    {}", binary.display());
-            if binary.exists() {
-                match probe_version(&binary) {
-                    Ok(v) => println!("Engine version: {v}  ✓"),
-                    Err(e) => println!("Engine binary exists but failed to run: {e}"),
-                }
-            } else {
-                println!("Engine binary:  NOT FOUND");
-                println!("Run `helpofai codebase install` to download it.");
-            }
-            let manager = CodebaseMemoryManager::new()?;
-            println!("Daemon status check:");
-            let _ = manager.get_status();
-            Ok(())
-        }
-        CodebaseCommand::Passthrough(args) => {
-            let manager = CodebaseMemoryManager::new()?;
-            manager.run_passthrough(&args)
-        }
     }
 }
