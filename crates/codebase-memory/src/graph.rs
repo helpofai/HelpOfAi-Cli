@@ -188,7 +188,6 @@ fn pid_is_alive(pid: u32) -> bool {
 #[cfg(not(target_os = "windows"))]
 fn pid_is_alive(pid: u32) -> bool {
     // POSIX: kill -0 sends no signal but checks existence / permission
-    use std::os::unix::process::ExitStatusExt;
     Command::new("kill")
         .args(["-0", &pid.to_string()])
         .status()
@@ -213,7 +212,7 @@ fn kill_pid(pid: u32) -> Result<()> {
         .args(["-TERM", &pid.to_string()])
         .status()?;
     if !status.success() {
-        bail!("kill -TERM failed for PID {}", pid);
+        bail!("kill -TERM failed for PID {pid}");
     }
     Ok(())
 }
