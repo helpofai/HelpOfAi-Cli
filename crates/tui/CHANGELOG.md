@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.1] - 2026-09-16
+
+### Added
+- **Codebase Memory Engine Integration**: Added native support for the DeusData Codebase Memory engine. Includes `helpofai codebase install`, `helpofai codebase update`, `helpofai codebase doctor`, and `helpofai graph` UI supervisor, isolating the CBM graph dynamically in `%LOCALAPPDATA%` and auto-registering the codebase-memory MCP engine for AI agent consumption.
+- **Built-in 3D Graph Visualization**: Bundled 3D interactive knowledge graph visualization assets with real-time process monitoring and graph rendering.
+- **Dynamic Port Management & Process Supervisor**: Added automatic port reservation, stale PID cleanup, and lifecycle management for the codebase memory server.
+
 ## [0.8.99] - 2026-09-11
 
 ### Added
@@ -137,12 +144,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **OmniRoute auto-router bypass**: Completely bypass the local classification router when OmniRoute is the active provider. This prevents out-of-band requests to `deepseek-v4-flash` and avoids DeepSeek credential requirements altogether for OmniRoute setups.
-
-## [0.8.75] - 2026-07-15
-
-### Fixed
-
-- **OmniRoute auto-router authentication**: Dynamically resolve the auto-routing classifier provider to OmniRoute (or DeepSeek China) when it is active, avoiding missing DeepSeek credential errors.
 
 ---
 
