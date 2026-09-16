@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codebase Memory Engine Integration**: Added native support for the DeusData Codebase Memory engine. Includes helpofai codebase install, helpofai codebase update, helpofai codebase doctor, and helpofai graph UI supervisor, isolating the CBM graph dynamically in %LOCALAPPDATA% and auto-registering the codebase-memory MCP engine for AI agent consumption.
 
 
-## [0.8.99] - 2026-09-11
+## [0.9.1] - 2026-09-11
 
 ### Added
 - **AIOS Full Platform Exposure to AI Agents**: Integrated all native AIOS subsystems, engines, and architectural catalogs as first-class tools for AI agents in Agent Mode and Plan Mode.
@@ -2429,8 +2429,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.99...HEAD
-[0.8.99]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...v0.8.99
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...v0.9.1
 [0.8.98]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.97...v0.8.98
 [0.8.97]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.96...v0.8.97
 [0.8.96]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.95...v0.8.96
