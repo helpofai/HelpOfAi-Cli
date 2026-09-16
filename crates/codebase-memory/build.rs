@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2026 HelpOfAi. All rights reserved.
- * 
+ *
  * This file is part of the HelpOfAi CLI codebase.
- * It is subject to the MIT license terms in the LICENSE.md file 
+ * It is subject to the MIT license terms in the LICENSE.md file
  * found in the top-level directory of this distribution.
  */
 
@@ -13,9 +13,12 @@ use std::process::Command;
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let upstream_dir = manifest_dir.join("../../ext/codebase-memory-upstream");
-    
+
     if !upstream_dir.exists() {
-        println!("cargo:warning=Upstream submodule not found at {:?}. Have you initialized submodules?", upstream_dir);
+        println!(
+            "cargo:warning=Upstream submodule not found at {:?}. Have you initialized submodules?",
+            upstream_dir
+        );
         return;
     }
 
@@ -38,19 +41,28 @@ fn main() {
             let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
             let src_bin = upstream_dir.join("codebase-memory-mcp");
             let src_bin_windows = upstream_dir.join("codebase-memory-mcp.exe");
-            let dest_bin = out_dir.join(if cfg!(target_os = "windows") { "helpofai-codebase-memory.exe" } else { "helpofai-codebase-memory" });
-            
+            let dest_bin = out_dir.join(if cfg!(target_os = "windows") {
+                "helpofai-codebase-memory.exe"
+            } else {
+                "helpofai-codebase-memory"
+            });
+
             if src_bin.exists() {
                 std::fs::rename(src_bin, dest_bin).expect("Failed to move compiled binary");
             } else if src_bin_windows.exists() {
                 std::fs::rename(src_bin_windows, dest_bin).expect("Failed to move compiled binary");
             }
-        },
+        }
         Ok(_) => {
-            println!("cargo:warning=make failed, but we will fallback to the binary downloader for now (or fail silently on Windows if make is missing)");
-        },
+            println!(
+                "cargo:warning=make failed, but we will fallback to the binary downloader for now (or fail silently on Windows if make is missing)"
+            );
+        }
         Err(e) => {
-            println!("cargo:warning=Failed to invoke make: {}. Falling back to prebuilt binary strategy.", e);
+            println!(
+                "cargo:warning=Failed to invoke make: {}. Falling back to prebuilt binary strategy.",
+                e
+            );
         }
     }
 }

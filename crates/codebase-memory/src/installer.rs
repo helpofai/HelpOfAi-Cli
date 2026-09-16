@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2026 HelpOfAi. All rights reserved.
- * 
+ *
  * This file is part of the HelpOfAi CLI codebase.
- * It is subject to the MIT license terms in the LICENSE.md file 
+ * It is subject to the MIT license terms in the LICENSE.md file
  * found in the top-level directory of this distribution.
  */
 
@@ -119,7 +119,7 @@ impl Installer {
         // 4 ── extract safely (atomic replacement with rollback)
         let engine_dest_dir = engine_dir()?;
         let rollback_dir = engine_dest_dir.with_file_name("codebase-memory-rollback");
-        
+
         if engine_dest_dir.exists() {
             // Backup old version
             if rollback_dir.exists() {
@@ -127,7 +127,7 @@ impl Installer {
             }
             std::fs::rename(&engine_dest_dir, &rollback_dir)?;
         }
-        
+
         std::fs::create_dir_all(&engine_dest_dir)?;
         println!("Extracting to {}…", engine_dest_dir.display());
         let extract_result = if platform == "windows" {
@@ -151,7 +151,7 @@ impl Installer {
         let (old_name, new_name) = ("codebase-memory-mcp.exe", "helpofai-codebase-memory.exe");
         #[cfg(not(target_os = "windows"))]
         let (old_name, new_name) = ("codebase-memory-mcp", "helpofai-codebase-memory");
-        
+
         let old_bin = engine_dest_dir.join(old_name);
         let new_bin = engine_dest_dir.join(new_name);
         if old_bin.exists() {
@@ -170,13 +170,18 @@ impl Installer {
 
         // 8 ── initialize storage directory structure
         let engine_dest_dir = engine_dir()?;
-        let data_dir = engine_dest_dir.parent().unwrap().parent().unwrap().join("codebase-memory");
+        let data_dir = engine_dest_dir
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("codebase-memory");
         std::fs::create_dir_all(data_dir.join("repositories"))?;
         std::fs::create_dir_all(data_dir.join("global"))?;
         std::fs::create_dir_all(data_dir.join("indexes"))?;
         std::fs::create_dir_all(data_dir.join("runtime"))?;
         std::fs::create_dir_all(data_dir.join("logs"))?;
-        
+
         // 9 ── confirm
         let binary = engine_binary_path()?;
         let ver = probe_version(&binary).unwrap_or_else(|_| "unknown".into());

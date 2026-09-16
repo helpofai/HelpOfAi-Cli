@@ -737,7 +737,6 @@ impl HarnessProfile {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CodebaseMemoryToml {
     pub enabled: Option<bool>,
