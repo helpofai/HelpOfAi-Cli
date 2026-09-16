@@ -39,7 +39,7 @@ impl Installer {
         let binary = engine_binary_path()?;
         if binary.exists() && !force {
             let ver = probe_version(&binary)?;
-            println!("Codebase Memory engine already installed ({})", ver);
+            println!("Codebase Memory engine already installed ({ver})");
             println!("Run `helpofai codebase update` to upgrade.");
             return Ok(());
         }
@@ -51,7 +51,7 @@ impl Installer {
         let binary = engine_binary_path()?;
         if binary.exists() {
             let existing = probe_version(&binary).unwrap_or_default();
-            println!("Current version: {}", existing);
+            println!("Current version: {existing}");
         } else {
             println!("Engine not installed — performing fresh install.");
         }
@@ -69,20 +69,20 @@ impl Installer {
         } else {
             "tar.gz"
         };
-        let archive_name = format!("codebase-memory-mcp-{}-{}.{}", platform, arch, ext);
+        let archive_name = format!("codebase-memory-mcp-{platform}-{arch}.{ext}");
 
         let temp_dir = tempfile::Builder::new().prefix("cbm-install-").tempdir()?;
         let temp_path = temp_dir.path();
 
         // 1 ── fetch checksums
-        let checksums_url = format!("{}/checksums.txt", BASE_URL);
+        let checksums_url = format!("{BASE_URL}/checksums.txt");
         println!("Fetching checksums…");
         let checksums_txt = self.client.get(&checksums_url).send()?.text()?;
         let expected_hash = self.parse_checksum(&checksums_txt, &archive_name)?;
 
         // 2 ── streaming download with byte counter
-        let archive_url = format!("{}/{}", BASE_URL, archive_name);
-        println!("Downloading {}…", archive_url);
+        let archive_url = format!("{BASE_URL}/{archive_name}");
+        println!("Downloading {archive_url}…");
         let mut response = self.client.get(&archive_url).send()?;
         if !response.status().is_success() {
             bail!("HTTP {} downloading archive", response.status());
@@ -103,9 +103,9 @@ impl Installer {
                 downloaded += n as u64;
                 if let Some(total) = total {
                     let pct = downloaded * 100 / total;
-                    eprint!("\r  {} / {} bytes  ({}%)", downloaded, total, pct);
+                    eprint!("\r  {downloaded} / {total} bytes  ({pct}%)");
                 } else {
-                    eprint!("\r  {} bytes", downloaded);
+                    eprint!("\r  {downloaded} bytes");
                 }
             }
             eprintln!();
@@ -137,7 +137,7 @@ impl Installer {
         };
 
         if let Err(e) = extract_result {
-            println!("Extraction failed: {}", e);
+            println!("Extraction failed: {e}");
             std::fs::remove_dir_all(&engine_dest_dir).ok();
             if rollback_dir.exists() {
                 println!("Rolling back to previous version…");
@@ -185,12 +185,12 @@ impl Installer {
         // 9 ── confirm
         let binary = engine_binary_path()?;
         let ver = probe_version(&binary).unwrap_or_else(|_| "unknown".into());
-        println!("✓ Codebase Memory engine installed: {}", ver);
+        println!("✓ Codebase Memory engine installed: {ver}");
 
         // 7 ── register in mcp.json so HelpOfAi agent sessions can call it
         if let Err(e) = register_in_mcp_json(&binary) {
             // Non-fatal — user can register manually
-            eprintln!("Note: MCP auto-registration skipped: {}", e);
+            eprintln!("Note: MCP auto-registration skipped: {e}");
         }
 
         Ok(())
@@ -212,7 +212,7 @@ impl Installer {
                 }
             }
         }
-        bail!("No checksum entry for {} in checksums.txt", target)
+        bail!("No checksum entry for {target} in checksums.txt")
     }
 
     fn verify_file_hash(&self, path: &Path, expected: &str) -> Result<()> {
@@ -221,11 +221,7 @@ impl Installer {
         std::io::copy(&mut file, &mut hasher)?;
         let actual = format!("{:x}", hasher.finalize());
         if actual != expected {
-            bail!(
-                "Checksum mismatch!\n  expected: {}\n  got:      {}",
-                expected,
-                actual
-            );
+            bail!("Checksum mismatch!\n  expected: {expected}\n  got:      {actual}");
         }
         Ok(())
     }

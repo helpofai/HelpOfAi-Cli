@@ -76,7 +76,7 @@ impl GraphSupervisor {
 
     /// Poll `http://127.0.0.1:<port>/` until it responds or we time out (~10 s).
     pub async fn wait_until_ready(&self, port: u16) -> Result<()> {
-        let url = format!("http://localhost:{}/", port);
+        let url = format!("http://localhost:{port}/");
         let client = reqwest::Client::builder()
             .timeout(Duration::from_millis(500))
             .build()?;
@@ -88,9 +88,8 @@ impl GraphSupervisor {
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
         bail!(
-            "Codebase Memory graph server did not become ready at {} within 10 seconds.\n\
-             Check `helpofai graph status` or the engine logs.",
-            url
+            "Codebase Memory graph server did not become ready at {url} within 10 seconds.\n\
+             Check `helpofai graph status` or the engine logs."
         )
     }
 }
@@ -175,7 +174,7 @@ pub fn stop_by_pid() -> Result<()> {
 fn pid_is_alive(pid: u32) -> bool {
     // On Windows: check if the process exists via tasklist
     let out = Command::new("tasklist")
-        .args(["/FI", &format!("PID eq {}", pid), "/NH", "/FO", "CSV"])
+        .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
         .output();
     match out {
         Ok(o) => {
@@ -203,7 +202,7 @@ fn kill_pid(pid: u32) -> Result<()> {
         .args(["/PID", &pid.to_string(), "/F"])
         .status()?;
     if !status.success() {
-        bail!("taskkill failed for PID {}", pid);
+        bail!("taskkill failed for PID {pid}");
     }
     Ok(())
 }
@@ -223,8 +222,8 @@ fn kill_pid(pid: u32) -> Result<()> {
 
 /// Open the user's default browser to the graph UI URL.
 pub fn open_browser(port: u16) -> Result<()> {
-    let url = format!("http://localhost:{}", port);
-    println!("Opening browser: {}", url);
+    let url = format!("http://localhost:{port}");
+    println!("Opening browser: {url}");
 
     #[cfg(target_os = "windows")]
     {

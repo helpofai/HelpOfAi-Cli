@@ -16,8 +16,7 @@ fn main() {
 
     if !upstream_dir.exists() {
         println!(
-            "cargo:warning=Upstream submodule not found at {:?}. Have you initialized submodules?",
-            upstream_dir
+            "cargo:warning=Upstream submodule not found at {upstream_dir:?}. Have you initialized submodules?"
         );
         return;
     }
@@ -60,8 +59,7 @@ fn main() {
         }
         Err(e) => {
             println!(
-                "cargo:warning=Failed to invoke make: {}. Falling back to prebuilt binary strategy.",
-                e
+                "cargo:warning=Failed to invoke make: {e}. Falling back to prebuilt binary strategy."
             );
         }
     }

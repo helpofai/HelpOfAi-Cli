@@ -17,7 +17,7 @@ pub fn helpofai_data_dir() -> anyhow::Result<PathBuf> {
         let base = std::env::var("LOCALAPPDATA")
             .ok()
             .map(PathBuf::from)
-            .or_else(|| dirs::data_local_dir())
+            .or_else(dirs::data_local_dir)
             .ok_or_else(|| anyhow::anyhow!("Cannot determine %LOCALAPPDATA%"))?;
         Ok(base.join("HelpOfAi"))
     } else {
