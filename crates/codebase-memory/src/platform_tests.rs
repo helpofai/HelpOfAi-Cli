@@ -32,3 +32,12 @@ fn test_engine_binary_path() {
         assert!(display.ends_with("helpofai-codebase-memory"));
     }
 }
+
+#[test]
+fn test_get_architecture() {
+    let arch = get_architecture();
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    assert!(arch.is_ok());
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    assert!(arch.is_err());
+}

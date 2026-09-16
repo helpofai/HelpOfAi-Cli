@@ -63,7 +63,7 @@ impl Installer {
 
     fn download_and_install(&self) -> Result<()> {
         let platform = get_platform();
-        let arch = get_architecture();
+        let arch = get_architecture()?;
         let ext = if platform == "windows" {
             "zip"
         } else {
