@@ -118,4 +118,37 @@ impl CodebaseMemoryManager {
         }
         Ok(())
     }
+
+    /// Index a repository path into the semantic knowledge graph.
+    pub fn index_repository(&self, repo_path: &str) -> Result<()> {
+        let abs_path = std::path::Path::new(repo_path)
+            .canonicalize()
+            .unwrap_or_else(|_| std::path::PathBuf::from(repo_path));
+        let args_json = serde_json::json!({
+            "repo_path": abs_path.to_string_lossy(),
+        })
+        .to_string();
+        self.run_passthrough(&["cli".to_string(), "index_repository".to_string(), args_json])
+    }
+
+    /// Search the codebase graph using a regex pattern.
+    pub fn search_graph(&self, pattern: &str) -> Result<()> {
+        let args_json = serde_json::json!({
+            "name_pattern": pattern,
+        })
+        .to_string();
+        self.run_passthrough(&["cli".to_string(), "search_graph".to_string(), args_json])
+    }
+
+    /// Run the upstream agent auto-configuration installer (`codebase-memory-mcp install`).
+    pub fn setup_agents(&self) -> Result<()> {
+        self.run_passthrough(&["install".to_string()])
+    }
+
+    /// Run configuration commands against the engine's config store.
+    pub fn run_config(&self, args: &[String]) -> Result<()> {
+        let mut full_args = vec!["config".to_string()];
+        full_args.extend_from_slice(args);
+        self.run_passthrough(&full_args)
+    }
 }

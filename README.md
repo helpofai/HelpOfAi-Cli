@@ -82,8 +82,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # or the NSIS installer from GitHub Releases
 
 # CNB mirror for users who cannot reliably reach GitHub
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.1 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.1 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.2 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.2 helpofai-tui --locked --force
 
 # Legacy Homebrew compatibility while the formula is renamed
 brew tap helpofai/HelpOfAi-Cli
@@ -221,6 +221,18 @@ structure intact.
 - **Skills.** Reusable workflows in `~/.helpofai/skills/`, loaded with `/skills`.
 - **Embedded everywhere.** HTTP/SSE and ACP runtime APIs, a VS Code extension,
   and Telegram/Feishu bridges (Weixin experimental).
+
+
+ ##  Useful Commands Reference 
+   Action                                                  | Command
+  ---------------------------------------------------------|---------------------------------------------------------
+   Open Web UI in browser                                  | helpofai graph open
+   Check server status                                     | helpofai graph status
+   Start server manually                                   | helpofai graph start
+   Stop background server                                  | helpofai graph stop
+   Install engine                                          | helpofai codebase install
+   Upgrade engine                                          | helpofai codebase update
+   Run full doctor check                                   | helpofai doctor
 
 ## The project
 

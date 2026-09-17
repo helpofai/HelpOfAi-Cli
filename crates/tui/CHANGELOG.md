@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.2] - 2026-09-17
+
+### Added
+- **Codebase Memory Graph UI Readiness & Resilient Supervisor**: Synchronous port readiness detection before opening the browser, persistent supervisor stdin pipe, and live port liveness probing in header chip and commands.
+- **TUI Slash Commands**: Added `/graph open`, `/graph start`, `/graph stop`, `/graph index`, and `/graph status` slash commands.
+- **MCP Auto-Registration & Skills**: Injected 15 Codebase Memory tools and skill documentation into AI agents upon engine installation.
+
 ## [0.9.1] - 2026-09-16
 
 ### Added

@@ -111,11 +111,10 @@ pub fn probe_status() -> CodebaseMemoryStatus {
     }
 
     // 3. Check if running
-    if let Some(pid) = read_pid() {
-        if pid_is_alive(pid) {
-            let port = read_port().unwrap_or(9749);
-            return CodebaseMemoryStatus::Running { port, pid };
-        }
+    let port = read_port().unwrap_or(9749);
+    if crate::graph::is_port_responding(port) {
+        let pid = read_pid().unwrap_or(0);
+        return CodebaseMemoryStatus::Running { port, pid };
     }
 
     CodebaseMemoryStatus::Stopped

@@ -2704,6 +2704,37 @@ pub fn load_config_with_workspace(global_path: &Path, workspace: &Path) -> Resul
         }
     }
     merged.servers.extend(project.servers);
+
+    // Automatically attach the Codebase Memory MCP server if installed and not explicitly overridden
+    if !merged.servers.contains_key("codebase-memory")
+        && !merged.servers.contains_key("codebase-memory-mcp")
+    {
+        if let Ok(bin) = helpofai_codebase_memory::platform::engine_binary_path() {
+            if bin.exists() {
+                merged.servers.insert(
+                    "codebase-memory".to_string(),
+                    McpServerConfig {
+                        command: Some(bin.to_string_lossy().to_string()),
+                        args: vec![],
+                        env: HashMap::new(),
+                        cwd: Some(workspace.to_path_buf()),
+                        url: None,
+                        transport: None,
+                        connect_timeout: None,
+                        execute_timeout: None,
+                        read_timeout: None,
+                        disabled: false,
+                        enabled: true,
+                        required: false,
+                        enabled_tools: vec![],
+                        disabled_tools: vec![],
+                        headers: HashMap::new(),
+                    },
+                );
+            }
+        }
+    }
+
     Ok(merged)
 }
 

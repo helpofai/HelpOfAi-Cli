@@ -374,6 +374,24 @@ enum CodebaseCommand {
     Update,
     /// Check engine installation, binary health, and daemon status.
     Doctor,
+    /// Index a project repository into the semantic knowledge graph.
+    Index {
+        /// Path to the repository to index (default: current directory).
+        #[arg(default_value = ".")]
+        path: String,
+    },
+    /// Search the codebase knowledge graph using a pattern or symbol name.
+    Search {
+        /// Regex or symbol pattern to search for.
+        pattern: String,
+    },
+    /// Configure Codebase Memory MCP in all detected coding agents (VS Code, Cursor, Claude Code, Zed, etc.).
+    SetupAgents,
+    /// View or change runtime settings (auto_index, auto_watch, watcher_enabled, auto_index_limit).
+    Config {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Run a raw engine subcommand (e.g. index, search, get_architecture).
     #[command(external_subcommand)]
     Passthrough(Vec<String>),
@@ -2794,17 +2812,37 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
             Ok(())
         }
         GraphCommand::Stop => stop_by_pid(),
-        GraphCommand::Open => open_browser(port),
+        GraphCommand::Open => {
+            if !helpofai_codebase_memory::graph::is_port_responding(port) {
+                println!("Graph server not running on port {port}. Starting it now…");
+                let supervisor = GraphSupervisor::new()?;
+                let mut child = supervisor.start(port)?;
+                if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
+                    println!("Graph server ready → http://localhost:{port}");
+                    open_browser(port)?;
+                } else {
+                    println!("Graph server started but did not respond on port {port} within 10s.");
+                }
+                child.wait()?;
+                Ok(())
+            } else {
+                open_browser(port)
+            }
+        }
 
         GraphCommand::Start => {
             let supervisor = GraphSupervisor::new()?;
             println!("Starting Codebase Memory UI on port {port}…");
             let mut child = supervisor.start(port)?;
-            let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://localhost:{port}");
-            if !no_open {
-                open_browser(port)?;
+            if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
+                println!("Graph server ready → http://localhost:{port}");
+                if !no_open {
+                    open_browser(port)?;
+                }
+            } else {
+                println!(
+                    "Graph server started but did not respond on port {port} within 10 seconds."
+                );
             }
             child.wait()?;
             Ok(())
@@ -2814,11 +2852,15 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
             println!("Restarting…");
             let supervisor = GraphSupervisor::new()?;
             let mut child = supervisor.start(port)?;
-            let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async { supervisor.wait_until_ready(port).await })?;
-            println!("Graph server ready → http://localhost:{port}");
-            if !no_open {
-                open_browser(port)?;
+            if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
+                println!("Graph server ready → http://localhost:{port}");
+                if !no_open {
+                    open_browser(port)?;
+                }
+            } else {
+                println!(
+                    "Graph server started but did not respond on port {port} within 10 seconds."
+                );
             }
             child.wait()?;
             Ok(())
@@ -2859,6 +2901,30 @@ fn run_codebase_command(command: CodebaseCommand) -> Result<()> {
             let manager = CodebaseMemoryManager::new()?;
             println!("Daemon status check:");
             let _ = manager.get_status();
+            Ok(())
+        }
+        CodebaseCommand::Index { path } => {
+            let manager = CodebaseMemoryManager::new()?;
+            println!("Indexing repository at '{path}'...");
+            manager.index_repository(&path)?;
+            println!("Indexing complete.");
+            Ok(())
+        }
+        CodebaseCommand::Search { pattern } => {
+            let manager = CodebaseMemoryManager::new()?;
+            manager.search_graph(&pattern)?;
+            Ok(())
+        }
+        CodebaseCommand::SetupAgents => {
+            let manager = CodebaseMemoryManager::new()?;
+            println!("Setting up Codebase Memory MCP across all detected coding agents...");
+            manager.setup_agents()?;
+            println!("Setup complete.");
+            Ok(())
+        }
+        CodebaseCommand::Config { args } => {
+            let manager = CodebaseMemoryManager::new()?;
+            manager.run_config(&args)?;
             Ok(())
         }
         CodebaseCommand::Passthrough(args) => {

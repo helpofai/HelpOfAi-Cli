@@ -42,6 +42,7 @@ outputs/
 tmp/
 backup/
 /web/lib/facts.generated.ts
+codebase-memory-mcp-main-download-from-github/
 
 # Reference papers / large research blobs (keep locally if needed, don't ship)
 docs/DeepSeek_V4.pdf

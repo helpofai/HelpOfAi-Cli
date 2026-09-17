@@ -4,6 +4,7 @@
 // name. The module_inception allow is a permanent structure rationale, not
 // migration scaffolding; see docs/architecture/command-dispatch.md.
 #[allow(clippy::module_inception)]
+mod codebase;
 mod memory;
 mod note;
 
@@ -23,9 +24,17 @@ impl CommandGroup for MemoryCommands {
                 &PROJECT_MEMORY_INFO,
                 run_project_memory,
             )),
+            Box::new(FunctionCommand::new(&GRAPH_INFO, run_graph)),
         ]
     }
 }
+
+static GRAPH_INFO: CommandInfo = CommandInfo {
+    name: "graph",
+    aliases: &["cbm", "codebase"],
+    usage: "/graph [open|start|stop|index|status]",
+    description_id: MessageId::CmdMemoryDescription,
+};
 
 static NOTE_INFO: CommandInfo = CommandInfo {
     name: "note",
@@ -59,6 +68,9 @@ fn run_memory(app: &mut App, arg: Option<&str>) -> CommandResult {
 fn run_project_memory(app: &mut App, arg: Option<&str>) -> CommandResult {
     run_registered(app, "projectmemory", arg)
 }
+fn run_graph(app: &mut App, arg: Option<&str>) -> CommandResult {
+    run_registered(app, "graph", arg)
+}
 
 pub(in crate::commands) fn dispatch(
     app: &mut App,
@@ -69,6 +81,7 @@ pub(in crate::commands) fn dispatch(
         "memory" => memory::memory(app, arg),
         "projectmemory" | "pmemory" => memory::project_memory(app, arg),
         "note" => note::note(app, arg),
+        "graph" | "cbm" | "codebase" => codebase::graph(app, arg),
         _ => return None,
     };
     Some(result)

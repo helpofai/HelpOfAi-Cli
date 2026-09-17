@@ -54,10 +54,27 @@ impl GraphSupervisor {
         Ok(Self { binary })
     }
 
+    /// Check if the HTTP server on port is accepting TCP connections.
+    pub fn is_port_responding(port: u16) -> bool {
+        is_port_responding(port)
+    }
+
+    /// Synchronously poll until `http://localhost:<port>/` responds or timeout expires.
+    pub fn wait_until_ready_sync(&self, port: u16, timeout: Duration) -> bool {
+        let start = std::time::Instant::now();
+        while start.elapsed() < timeout {
+            if Self::is_port_responding(port) {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        false
+    }
+
     /// Ensure the engine is running in the background and open the browser to the graph UI.
     /// If the server is already running, simply opens the browser to the existing port.
     pub fn ensure_running_and_open_browser(port: u16) -> Result<()> {
-        if is_running() {
+        if Self::is_port_responding(port) {
             let active_port = read_port().unwrap_or(port);
             open_browser(active_port)?;
             return Ok(());
@@ -84,7 +101,8 @@ impl GraphSupervisor {
         cmd.arg("--port").arg(port.to_string());
         cmd.env("CBM_CACHE_DIR", &cache_dir);
         cmd.env("CBM_RUNTIME_DIR", &runtime_dir);
-        cmd.stdin(Stdio::null());
+        // Keep stdin open via a pipe so the MCP engine does not immediately exit on EOF
+        cmd.stdin(Stdio::piped());
         if let Some(f) = log_file {
             cmd.stdout(
                 f.try_clone()
@@ -104,23 +122,28 @@ impl GraphSupervisor {
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
 
-        let child = cmd
+        let mut child = cmd
             .spawn()
             .context("Failed to spawn Codebase Memory engine in background")?;
 
         write_pid(child.id(), port)?;
 
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()?;
-        rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+        // Wait until server is ready before opening browser
+        if supervisor.wait_until_ready_sync(port, Duration::from_secs(10)) {
+            let _ = open_browser(port);
+        } else {
+            tracing::warn!(
+                "Codebase Memory engine (PID {}) did not respond on port {port} within 10s",
+                child.id()
+            );
+        }
 
-        open_browser(port)?;
+        // Wait on the child in this thread to keep its stdin pipe open as long as HelpOfAi runs
+        let _ = child.wait();
         Ok(())
     }
 
-    /// Spawn the graph UI process, write a PID file, and optionally poll for
-    /// readiness before returning the child handle.
+    /// Spawn the graph UI process, write a PID file, and return the child handle.
     pub fn start(&self, port: u16) -> Result<Child> {
         let engine_root = engine_dir()?;
         let cache_dir = engine_root.join("cache");
@@ -193,30 +216,49 @@ pub(crate) fn read_port() -> Option<u16> {
         .and_then(|s| s.trim().parse().ok())
 }
 
-/// True if the PID from the pid-file is currently alive.
+/// Check if the HTTP server on port is accepting TCP connections.
+pub fn is_port_responding(port: u16) -> bool {
+    use std::net::{SocketAddr, TcpStream};
+    TcpStream::connect_timeout(
+        &SocketAddr::from(([127, 0, 0, 1], port)),
+        Duration::from_millis(150),
+    )
+    .is_ok()
+}
+
+/// True if the graph server is responding on its configured port.
 pub fn is_running() -> bool {
-    match read_pid() {
-        None => false,
-        Some(pid) => pid_is_alive(pid),
-    }
+    let port = read_port().unwrap_or(9749);
+    is_port_responding(port)
 }
 
 /// Print a human-readable status line to stdout.
 pub fn print_status() {
-    match read_pid() {
-        None => println!("Graph server: not running (no PID file found)"),
-        Some(pid) => {
-            let port = read_port().unwrap_or(9749);
-            if pid_is_alive(pid) {
-                println!(
-                    "Graph server: running (PID {pid}, port {port})\n\
-                     URL: http://localhost:{port}"
-                );
-            } else {
-                println!("Graph server: stopped (stale PID {pid})");
-                // Clean up stale file
-                pid_file_path().ok().map(|p| std::fs::remove_file(p).ok());
-            }
+    let port = read_port().unwrap_or(9749);
+    let pid = read_pid();
+    if is_port_responding(port) {
+        if let Some(p) = pid {
+            println!(
+                "Graph server: running (PID {p}, port {port})\n\
+                 URL: http://localhost:{port}"
+            );
+        } else {
+            println!(
+                "Graph server: running (port {port})\n\
+                 URL: http://localhost:{port}"
+            );
+        }
+    } else {
+        if let Some(p) = pid {
+            println!("Graph server: stopped (stale PID {p})");
+            pid_file_path()
+                .ok()
+                .and_then(|p| std::fs::remove_file(p).ok());
+            port_file_path()
+                .ok()
+                .and_then(|p| std::fs::remove_file(p).ok());
+        } else {
+            println!("Graph server: not running");
         }
     }
 }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.2] - 2026-09-17
+
+### Added
+- **Codebase Memory Graph UI Readiness & Resilient Supervisor**: Enhanced background supervisor to wait synchronously for HTTP port readiness before launching the default browser, eliminating `ERR_CONNECTION_REFUSED` on startup. Kept supervisor stdin pipe held open throughout application lifecycle to prevent premature MCP engine exit on EOF.
+- **TUI & CLI Memory Commands**: Added `/graph open`, `/graph start`, `/graph stop`, `/graph index`, and `/graph status` slash commands in TUI, alongside `helpofai graph` and `helpofai codebase` subcommands.
+- **Codebase Memory MCP Auto-Registration & Skills**: HelpOfAi AI agents automatically receive all 15 native Codebase Memory MCP tools (`index_repository`, `search_graph`, `trace_path`, `get_architecture`, `detect_changes`, `manage_adr`, etc.) and bundled skills with Cypher syntax guides when the engine is installed.
+- **Real-Time Port Liveness Status**: Improved `/status` command, doctor diagnosis, and TUI header chip (`🧠 ● 9749`, `🧠 ⟳ dl...`, `🧠 ○ off`, `🧠 ✕`) to probe live TCP port responsiveness, auto-recovering from stale PID files.
+
 ## [0.9.1] - 2026-09-16
 
 ### Added
@@ -2435,7 +2443,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.99...v0.9.1
 [0.8.99]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...v0.8.99
 [0.8.98]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.97...v0.8.98
