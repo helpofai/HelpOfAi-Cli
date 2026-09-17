@@ -151,6 +151,9 @@ const DEFAULT_META_MODEL: &str = "muse-spark-1.1";
 const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
 const DEFAULT_XAI_MODEL: &str = "grok-4.5";
 const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
+const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-2.5-pro";
+const DEFAULT_ANTIGRAVITY_BASE_URL: &str =
+    "https://generativelanguage.googleapis.com/v1beta/openai";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "kebab-case")]
@@ -257,11 +260,18 @@ pub enum ProviderKind {
     Meta,
     #[serde(alias = "x-ai", alias = "x_ai", alias = "grok")]
     Xai,
+    #[serde(
+        alias = "google-antigravity",
+        alias = "google_antigravity",
+        alias = "google",
+        alias = "gemini"
+    )]
+    Antigravity,
     Custom,
 }
 
 impl ProviderKind {
-    pub const ALL: [Self; 35] = [
+    pub const ALL: [Self; 36] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -296,6 +306,7 @@ impl ProviderKind {
         Self::LongCat,
         Self::Meta,
         Self::Xai,
+        Self::Antigravity,
         Self::Custom,
     ];
 
@@ -482,6 +493,15 @@ pub struct ProvidersToml {
     pub meta: ProviderConfigToml,
     #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
     pub xai: ProviderConfigToml,
+    #[serde(
+        default,
+        skip_serializing_if = "ProviderConfigToml::is_empty",
+        alias = "google-antigravity",
+        alias = "google_antigravity",
+        alias = "google",
+        alias = "gemini"
+    )]
+    pub antigravity: ProviderConfigToml,
     #[serde(default, skip_serializing_if = "ProviderConfigToml::is_empty")]
     pub custom: ProviderConfigToml,
 }
@@ -548,6 +568,7 @@ impl ProvidersToml {
             ProviderKind::LongCat => &self.longcat,
             ProviderKind::Meta => &self.meta,
             ProviderKind::Xai => &self.xai,
+            ProviderKind::Antigravity => &self.antigravity,
             ProviderKind::Custom => &self.custom,
         }
     }
@@ -588,6 +609,7 @@ impl ProvidersToml {
             ProviderKind::LongCat => &mut self.longcat,
             ProviderKind::Meta => &mut self.meta,
             ProviderKind::Xai => &mut self.xai,
+            ProviderKind::Antigravity => &mut self.antigravity,
             ProviderKind::Custom => &mut self.custom,
         }
     }
@@ -2112,6 +2134,7 @@ impl ConfigToml {
                 ProviderKind::LongCat => DEFAULT_LONGCAT_BASE_URL.to_string(),
                 ProviderKind::Meta => DEFAULT_META_BASE_URL.to_string(),
                 ProviderKind::Xai => DEFAULT_XAI_BASE_URL.to_string(),
+                ProviderKind::Antigravity => DEFAULT_ANTIGRAVITY_BASE_URL.to_string(),
                 ProviderKind::Custom => "http://localhost/v1".to_string(),
             })
         };
@@ -2670,6 +2693,7 @@ fn default_model_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::LongCat => DEFAULT_LONGCAT_MODEL,
         ProviderKind::Meta => DEFAULT_META_MODEL,
         ProviderKind::Xai => DEFAULT_XAI_MODEL,
+        ProviderKind::Antigravity => DEFAULT_ANTIGRAVITY_MODEL,
         ProviderKind::Custom => "custom-model",
     }
 }
@@ -2710,6 +2734,7 @@ fn default_base_url_for_provider(provider: ProviderKind) -> &'static str {
         ProviderKind::LongCat => DEFAULT_LONGCAT_BASE_URL,
         ProviderKind::Meta => DEFAULT_META_BASE_URL,
         ProviderKind::Xai => DEFAULT_XAI_BASE_URL,
+        ProviderKind::Antigravity => DEFAULT_ANTIGRAVITY_BASE_URL,
         ProviderKind::Custom => "http://localhost/v1",
     }
 }
@@ -3812,6 +3837,8 @@ struct EnvRuntimeOverrides {
     meta_model: Option<String>,
     xai_base_url: Option<String>,
     xai_model: Option<String>,
+    antigravity_base_url: Option<String>,
+    antigravity_model: Option<String>,
     custom_base_url: Option<String>,
     custom_model: Option<String>,
 }
@@ -4073,6 +4100,14 @@ impl EnvRuntimeOverrides {
             xai_model: std::env::var("XAI_MODEL")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
+            antigravity_base_url: std::env::var("ANTIGRAVITY_BASE_URL")
+                .or_else(|_| std::env::var("GOOGLE_ANTIGRAVITY_BASE_URL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            antigravity_model: std::env::var("ANTIGRAVITY_MODEL")
+                .or_else(|_| std::env::var("GOOGLE_ANTIGRAVITY_MODEL"))
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
             custom_base_url: std::env::var("CUSTOM_BASE_URL")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
@@ -4135,6 +4170,7 @@ impl EnvRuntimeOverrides {
             ProviderKind::LongCat => self.longcat_base_url.clone(),
             ProviderKind::Meta => self.meta_base_url.clone(),
             ProviderKind::Xai => self.xai_base_url.clone(),
+            ProviderKind::Antigravity => self.antigravity_base_url.clone(),
             ProviderKind::Custom => self.custom_base_url.clone(),
         }
     }
@@ -4169,6 +4205,7 @@ impl EnvRuntimeOverrides {
             ProviderKind::LongCat => self.longcat_model.clone(),
             ProviderKind::Meta => self.meta_model.clone(),
             ProviderKind::Xai => self.xai_model.clone(),
+            ProviderKind::Antigravity => self.antigravity_model.clone(),
             ProviderKind::Custom => self.custom_model.clone(),
             _ => None,
         }?;

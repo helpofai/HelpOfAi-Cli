@@ -212,6 +212,9 @@ pub const DEFAULT_META_MODEL: &str = "llama-3.5-70b";
 pub const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
 pub const DEFAULT_XAI_MODEL: &str = "grok-2.5";
 pub const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
+pub const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-2.5-pro";
+pub const DEFAULT_ANTIGRAVITY_BASE_URL: &str =
+    "https://generativelanguage.googleapis.com/v1beta/openai";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -251,6 +254,7 @@ pub enum ApiProvider {
     LongCat,
     Meta,
     Xai,
+    Antigravity,
     Custom,
 }
 
@@ -356,7 +360,7 @@ impl ApiProvider {
 
     /// `ApiProvider` discriminant → `ProviderKind` lookup.
     /// Index 1 is `None` for the legacy `DeepseekCN` variant.
-    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 36] = [
+    const KIND_LOOKUP: [Option<helpofai_config::ProviderKind>; 37] = [
         Some(helpofai_config::ProviderKind::Deepseek),
         None, // DeepseekCN
         Some(helpofai_config::ProviderKind::NvidiaNim),
@@ -392,11 +396,12 @@ impl ApiProvider {
         Some(helpofai_config::ProviderKind::LongCat),
         Some(helpofai_config::ProviderKind::Meta),
         Some(helpofai_config::ProviderKind::Xai),
+        Some(helpofai_config::ProviderKind::Antigravity),
         Some(helpofai_config::ProviderKind::Custom),
     ];
 
     /// `ProviderKind` discriminant → `ApiProvider` lookup.
-    const FROM_KIND_LOOKUP: [Self; 35] = [
+    const FROM_KIND_LOOKUP: [Self; 36] = [
         Self::Deepseek,
         Self::NvidiaNim,
         Self::Openai,
@@ -431,6 +436,7 @@ impl ApiProvider {
         Self::LongCat,
         Self::Meta,
         Self::Xai,
+        Self::Antigravity,
         Self::Custom,
     ];
 
@@ -1212,6 +1218,15 @@ pub fn model_completion_names_for_provider(provider: ApiProvider) -> Vec<&'stati
         ApiProvider::LongCat => vec![DEFAULT_LONGCAT_MODEL],
         ApiProvider::Meta => vec![DEFAULT_META_MODEL],
         ApiProvider::Xai => vec![DEFAULT_XAI_MODEL],
+        ApiProvider::Antigravity => vec![
+            DEFAULT_ANTIGRAVITY_MODEL,
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.1-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+        ],
         ApiProvider::Custom => vec!["custom-model"],
     }
 }
@@ -2475,6 +2490,14 @@ pub struct ProvidersConfig {
     pub meta: ProviderConfig,
     #[serde(default, alias = "xai", alias = "xAi", alias = "grok")]
     pub xai: ProviderConfig,
+    #[serde(
+        default,
+        alias = "google-antigravity",
+        alias = "google_antigravity",
+        alias = "google",
+        alias = "gemini"
+    )]
+    pub antigravity: ProviderConfig,
     #[serde(default)]
     pub custom: ProviderConfig,
 }
@@ -2765,6 +2788,7 @@ impl Config {
             ApiProvider::LongCat => &providers.longcat,
             ApiProvider::Meta => &providers.meta,
             ApiProvider::Xai => &providers.xai,
+            ApiProvider::Antigravity => &providers.antigravity,
             ApiProvider::Custom => &providers.custom,
         })
     }
@@ -2807,6 +2831,7 @@ impl Config {
             ApiProvider::LongCat => &mut providers.longcat,
             ApiProvider::Meta => &mut providers.meta,
             ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Antigravity => &mut providers.antigravity,
             ApiProvider::Custom => &mut providers.custom,
         }
     }
@@ -2966,6 +2991,7 @@ impl Config {
             ApiProvider::LongCat => DEFAULT_LONGCAT_MODEL,
             ApiProvider::Meta => DEFAULT_META_MODEL,
             ApiProvider::Xai => DEFAULT_XAI_MODEL,
+            ApiProvider::Antigravity => DEFAULT_ANTIGRAVITY_MODEL,
             ApiProvider::Custom => "custom-model",
         }
         .to_string()
@@ -3020,6 +3046,7 @@ impl Config {
             | ApiProvider::LongCat
             | ApiProvider::Meta
             | ApiProvider::Xai
+            | ApiProvider::Antigravity
             | ApiProvider::Custom => None,
         };
         let configured_base_url = provider_base.or(root_base);
@@ -3089,6 +3116,7 @@ impl Config {
                         ApiProvider::LongCat => DEFAULT_LONGCAT_BASE_URL,
                         ApiProvider::Meta => DEFAULT_META_BASE_URL,
                         ApiProvider::Xai => DEFAULT_XAI_BASE_URL,
+                        ApiProvider::Antigravity => DEFAULT_ANTIGRAVITY_BASE_URL,
                         ApiProvider::Custom => "http://localhost/v1",
                     }
                     .to_string()
@@ -4272,6 +4300,13 @@ fn apply_env_overrides(config: &mut Config) {
                     .xai
                     .base_url = Some(value);
             }
+            ApiProvider::Antigravity => {
+                config
+                    .providers
+                    .get_or_insert_with(ProvidersConfig::default)
+                    .antigravity
+                    .base_url = Some(value);
+            }
             ApiProvider::Custom => {
                 config
                     .providers
@@ -4451,6 +4486,17 @@ fn apply_env_overrides(config: &mut Config) {
             .vllm
             .base_url = Some(value);
     }
+    if matches!(config.api_provider(), ApiProvider::Antigravity)
+        && let Ok(value) = std::env::var("ANTIGRAVITY_BASE_URL")
+            .or_else(|_| std::env::var("GOOGLE_ANTIGRAVITY_BASE_URL"))
+        && !value.trim().is_empty()
+    {
+        config
+            .providers
+            .get_or_insert_with(ProvidersConfig::default)
+            .antigravity
+            .base_url = Some(value);
+    }
     if let Ok(value) = std::env::var("DEEPSEEK_HTTP_HEADERS")
         && let Ok(headers) = parse_http_headers(&value)
         && !headers.is_empty()
@@ -4499,6 +4545,7 @@ fn apply_env_overrides(config: &mut Config) {
             ApiProvider::LongCat => &mut providers.longcat,
             ApiProvider::Meta => &mut providers.meta,
             ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Antigravity => &mut providers.antigravity,
             ApiProvider::Custom => &mut providers.custom,
         };
         let mut provider_headers = entry.http_headers.clone().unwrap_or_default();
@@ -4648,6 +4695,17 @@ fn apply_env_overrides(config: &mut Config) {
             .huggingface
             .model = Some(value);
     }
+    if matches!(config.api_provider(), ApiProvider::Antigravity)
+        && let Ok(value) = std::env::var("ANTIGRAVITY_MODEL")
+            .or_else(|_| std::env::var("GOOGLE_ANTIGRAVITY_MODEL"))
+        && !value.trim().is_empty()
+    {
+        config
+            .providers
+            .get_or_insert_with(ProvidersConfig::default)
+            .antigravity
+            .model = Some(value);
+    }
     if let Some(value) = helpofai_env_var("HELPOFAI_MODEL", "DEEPSEEK_MODEL")
         .ok()
         .or_else(|| {
@@ -4708,6 +4766,7 @@ fn apply_env_overrides(config: &mut Config) {
                 ApiProvider::LongCat => &mut providers.longcat,
                 ApiProvider::Meta => &mut providers.meta,
                 ApiProvider::Xai => &mut providers.xai,
+                ApiProvider::Antigravity => &mut providers.antigravity,
                 ApiProvider::Custom => &mut providers.custom,
             };
             entry.model = Some(value);
@@ -5438,6 +5497,7 @@ fn merge_providers(
             longcat: merge_provider_config(base.longcat, override_cfg.longcat),
             meta: merge_provider_config(base.meta, override_cfg.meta),
             xai: merge_provider_config(base.xai, override_cfg.xai),
+            antigravity: merge_provider_config(base.antigravity, override_cfg.antigravity),
             custom: merge_provider_config(base.custom, override_cfg.custom),
         }),
     }
@@ -5865,7 +5925,8 @@ pub fn active_provider_has_config_api_key(config: &Config) -> bool {
         return crate::oauth::auth_file_path().exists();
     }
     if matches!(provider, ApiProvider::Huggingface)
-        && std::env::var("HF_TOKEN").is_ok_and(|k| !k.trim().is_empty())
+        && (std::env::var("HUGGINGFACE_API_KEY").is_ok_and(|k| !k.trim().is_empty())
+            || std::env::var("HF_TOKEN").is_ok_and(|k| !k.trim().is_empty()))
     {
         return true;
     }

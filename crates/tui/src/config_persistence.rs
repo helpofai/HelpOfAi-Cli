@@ -259,6 +259,7 @@ fn provider_base_url_table_key(provider: ApiProvider) -> anyhow::Result<&'static
         ApiProvider::LongCat => Ok("longcat"),
         ApiProvider::Meta => Ok("meta"),
         ApiProvider::Xai => Ok("xai"),
+        ApiProvider::Antigravity => Ok("antigravity"),
         ApiProvider::Custom => Ok("custom"),
     }
 }

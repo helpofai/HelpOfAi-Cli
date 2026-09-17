@@ -28,6 +28,18 @@ impl CodebaseMemoryManager {
         self.binary.exists()
     }
 
+    /// Automatically download and install the engine if not present.
+    pub fn ensure_installed(&self) -> Result<()> {
+        if !self.is_installed() {
+            println!(
+                "Codebase Memory engine not found. Automatically downloading and installing..."
+            );
+            let installer = crate::installer::Installer::new()?;
+            installer.install(false)?;
+        }
+        Ok(())
+    }
+
     /// Run the `daemon stop` command provided natively by the upstream binary.
     /// This sends IPC to the coordination daemon to shut down gracefully.
     pub fn stop_daemon(&self) -> Result<()> {
@@ -60,7 +72,7 @@ impl CodebaseMemoryManager {
     /// Run the `daemon status` command provided natively by the upstream binary.
     pub fn get_status(&self) -> Result<()> {
         if !self.is_installed() {
-            bail!("Codebase Memory engine is not installed.");
+            self.ensure_installed()?;
         }
         let status = Command::new(&self.binary)
             .arg("daemon")
@@ -76,7 +88,10 @@ impl CodebaseMemoryManager {
             .status()?;
 
         if !status.success() {
-            bail!("Daemon is not running or encountered an error.");
+            warn!(
+                "daemon status returned non-zero exit status: {:?}",
+                status.code()
+            );
         }
         Ok(())
     }
@@ -84,9 +99,7 @@ impl CodebaseMemoryManager {
     /// Pass a raw codebase command (index, search, etc.) through to the binary.
     pub fn run_passthrough(&self, args: &[String]) -> Result<()> {
         if !self.is_installed() {
-            bail!(
-                "Codebase Memory engine is not installed. Run `helpofai codebase install` first."
-            );
+            self.ensure_installed()?;
         }
         let status = Command::new(&self.binary)
             .args(args)

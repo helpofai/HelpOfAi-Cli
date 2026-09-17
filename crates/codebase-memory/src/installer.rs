@@ -22,6 +22,7 @@ const BASE_URL: &str = "https://github.com/DeusData/codebase-memory-mcp/releases
 
 pub struct Installer {
     client: Client,
+    silent: bool,
 }
 
 impl Installer {
@@ -29,7 +30,26 @@ impl Installer {
         let client = Client::builder()
             .timeout(Duration::from_secs(300))
             .build()?;
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            silent: false,
+        })
+    }
+
+    pub fn new_silent() -> Result<Self> {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(300))
+            .build()?;
+        Ok(Self {
+            client,
+            silent: true,
+        })
+    }
+
+    fn log(&self, msg: &str) {
+        if !self.silent {
+            println!("{msg}");
+        }
     }
 
     // ── public API ────────────────────────────────────────────────────────────
@@ -39,8 +59,8 @@ impl Installer {
         let binary = engine_binary_path()?;
         if binary.exists() && !force {
             let ver = probe_version(&binary)?;
-            println!("Codebase Memory engine already installed ({ver})");
-            println!("Run `helpofai codebase update` to upgrade.");
+            self.log(&format!("Codebase Memory engine already installed ({ver})"));
+            self.log("Run `helpofai codebase update` to upgrade.");
             return Ok(());
         }
         self.download_and_install()
@@ -51,11 +71,11 @@ impl Installer {
         let binary = engine_binary_path()?;
         if binary.exists() {
             let existing = probe_version(&binary).unwrap_or_default();
-            println!("Current version: {existing}");
+            self.log(&format!("Current version: {existing}"));
         } else {
-            println!("Engine not installed — performing fresh install.");
+            self.log("Engine not installed — performing fresh install.");
         }
-        println!("Checking for latest release…");
+        self.log("Checking for latest release…");
         self.download_and_install()
     }
 
@@ -76,13 +96,13 @@ impl Installer {
 
         // 1 ── fetch checksums
         let checksums_url = format!("{BASE_URL}/checksums.txt");
-        println!("Fetching checksums…");
+        self.log("Fetching checksums…");
         let checksums_txt = self.client.get(&checksums_url).send()?.text()?;
         let expected_hash = self.parse_checksum(&checksums_txt, &archive_name)?;
 
         // 2 ── streaming download with byte counter
         let archive_url = format!("{BASE_URL}/{archive_name}");
-        println!("Downloading {archive_url}…");
+        self.log(&format!("Downloading {archive_url}…"));
         let mut response = self.client.get(&archive_url).send()?;
         if !response.status().is_success() {
             bail!("HTTP {} downloading archive", response.status());
@@ -101,20 +121,24 @@ impl Installer {
                 }
                 dest.write_all(&buf[..n])?;
                 downloaded += n as u64;
-                if let Some(total) = total {
-                    let pct = downloaded * 100 / total;
-                    eprint!("\r  {downloaded} / {total} bytes  ({pct}%)");
-                } else {
-                    eprint!("\r  {downloaded} bytes");
+                if !self.silent {
+                    if let Some(total) = total {
+                        let pct = downloaded * 100 / total;
+                        eprint!("\r  {downloaded} / {total} bytes  ({pct}%)");
+                    } else {
+                        eprint!("\r  {downloaded} bytes");
+                    }
                 }
             }
-            eprintln!();
+            if !self.silent {
+                eprintln!();
+            }
         }
 
         // 3 ── verify
-        println!("Verifying SHA-256 checksum…");
+        self.log("Verifying SHA-256 checksum…");
         self.verify_file_hash(&archive_path, &expected_hash)?;
-        println!("  Checksum OK.");
+        self.log("  Checksum OK.");
 
         // 4 ── extract safely (atomic replacement with rollback)
         let engine_dest_dir = engine_dir()?;
@@ -129,7 +153,7 @@ impl Installer {
         }
 
         std::fs::create_dir_all(&engine_dest_dir)?;
-        println!("Extracting to {}…", engine_dest_dir.display());
+        self.log(&format!("Extracting to {}…", engine_dest_dir.display()));
         let extract_result = if platform == "windows" {
             self.extract_zip(&archive_path, &engine_dest_dir)
         } else {
@@ -137,10 +161,10 @@ impl Installer {
         };
 
         if let Err(e) = extract_result {
-            println!("Extraction failed: {e}");
+            self.log(&format!("Extraction failed: {e}"));
             std::fs::remove_dir_all(&engine_dest_dir).ok();
             if rollback_dir.exists() {
-                println!("Rolling back to previous version…");
+                self.log("Rolling back to previous version…");
                 std::fs::rename(&rollback_dir, &engine_dest_dir).ok();
             }
             bail!("Extraction failed and was rolled back.");
@@ -185,12 +209,14 @@ impl Installer {
         // 9 ── confirm
         let binary = engine_binary_path()?;
         let ver = probe_version(&binary).unwrap_or_else(|_| "unknown".into());
-        println!("✓ Codebase Memory engine installed: {ver}");
+        self.log(&format!("✓ Codebase Memory engine installed: {ver}"));
 
         // 7 ── register in mcp.json so HelpOfAi agent sessions can call it
         if let Err(e) = register_in_mcp_json(&binary) {
             // Non-fatal — user can register manually
-            eprintln!("Note: MCP auto-registration skipped: {e}");
+            if !self.silent {
+                eprintln!("Note: MCP auto-registration skipped: {e}");
+            }
         }
 
         Ok(())

@@ -960,6 +960,21 @@ fn run() -> Result<()> {
         Some(Commands::Graph(args)) => run_graph_command(args.command, args.port, args.no_open),
         Some(Commands::Codebase(args)) => run_codebase_command(args.command),
         None => {
+            // When CLI launches in interactive mode, ensure Codebase Memory UI is running
+            // and automatically open device browser unless explicitly disabled.
+            if std::env::var("HELPOFAI_NO_GRAPH_AUTO_OPEN")
+                .map(|v| v != "1" && v != "true")
+                .unwrap_or(true)
+            {
+                let port = std::env::var("HELPOFAI_GRAPH_PORT")
+                    .ok()
+                    .and_then(|p| p.parse().ok())
+                    .unwrap_or(9749);
+                std::thread::spawn(move || {
+                    let _ = helpofai_codebase_memory::graph::GraphSupervisor::ensure_running_and_open_browser(port);
+                });
+            }
+
             let resolved_runtime = resolve_runtime_for_dispatch(&mut store, &runtime_overrides);
             let forwarded = root_tui_passthrough(&cli)?;
             delegate_to_tui(&cli, &resolved_runtime, forwarded)

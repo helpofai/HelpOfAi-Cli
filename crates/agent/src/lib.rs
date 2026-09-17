@@ -848,6 +848,69 @@ impl Default for ModelRegistry {
                 supports_tools: true,
                 supports_reasoning: true,
             },
+            // Google Antigravity Gateway
+            ModelInfo {
+                id: "gemini-2.5-pro".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "antigravity-pro".to_string(),
+                    "gemini-pro".to_string(),
+                    "google-gemini-2.5-pro".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-2.5-flash".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "antigravity-flash".to_string(),
+                    "gemini-flash".to_string(),
+                    "google-gemini-2.5-flash".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-3.8-flash".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3-8-flash".to_string(),
+                    "antigravity-3.8-flash".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-3.7-flash".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3-7-flash".to_string(),
+                    "antigravity-3.7-flash".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-3.6-flash".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3-6-flash".to_string(),
+                    "antigravity-3.6-flash".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-3.1-pro".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3-1-pro".to_string(),
+                    "antigravity-3.1-pro".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
         ];
         Self::new(models)
     }

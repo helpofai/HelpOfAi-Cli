@@ -261,6 +261,12 @@ pub fn context_window_for_model(model: &str) -> Option<u32> {
     if lower.contains("claude") {
         return Some(200_000);
     }
+    if lower.contains("gemini") {
+        return Some(1_000_000);
+    }
+    if lower.contains("gpt-oss") {
+        return Some(128_000);
+    }
     None
 }
 
@@ -334,12 +340,15 @@ pub fn max_output_tokens_for_model(model: &str) -> Option<u32> {
     if lower.contains("deepseek") && lower.contains("v4") {
         return Some(384_000);
     }
+    if lower.contains("gemini") {
+        return Some(64_000);
+    }
     if is_openai_gpt_55_api_model(&lower) || is_openai_codex_model(&lower) {
         return Some(128_000);
     }
     match lower.as_str() {
         "gpt-5-codex" | "gpt-5.3-codex" => Some(128_000),
-        "claude-opus-4-8" => Some(128_000),
+        "claude-opus-4-8" | "claude-opus-4-6" => Some(128_000),
         "claude-sonnet-4-6" | "claude-haiku-4-5" => Some(64_000),
         "arcee-ai/trinity-large-thinking"
         | "trinity-large-thinking"
@@ -377,6 +386,9 @@ pub fn model_supports_reasoning(model: &str) -> bool {
     }
     let lower = model.to_lowercase();
     if lower.contains("deepseek") && lower.contains("v4") {
+        return true;
+    }
+    if lower.contains("gemini") {
         return true;
     }
     // #3016 plus the 2026 Kimi Code K2.7 update: Moonshot-native Kimi IDs,

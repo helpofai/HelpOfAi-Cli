@@ -109,10 +109,14 @@ def provider_kind_ids(config_rs: str) -> dict[str, str]:
         provider_rs,
     )
     ids: dict[str, str] = {variant: provider_id for variant, provider_id in pairs}
-    # OpenaiCodex and Anthropic use manual impls rather than the provider!() macro
+    # Providers with manual Provider impls rather than the provider!() macro
     for variant_name, id_literal in [
         ("OpenaiCodex", "openai-codex"),
         ("Anthropic", "anthropic"),
+        ("DeepseekAnthropic", "deepseek-anthropic"),
+        ("Openmodel", "openmodel"),
+        ("MinimaxAnthropic", "minimax-anthropic"),
+        ("Custom", "custom"),
     ]:
         match = re.search(
             rf'impl\s+Provider\s+for\s+{variant_name}.*?fn\s+id.*?\"({id_literal})\"',

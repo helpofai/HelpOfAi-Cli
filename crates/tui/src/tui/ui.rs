@@ -8735,6 +8735,7 @@ fn render(f: &mut Frame, app: &mut App) {
             crate::config::ApiProvider::LongCat => Some("LongCat"),
             crate::config::ApiProvider::Meta => Some("Meta"),
             crate::config::ApiProvider::Xai => Some("xAI"),
+            crate::config::ApiProvider::Antigravity => Some("Antigravity"),
             crate::config::ApiProvider::Custom => Some("Custom"),
         };
         let status_indicator_started_at = if app.low_motion {
@@ -9896,6 +9897,7 @@ async fn apply_provider_picker_api_key(
             ApiProvider::LongCat => &mut providers.longcat,
             ApiProvider::Meta => &mut providers.meta,
             ApiProvider::Xai => &mut providers.xai,
+            ApiProvider::Antigravity => &mut providers.antigravity,
             ApiProvider::Custom => &mut providers.custom,
         };
         entry.api_key = Some(api_key);
@@ -9970,6 +9972,7 @@ fn set_provider_auth_mode_in_memory(config: &mut Config, provider: ApiProvider, 
         ApiProvider::LongCat => &mut providers.longcat,
         ApiProvider::Meta => &mut providers.meta,
         ApiProvider::Xai => &mut providers.xai,
+        ApiProvider::Antigravity => &mut providers.antigravity,
         ApiProvider::Custom => &mut providers.custom,
     };
     entry.auth_mode = Some(auth_mode);

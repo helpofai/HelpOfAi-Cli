@@ -1305,6 +1305,7 @@ pub(super) fn apply_reasoning_effort(
                 });
             }
             ApiProvider::Openai
+            | ApiProvider::Antigravity
             | ApiProvider::WanjieArk
             | ApiProvider::Arcee
             | ApiProvider::Huggingface
@@ -1395,6 +1396,7 @@ pub(super) fn apply_reasoning_effort(
                 body["reasoning_effort"] = json!(value);
             }
             ApiProvider::Openai
+            | ApiProvider::Antigravity
             | ApiProvider::WanjieArk
             | ApiProvider::OpenaiCodex
             | ApiProvider::Qianfan
@@ -1471,6 +1473,7 @@ pub(super) fn apply_reasoning_effort(
                 body["reasoning_effort"] = json!("high");
             }
             ApiProvider::Openai
+            | ApiProvider::Antigravity
             | ApiProvider::WanjieArk
             | ApiProvider::OpenaiCodex
             | ApiProvider::Qianfan

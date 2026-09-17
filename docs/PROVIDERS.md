@@ -149,6 +149,17 @@ endpoint.
 | `together` | `[providers.together]` | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL`; default `https://api.together.xyz/v1` | `deepseek-ai/DeepSeek-V4-Pro`, `deepseek-ai/DeepSeek-V4-Flash` | Together AI OpenAI-compatible route. `TOGETHER_MODEL` is accepted. Model aliases `deepseek-v4-pro` and `deepseek-v4-flash` normalize to Together's org-prefixed IDs. |
 | `openai-codex` | `[providers.openai_codex]` | OAuth via `codex login` (`~/.codex/auth.json`); env override `OPENAI_CODEX_ACCESS_TOKEN`, `CODEX_ACCESS_TOKEN` | `OPENAI_CODEX_BASE_URL`/`CODEX_BASE_URL`; default `https://chatgpt.com/backend-api` | `gpt-5.5` | **Experimental.** Reuses your existing ChatGPT/Codex CLI OAuth login and talks to the OpenAI Responses API at `/codex/responses`. The access token is read and refreshed from `~/.codex/auth.json`; no API key is stored. `OPENAI_CODEX_MODEL`/`CODEX_MODEL` and `OPENAI_CODEX_ACCOUNT_ID`/`CODEX_ACCOUNT_ID` are accepted. HelpOfAi budgets this route with the 400K Codex-family effective context window even when the public API model table lists a larger native `gpt-5.5` window. |
 | `anthropic` | `[providers.anthropic]` | `ANTHROPIC_API_KEY` | `ANTHROPIC_BASE_URL`; default `https://api.anthropic.com` | `claude-opus-4-8`, `claude-sonnet-4-6` (default), `claude-haiku-4-5` | Native Anthropic Messages API route (`/v1/messages`, `x-api-key` + `anthropic-version: 2023-06-01`) — not OpenAI-compatible. Prompt caching via `cache_control` breakpoints, adaptive thinking + `output_config.effort`, signed thinking blocks replayed verbatim, cache telemetry normalized per #2961. `ANTHROPIC_MODEL` is accepted. |
+| `omniroute` | `[providers.omniroute]` | `OMNIROUTE_API_KEY` | `OMNIROUTE_BASE_URL`; default `http://localhost:20128/v1` | `auto` | OmniRoute local proxy / intelligent router. |
+| `deepseek-anthropic` | `[providers.deepseek_anthropic]` | `DEEPSEEK_API_KEY` | `DEEPSEEK_ANTHROPIC_BASE_URL`; default `https://api.deepseek.com/anthropic` | `deepseek-v4-pro` | Opt-in DeepSeek route speaking Anthropic Messages protocol. |
+| `qianfan` | `[providers.qianfan]` | `QIANFAN_API_KEY`, `BAIDU_QIANFAN_API_KEY` | `QIANFAN_BASE_URL`; default `https://api.baiduqianfan.ai/v1` | `ernie-4.0-turbo-8k` | Baidu Qianfan OpenAI-compatible route. |
+| `openmodel` | `[providers.openmodel]` | `OPENMODEL_API_KEY` | `OPENMODEL_BASE_URL`; default `https://api.openmodel.ai` | `default` | OpenModel Anthropic Messages compatible route. |
+| `minimax-anthropic` | `[providers.minimax_anthropic]` | `MINIMAX_API_KEY` | `MINIMAX_ANTHROPIC_BASE_URL`; default `https://api.minimax.io/anthropic` | `MiniMax-M3` | MiniMax route speaking Anthropic Messages protocol. |
+| `sakana` | `[providers.sakana]` | `SAKANA_API_KEY` | `SAKANA_BASE_URL`; default `https://api.sakana.ai/v1` | `fugu-3.5-pro` | Sakana AI route. |
+| `longcat` | `[providers.longcat]` | `LONGCAT_API_KEY` | `LONGCAT_BASE_URL`; default `https://api.longcat.ai/v1` | `longcat-v1.5` | LongCat AI route. |
+| `meta` | `[providers.meta]` | `META_API_KEY`, `LLAMA_API_KEY` | `META_BASE_URL`, `LLAMA_BASE_URL`; default `https://api.meta.ai/v1` | `llama-3.5-70b` | Meta Llama route. |
+| `xai` | `[providers.xai]` | `XAI_API_KEY` | `XAI_BASE_URL`; default `https://api.x.ai/v1` | `grok-2.5` | xAI Grok route. |
+| `antigravity` | `[providers.antigravity]` | `ANTIGRAVITY_API_KEY`, `GOOGLE_ANTIGRAVITY_API_KEY`, `GEMINI_API_KEY` | `ANTIGRAVITY_BASE_URL`, `GOOGLE_ANTIGRAVITY_BASE_URL`; default `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.5-pro`, `gemini-2.5-flash` | Google Antigravity Gateway route. Supports Gemini models through the Google AI OpenAI-compatible endpoint. |
+| `custom` | `[providers.custom]` | `CUSTOM_API_KEY` | `CUSTOM_BASE_URL`; default `http://localhost/v1` | `custom-model` | Custom user-defined provider endpoint. |
 
 ### Hugging Face Provider vs MCP vs Hub
 
@@ -241,6 +252,8 @@ endpoint when the endpoint supports model listing.
 | `together` | `deepseek-ai/DeepSeek-V4-Pro`, `deepseek-ai/DeepSeek-V4-Flash` | yes | yes |
 | `openai-codex` | `gpt-5.5` | yes | yes |
 | `anthropic` | `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5` | yes | yes for `claude-opus-4-8` and `claude-sonnet-4-6`; no for `claude-haiku-4-5` |
+| `omniroute` | `auto` | yes | yes |
+| `antigravity` | `gemini-2.5-pro`, `gemini-2.5-flash` | yes | yes |
 
 AtlasCloud keeps the same default model as the config layer and adds
 provider-scoped aliases for the Pro and Flash rows. Other AtlasCloud model IDs

@@ -68,6 +68,8 @@ pub enum ModelProvider {
     Arcee,
     /// Xiaomi MiMo models.
     XiaomiMimo,
+    /// Google Antigravity models.
+    Antigravity,
     /// Anything not otherwise classified (still gets real metadata via the
     /// `models.rs` heuristics where possible).
     Other,
@@ -87,6 +89,7 @@ pub fn serving_provider(provider: ModelProvider) -> crate::config::ApiProvider {
         ModelProvider::Qwen => crate::config::ApiProvider::Openrouter,
         ModelProvider::Arcee => crate::config::ApiProvider::Arcee,
         ModelProvider::XiaomiMimo => crate::config::ApiProvider::XiaomiMimo,
+        ModelProvider::Antigravity => crate::config::ApiProvider::Antigravity,
         ModelProvider::Other => crate::config::ApiProvider::Openrouter,
     }
 }
@@ -181,6 +184,14 @@ const SEED_MODEL_IDS: &[(&str, ModelProvider)] = &[
     // --- Xiaomi MiMo (config DEFAULT_XIAOMI_MIMO_MODEL) ---
     ("mimo-v2.5-pro", ModelProvider::XiaomiMimo),
     ("mimo-v2.5", ModelProvider::XiaomiMimo),
+    // --- Google Antigravity (config DEFAULT_ANTIGRAVITY_MODEL) ---
+    ("gemini-2.5-pro", ModelProvider::Antigravity),
+    ("gemini-2.5-flash", ModelProvider::Antigravity),
+    ("gemini-3.8-flash", ModelProvider::Antigravity),
+    ("gemini-3.7-flash", ModelProvider::Antigravity),
+    ("gemini-3.6-flash", ModelProvider::Antigravity),
+    ("gemini-3.1-pro", ModelProvider::Antigravity),
+    ("gemini-2.0-flash", ModelProvider::Antigravity),
 ];
 
 fn registry() -> &'static BTreeMap<&'static str, ModelMetadata> {

@@ -88,6 +88,7 @@ pub fn run_update(beta: bool, check_only: bool, proxy_arg: Option<String>) -> Re
         }
     } else if !update_is_needed(channel, current_version, latest_tag)? {
         println!("Already up to date; no download needed.");
+        ensure_codebase_memory_updated();
         return Ok(());
     }
 
@@ -166,6 +167,9 @@ pub fn run_update(beta: bool, check_only: bool, proxy_arg: Option<String>) -> Re
         replace_binary(path, bytes)?;
     }
 
+    // Step 5: Update or install Codebase Memory engine
+    ensure_codebase_memory_updated();
+
     println!(
         "\n✅ Successfully updated to {latest_tag}!\n\
          Updated binaries:\n{}\n\
@@ -179,6 +183,20 @@ pub fn run_update(beta: bool, check_only: bool, proxy_arg: Option<String>) -> Re
     );
 
     Ok(())
+}
+
+fn ensure_codebase_memory_updated() {
+    println!("\nChecking Codebase Memory engine...");
+    match helpofai_codebase_memory::installer::Installer::new() {
+        Ok(installer) => {
+            if let Err(err) = installer.update() {
+                eprintln!("Note: could not update Codebase Memory engine: {err}");
+            }
+        }
+        Err(err) => {
+            eprintln!("Note: could not initialize Codebase Memory installer: {err}");
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -36,13 +36,88 @@ impl GraphSupervisor {
     pub fn new() -> Result<Self> {
         let binary = engine_binary_path()?;
         if !binary.exists() {
-            bail!(
-                "Codebase Memory engine is not installed at {}.\n\
-                 Run `helpofai codebase install` first.",
-                binary.display()
+            println!(
+                "Codebase Memory engine not found. Automatically downloading and installing..."
             );
+            let installer = crate::installer::Installer::new()?;
+            installer.install(false)?;
         }
         Ok(Self { binary })
+    }
+
+    pub fn new_silent() -> Result<Self> {
+        let binary = engine_binary_path()?;
+        if !binary.exists() {
+            let installer = crate::installer::Installer::new_silent()?;
+            installer.install(false)?;
+        }
+        Ok(Self { binary })
+    }
+
+    /// Ensure the engine is running in the background and open the browser to the graph UI.
+    /// If the server is already running, simply opens the browser to the existing port.
+    pub fn ensure_running_and_open_browser(port: u16) -> Result<()> {
+        if is_running() {
+            let active_port = read_port().unwrap_or(port);
+            open_browser(active_port)?;
+            return Ok(());
+        }
+
+        let supervisor = Self::new_silent()?;
+        let engine_root = engine_dir()?;
+        let cache_dir = engine_root.join("cache");
+        let runtime_dir = engine_root.join("runtime");
+        let logs_dir = engine_root.join("logs");
+        std::fs::create_dir_all(&cache_dir).ok();
+        std::fs::create_dir_all(&runtime_dir).ok();
+        std::fs::create_dir_all(&logs_dir).ok();
+
+        let log_file_path = logs_dir.join("graph.log");
+        let log_file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(true)
+            .open(&log_file_path)
+            .ok();
+
+        let mut cmd = Command::new(&supervisor.binary);
+        cmd.arg("--ui=true");
+        cmd.arg("--port").arg(port.to_string());
+        cmd.env("CBM_CACHE_DIR", &cache_dir);
+        cmd.env("CBM_RUNTIME_DIR", &runtime_dir);
+        cmd.stdin(Stdio::null());
+        if let Some(f) = log_file {
+            cmd.stdout(
+                f.try_clone()
+                    .map(Stdio::from)
+                    .unwrap_or_else(|_| Stdio::null()),
+            );
+            cmd.stderr(Stdio::from(f));
+        } else {
+            cmd.stdout(Stdio::null());
+            cmd.stderr(Stdio::null());
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let child = cmd
+            .spawn()
+            .context("Failed to spawn Codebase Memory engine in background")?;
+
+        write_pid(child.id(), port)?;
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        rt.block_on(async { supervisor.wait_until_ready(port).await })?;
+
+        open_browser(port)?;
+        Ok(())
     }
 
     /// Spawn the graph UI process, write a PID file, and optionally poll for
