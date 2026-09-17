@@ -248,18 +248,16 @@ pub fn print_status() {
                  URL: http://localhost:{port}"
             );
         }
+    } else if let Some(p) = pid {
+        println!("Graph server: stopped (stale PID {p})");
+        pid_file_path()
+            .ok()
+            .and_then(|p| std::fs::remove_file(p).ok());
+        port_file_path()
+            .ok()
+            .and_then(|p| std::fs::remove_file(p).ok());
     } else {
-        if let Some(p) = pid {
-            println!("Graph server: stopped (stale PID {p})");
-            pid_file_path()
-                .ok()
-                .and_then(|p| std::fs::remove_file(p).ok());
-            port_file_path()
-                .ok()
-                .and_then(|p| std::fs::remove_file(p).ok());
-        } else {
-            println!("Graph server: not running");
-        }
+        println!("Graph server: not running");
     }
 }
 
