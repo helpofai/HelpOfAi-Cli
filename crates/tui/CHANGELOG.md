@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.3] - 2026-09-17
+
+### Fixed
+- **Permanent Background Daemon Lifecycle**: `/graph start` and `/graph open` now delegate to the native background daemon, keeping the knowledge graph visualization server running permanently without blocking or suffering from stale PID crashes.
+
 ## [0.9.2] - 2026-09-17
 
 ### Added

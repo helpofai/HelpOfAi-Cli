@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.3] - 2026-09-17
+
+### Fixed
+- **Codebase Memory Native Daemon Lifecycle**: Switched `GraphSupervisor` and CLI graph commands to use the native `codebase-memory-mcp daemon start --port=...` lifecycle. Spawns as a permanent detached background daemon (`.spawn_permanent = true`) that survives parent process exit and terminal closing, eliminating premature shutdown and stale PID errors.
+- **Non-Blocking CLI Workflow**: Removed blocking child process wait in `helpofai graph start`, `helpofai graph open`, and `helpofai graph restart`, enabling the command to verify HTTP readiness, launch the browser, and cleanly return to the prompt while the server stays active.
+- **Clean Daemon Shutdown & Status Detection**: Integrated `codebase-memory-mcp daemon stop` and `codebase-memory-mcp daemon status` for graceful SQLite WAL flushing and reliable real-time status reporting.
+
 ## [0.9.2] - 2026-09-17
 
 ### Added
@@ -2443,7 +2450,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.99...v0.9.1
 [0.8.99]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.98...v0.8.99

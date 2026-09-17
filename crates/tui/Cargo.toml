@@ -20,14 +20,14 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.100"
-helpofai-config = { path = "../config", version = "0.9.2" }
-helpofai-execpolicy = { path = "../execpolicy", version = "0.9.2" }
-helpofai-protocol = { path = "../protocol", version = "0.9.2" }
-helpofai-aios = { path = "../aios", version = "0.9.2" }
-helpofai-release = { path = "../release", version = "0.9.2" }
-helpofai-secrets = { path = "../secrets", version = "0.9.2" }
-helpofai-tools = { path = "../tools", version = "0.9.2" }
-helpofai-codebase-memory = { path = "../codebase-memory", version = "0.9.2" }
+helpofai-config = { path = "../config", version = "0.9.3" }
+helpofai-execpolicy = { path = "../execpolicy", version = "0.9.3" }
+helpofai-protocol = { path = "../protocol", version = "0.9.3" }
+helpofai-aios = { path = "../aios", version = "0.9.3" }
+helpofai-release = { path = "../release", version = "0.9.3" }
+helpofai-secrets = { path = "../secrets", version = "0.9.3" }
+helpofai-tools = { path = "../tools", version = "0.9.3" }
+helpofai-codebase-memory = { path = "../codebase-memory", version = "0.9.3" }
 schemaui = { version = "0.12.0", default-features = false, optional = true }
 async-stream = "0.3.6"
 async-trait = "0.1"
