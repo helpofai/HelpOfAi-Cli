@@ -3189,6 +3189,28 @@ impl Config {
             return Ok(crate::oauth::get_credentials()?.access_token);
         }
 
+        // Google Antigravity supports multi-account Google OAuth login with automatic quota failover.
+        // If OAuth accounts exist, or if auth_mode is set to oauth, resolve the valid access token.
+        if provider == ApiProvider::Antigravity {
+            let auth_mode = self
+                .provider_config_for(provider)
+                .and_then(|p| p.auth_mode.as_deref());
+            let prefers_oauth = auth_mode == Some("oauth") || auth_mode == Some("google");
+            let has_config_key = self
+                .provider_config_string_with_runtime_fallback(provider, |entry| {
+                    entry.api_key.clone()
+                })
+                .is_some_and(|k| !k.trim().is_empty());
+
+            if prefers_oauth || !has_config_key {
+                if let Ok(Some(token)) =
+                    crate::oauth_antigravity::get_valid_antigravity_access_token()
+                {
+                    return Ok(token);
+                }
+            }
+        }
+
         // 1. Config file (provider-scoped slot). This intentionally wins
         // over ambient env so `helpofai auth set` fixes stale shell exports.
         if let Some(configured) = self
@@ -3263,6 +3285,19 @@ impl Config {
                  \n\
                  Env overrides:\n\
                    OPENAI_CODEX_ACCESS_TOKEN  or  CODEX_ACCESS_TOKEN"
+            ),
+            ApiProvider::Antigravity => anyhow::bail!(
+                "Google Antigravity credentials not found.\n\
+                 \n\
+                 Direct Google Account OAuth login (supports multi-account pool with automatic quota failover):\n\
+                   helpofai auth login --provider antigravity\n\
+                 \n\
+                 Or set a free Google AI Studio API key:\n\
+                   helpofai auth set --provider antigravity\n\
+                   (Free keys available at https://aistudio.google.com/app/apikey)\n\
+                 \n\
+                 Env overrides:\n\
+                   ANTIGRAVITY_API_KEY  or  GEMINI_API_KEY"
             ),
             // Self-hosted deployments commonly run without auth on localhost.
             // Return an empty key and let the client omit the Authorization header.

@@ -1,3 +1,4 @@
+mod antigravity_oauth;
 mod metrics;
 mod update;
 
@@ -59,6 +60,12 @@ enum ProviderArg {
     Deepinfra,
     #[value(alias = "omni-route", alias = "omniroute")]
     Omniroute,
+    #[value(
+        alias = "google-antigravity",
+        alias = "google_antigravity",
+        alias = "gemini"
+    )]
+    Antigravity,
 }
 
 impl From<ProviderArg> for ProviderKind {
@@ -90,6 +97,7 @@ impl From<ProviderArg> for ProviderKind {
             ProviderArg::Minimax => ProviderKind::Minimax,
             ProviderArg::Deepinfra => ProviderKind::Deepinfra,
             ProviderArg::Omniroute => ProviderKind::Omniroute,
+            ProviderArg::Antigravity => ProviderKind::Antigravity,
         }
     }
 }
@@ -613,6 +621,30 @@ enum AuthCommand {
         #[arg(long, value_enum)]
         provider: Option<ProviderArg>,
     },
+    /// Log in via interactive browser OAuth (e.g. Google Antigravity).
+    Login {
+        #[arg(long, value_enum, default_value_t = ProviderArg::Antigravity)]
+        provider: ProviderArg,
+    },
+    /// List configured multi-account OAuth credentials and quota states (e.g. Antigravity).
+    Accounts {
+        #[arg(long, value_enum, default_value_t = ProviderArg::Antigravity)]
+        provider: ProviderArg,
+    },
+    /// Switch active account for multi-account providers.
+    SwitchAccount {
+        #[arg(long, value_enum, default_value_t = ProviderArg::Antigravity)]
+        provider: ProviderArg,
+        /// Account email or 0-based index to activate.
+        account: String,
+    },
+    /// Remove an account from multi-account providers.
+    RemoveAccount {
+        #[arg(long, value_enum, default_value_t = ProviderArg::Antigravity)]
+        provider: ProviderArg,
+        /// Account email or 0-based index to remove.
+        account: String,
+    },
     /// Save an API key to the shared user config file. Reads from
     /// `--api-key`, `--api-key-stdin`, or prompts on stdin when
     /// neither is given. Does not echo the key.
@@ -1073,6 +1105,10 @@ fn run_login_command_with_secrets(
     let provider: ProviderKind = args.provider.unwrap_or(ProviderArg::Deepseek).into();
     store.config.provider = provider;
 
+    if provider == ProviderKind::Antigravity && args.api_key.is_none() {
+        return antigravity_oauth::run_antigravity_oauth_login(store);
+    }
+
     let api_key = match args.api_key {
         Some(v) => v,
         None => read_api_key_from_stdin()?,
@@ -1195,7 +1231,11 @@ fn openai_codex_auth_file_path() -> PathBuf {
 }
 
 fn provider_oauth_file_path(provider: ProviderKind) -> Option<PathBuf> {
-    (provider == ProviderKind::OpenaiCodex).then(openai_codex_auth_file_path)
+    match provider {
+        ProviderKind::OpenaiCodex => Some(openai_codex_auth_file_path()),
+        ProviderKind::Antigravity => Some(helpofai_config::AntigravityAccountStore::file_path()),
+        _ => None,
+    }
 }
 
 fn provider_config_api_key(store: &ConfigStore, provider: ProviderKind) -> Option<&str> {
@@ -1397,7 +1437,24 @@ fn auth_status_lines_for_provider(
     ];
     if let Some(path) = oauth_file {
         let status = if path.exists() { "present" } else { "missing" };
-        lines.push(format!("Codex OAuth file: {} ({status})", path.display()));
+        if provider == ProviderKind::Antigravity {
+            lines.push(format!(
+                "Antigravity accounts file: {} ({status})",
+                path.display()
+            ));
+            if path.exists() {
+                let account_store = helpofai_config::AntigravityAccountStore::load();
+                lines.push(format!(
+                    "accounts in pool: {}",
+                    account_store.accounts.len()
+                ));
+                if let Some(active) = account_store.active_account() {
+                    lines.push(format!("active account: {}", active.email));
+                }
+            }
+        } else {
+            lines.push(format!("Codex OAuth file: {} ({status})", path.display()));
+        }
     }
     lines
 }
@@ -1538,6 +1595,48 @@ fn run_auth_command_with_secrets(
                 );
             }
             Ok(())
+        }
+        AuthCommand::Login { provider } => {
+            let provider: ProviderKind = provider.into();
+            if provider == ProviderKind::Antigravity {
+                antigravity_oauth::run_antigravity_oauth_login(store)
+            } else {
+                bail!(
+                    "Browser OAuth login is currently supported for Google Antigravity. For {}, use `helpofai auth set --provider {}`",
+                    provider.as_str(),
+                    provider.as_str()
+                );
+            }
+        }
+        AuthCommand::Accounts { provider } => {
+            let provider: ProviderKind = provider.into();
+            if provider == ProviderKind::Antigravity {
+                antigravity_oauth::list_antigravity_accounts()
+            } else {
+                bail!(
+                    "Multi-account pool is not supported for {}",
+                    provider.as_str()
+                );
+            }
+        }
+        AuthCommand::SwitchAccount { provider, account } => {
+            let provider: ProviderKind = provider.into();
+            if provider == ProviderKind::Antigravity {
+                antigravity_oauth::switch_antigravity_account(&account)
+            } else {
+                bail!(
+                    "Account switching is not supported for {}",
+                    provider.as_str()
+                );
+            }
+        }
+        AuthCommand::RemoveAccount { provider, account } => {
+            let provider: ProviderKind = provider.into();
+            if provider == ProviderKind::Antigravity {
+                antigravity_oauth::remove_antigravity_account(&account)
+            } else {
+                bail!("Account removal is not supported for {}", provider.as_str());
+            }
         }
         AuthCommand::Migrate { dry_run } => run_auth_migrate(store, secrets, dry_run),
     }

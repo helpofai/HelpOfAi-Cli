@@ -57,6 +57,7 @@ mod model_routing;
 mod models;
 mod network_policy;
 mod oauth;
+pub(crate) mod oauth_antigravity;
 mod palette;
 mod prefix_cache;
 mod pricing;

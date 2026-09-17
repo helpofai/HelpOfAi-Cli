@@ -1,4 +1,10 @@
+pub mod antigravity_account;
 pub mod provider;
+
+pub use antigravity_account::{
+    AntigravityAccount, AntigravityAccountStore, antigravity_oauth_client_id,
+    antigravity_oauth_client_secret, now_epoch_secs,
+};
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;

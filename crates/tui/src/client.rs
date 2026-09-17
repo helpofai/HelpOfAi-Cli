@@ -1049,11 +1049,19 @@ impl DeepSeekClient {
     where
         F: FnMut() -> reqwest::RequestBuilder,
     {
-        let retry_cfg: LlmRetryConfig = self.retry.clone().into();
+        let mut retry_cfg: LlmRetryConfig = self.retry.clone().into();
+        if self.api_provider == ApiProvider::Antigravity {
+            retry_cfg.max_retries = retry_cfg.max_retries.max(3);
+        }
         let request_result = with_retry(
             &retry_cfg,
             || {
-                let request = build();
+                let mut request = build();
+                if self.api_provider == ApiProvider::Antigravity {
+                    if let Ok(Some(token)) = crate::oauth_antigravity::get_valid_antigravity_access_token() {
+                        request = request.header("authorization", format!("Bearer {token}"));
+                    }
+                }
                 async move {
                     while let Some(delay) = crate::retry_status::rate_limit_remaining() {
                         tokio::time::sleep(delay).await;
@@ -1074,6 +1082,22 @@ impl DeepSeekClient {
                         status.as_u16(),
                         &body,
                     );
+
+                    // If Antigravity quota is exhausted, failover to the next account in pool
+                    if self.api_provider == ApiProvider::Antigravity
+                        && (status.as_u16() == 429
+                            || (status.as_u16() == 403
+                                && (body.contains("RESOURCE_EXHAUSTED")
+                                    || body.contains("quota")
+                                    || body.contains("rate limit"))))
+                    {
+                        if let Ok(Some(new_acc)) = crate::oauth_antigravity::mark_active_exhausted_and_failover() {
+                            logging::warn(format!(
+                                "[Antigravity] Model quota exhausted on Google account. Failed over to: {new_acc} (retrying request...)"
+                            ));
+                        }
+                    }
+
                     Err(LlmError::from_http_response_with_retry_after(
                         status.as_u16(),
                         &body,
