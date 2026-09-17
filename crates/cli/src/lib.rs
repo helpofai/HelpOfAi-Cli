@@ -2816,14 +2816,13 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
             if !helpofai_codebase_memory::graph::is_port_responding(port) {
                 println!("Graph server not running on port {port}. Starting it now…");
                 let supervisor = GraphSupervisor::new()?;
-                let mut child = supervisor.start(port)?;
+                let _ = supervisor.start_daemon(port)?;
                 if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
                     println!("Graph server ready → http://localhost:{port}");
                     open_browser(port)?;
                 } else {
                     println!("Graph server started but did not respond on port {port} within 10s.");
                 }
-                child.wait()?;
                 Ok(())
             } else {
                 open_browser(port)
@@ -2833,7 +2832,7 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
         GraphCommand::Start => {
             let supervisor = GraphSupervisor::new()?;
             println!("Starting Codebase Memory UI on port {port}…");
-            let mut child = supervisor.start(port)?;
+            let _ = supervisor.start_daemon(port)?;
             if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
                 println!("Graph server ready → http://localhost:{port}");
                 if !no_open {
@@ -2844,14 +2843,13 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
                     "Graph server started but did not respond on port {port} within 10 seconds."
                 );
             }
-            child.wait()?;
             Ok(())
         }
         GraphCommand::Restart => {
             stop_by_pid()?;
             println!("Restarting…");
             let supervisor = GraphSupervisor::new()?;
-            let mut child = supervisor.start(port)?;
+            let _ = supervisor.start_daemon(port)?;
             if supervisor.wait_until_ready_sync(port, std::time::Duration::from_secs(10)) {
                 println!("Graph server ready → http://localhost:{port}");
                 if !no_open {
@@ -2862,7 +2860,6 @@ fn run_graph_command(command: Option<GraphCommand>, port: u16, no_open: bool) ->
                     "Graph server started but did not respond on port {port} within 10 seconds."
                 );
             }
-            child.wait()?;
             Ok(())
         }
     }

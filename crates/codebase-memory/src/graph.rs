@@ -7,7 +7,7 @@
  */
 
 use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
+use std::process::Command;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
@@ -81,6 +81,19 @@ impl GraphSupervisor {
         }
 
         let supervisor = Self::new_silent()?;
+        let _ = supervisor.start_daemon(port)?;
+
+        if supervisor.wait_until_ready_sync(port, Duration::from_secs(10)) {
+            let _ = open_browser(port);
+        } else {
+            tracing::warn!("Codebase Memory daemon did not respond on port {port} within 10s");
+        }
+
+        Ok(())
+    }
+
+    /// Start the engine as a permanent background daemon with HTTP UI on `port`.
+    pub fn start_daemon(&self, port: u16) -> Result<Option<u32>> {
         let engine_root = engine_dir()?;
         let cache_dir = engine_root.join("cache");
         let runtime_dir = engine_root.join("runtime");
@@ -89,31 +102,10 @@ impl GraphSupervisor {
         std::fs::create_dir_all(&runtime_dir).ok();
         std::fs::create_dir_all(&logs_dir).ok();
 
-        let log_file_path = logs_dir.join("graph.log");
-        let log_file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&log_file_path)
-            .ok();
-
-        let mut cmd = Command::new(&supervisor.binary);
-        cmd.arg("--ui=true");
-        cmd.arg("--port").arg(port.to_string());
+        let mut cmd = Command::new(&self.binary);
+        cmd.arg("daemon").arg("start").arg(format!("--port={port}"));
         cmd.env("CBM_CACHE_DIR", &cache_dir);
         cmd.env("CBM_RUNTIME_DIR", &runtime_dir);
-        // Keep stdin open via a pipe so the MCP engine does not immediately exit on EOF
-        cmd.stdin(Stdio::piped());
-        if let Some(f) = log_file {
-            cmd.stdout(
-                f.try_clone()
-                    .map(Stdio::from)
-                    .unwrap_or_else(|_| Stdio::null()),
-            );
-            cmd.stderr(Stdio::from(f));
-        } else {
-            cmd.stdout(Stdio::null());
-            cmd.stderr(Stdio::null());
-        }
 
         #[cfg(target_os = "windows")]
         {
@@ -122,53 +114,27 @@ impl GraphSupervisor {
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
 
-        let mut child = cmd
-            .spawn()
-            .context("Failed to spawn Codebase Memory engine in background")?;
+        let output = cmd
+            .output()
+            .context("Failed to execute `codebase-memory-mcp daemon start`")?;
 
-        write_pid(child.id(), port)?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
 
-        // Wait until server is ready before opening browser
-        if supervisor.wait_until_ready_sync(port, Duration::from_secs(10)) {
-            let _ = open_browser(port);
-        } else {
-            tracing::warn!(
-                "Codebase Memory engine (PID {}) did not respond on port {port} within 10s",
-                child.id()
-            );
+        let pid = parse_pid_from_output(&stdout).or_else(|| parse_pid_from_output(&stderr));
+
+        if let Some(p) = pid {
+            let _ = write_pid(p, port);
+        } else if let Ok(path) = port_file_path() {
+            let _ = std::fs::write(&path, port.to_string());
         }
 
-        // Wait on the child in this thread to keep its stdin pipe open as long as HelpOfAi runs
-        let _ = child.wait();
-        Ok(())
+        Ok(pid)
     }
 
-    /// Spawn the graph UI process, write a PID file, and return the child handle.
-    pub fn start(&self, port: u16) -> Result<Child> {
-        let engine_root = engine_dir()?;
-        let cache_dir = engine_root.join("cache");
-        let runtime_dir = engine_root.join("runtime");
-        std::fs::create_dir_all(&cache_dir).ok();
-        std::fs::create_dir_all(&runtime_dir).ok();
-
-        let mut cmd = Command::new(&self.binary);
-        cmd.arg("--ui=true");
-        cmd.arg("--port").arg(port.to_string());
-        cmd.env("CBM_CACHE_DIR", &cache_dir);
-        cmd.env("CBM_RUNTIME_DIR", &runtime_dir);
-        // pipe stdin so we can hold the other end open, preventing the child from seeing EOF immediately
-        cmd.stdin(Stdio::piped());
-        cmd.stdout(Stdio::inherit());
-        cmd.stderr(Stdio::inherit());
-
-        let child = cmd
-            .spawn()
-            .context("Failed to spawn Codebase Memory engine")?;
-
-        // Persist PID and port so `stop` / `status` can find our process later.
-        write_pid(child.id(), port)?;
-
-        Ok(child)
+    /// Start the graph UI server in the background and return its PID if detected.
+    pub fn start(&self, port: u16) -> Result<Option<u32>> {
+        self.start_daemon(port)
     }
 
     /// Poll `http://127.0.0.1:<port>/` until it responds or we time out (~10 s).
@@ -232,10 +198,48 @@ pub fn is_running() -> bool {
     is_port_responding(port)
 }
 
+/// Parse PID from engine daemon output (e.g. "pid 12345" or "pid: 12345").
+pub(crate) fn parse_pid_from_output(text: &str) -> Option<u32> {
+    for line in text.lines() {
+        if let Some(idx) = line.find("pid") {
+            let rest = line[idx + 3..].trim_start_matches(|c: char| c == ':' || c.is_whitespace());
+            let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+            if let Ok(pid) = digits.parse::<u32>() {
+                return Some(pid);
+            }
+        }
+    }
+    None
+}
+
 /// Print a human-readable status line to stdout.
 pub fn print_status() {
     let port = read_port().unwrap_or(9749);
-    let pid = read_pid();
+    let mut pid = read_pid();
+
+    // If port is responding but we don't have PID recorded, try to detect via `daemon status`
+    if is_port_responding(port) && pid.is_none() {
+        if let Ok(binary) = engine_binary_path() {
+            if binary.exists() {
+                let mut cmd = Command::new(&binary);
+                cmd.args(["daemon", "status"]);
+                #[cfg(target_os = "windows")]
+                {
+                    use std::os::windows::process::CommandExt;
+                    const CREATE_NO_WINDOW: u32 = 0x08000000;
+                    cmd.creation_flags(CREATE_NO_WINDOW);
+                }
+                if let Ok(out) = cmd.output() {
+                    let s = String::from_utf8_lossy(&out.stdout);
+                    if let Some(p) = parse_pid_from_output(&s) {
+                        pid = Some(p);
+                        let _ = write_pid(p, port);
+                    }
+                }
+            }
+        }
+    }
+
     if is_port_responding(port) {
         if let Some(p) = pid {
             println!(
@@ -261,25 +265,51 @@ pub fn print_status() {
     }
 }
 
-/// Kill the process whose PID we tracked, then remove the pid-file.
+/// Stop the background daemon and remove PID/port files.
 pub fn stop_by_pid() -> Result<()> {
-    match read_pid() {
-        None => {
-            println!("Graph server is not running (no PID file).");
-            Ok(())
-        }
-        Some(pid) => {
-            if pid_is_alive(pid) {
-                kill_pid(pid)?;
-                println!("Graph server (PID {pid}) stopped.");
-            } else {
-                println!("Graph server already stopped (stale PID {pid}).");
+    let mut stopped_any = false;
+
+    // Ask daemon cleanly to stop via the binary
+    if let Ok(binary) = engine_binary_path() {
+        if binary.exists() {
+            let mut cmd = Command::new(&binary);
+            cmd.args(["daemon", "stop"]);
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+                cmd.creation_flags(CREATE_NO_WINDOW);
             }
-            pid_file_path().ok().map(|p| std::fs::remove_file(p).ok());
-            port_file_path().ok().map(|p| std::fs::remove_file(p).ok());
-            Ok(())
+            if let Ok(out) = cmd.output() {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                if stdout.contains("stopping") {
+                    stopped_any = true;
+                }
+            }
         }
     }
+
+    // If tracked PID is still alive, kill it
+    if let Some(pid) = read_pid() {
+        if pid_is_alive(pid) {
+            let _ = kill_pid(pid);
+            stopped_any = true;
+        }
+    }
+
+    pid_file_path()
+        .ok()
+        .and_then(|p| std::fs::remove_file(p).ok());
+    port_file_path()
+        .ok()
+        .and_then(|p| std::fs::remove_file(p).ok());
+
+    if stopped_any {
+        println!("Graph server stopped.");
+    } else {
+        println!("Graph server is not running.");
+    }
+    Ok(())
 }
 
 // ── OS-specific process utilities ─────────────────────────────────────────────
@@ -363,4 +393,26 @@ pub fn open_browser(port: u16) -> Result<()> {
             .wait()?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_pid_from_output() {
+        assert_eq!(
+            parse_pid_from_output("daemon: started (permanent, pid 48880)"),
+            Some(48880)
+        );
+        assert_eq!(
+            parse_pid_from_output("  pid: 12345\n  build: abc"),
+            Some(12345)
+        );
+        assert_eq!(
+            parse_pid_from_output("daemon: already active (permanent, pid 99999)"),
+            Some(99999)
+        );
+        assert_eq!(parse_pid_from_output("daemon: not running"), None);
+    }
 }
