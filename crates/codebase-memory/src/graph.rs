@@ -179,14 +179,14 @@ fn write_pid(pid: u32, port: u16) -> Result<()> {
     Ok(())
 }
 
-fn read_pid() -> Option<u32> {
+pub(crate) fn read_pid() -> Option<u32> {
     pid_file_path()
         .ok()
         .and_then(|p| std::fs::read_to_string(p).ok())
         .and_then(|s| s.trim().parse().ok())
 }
 
-fn read_port() -> Option<u16> {
+pub(crate) fn read_port() -> Option<u16> {
     port_file_path()
         .ok()
         .and_then(|p| std::fs::read_to_string(p).ok())
@@ -245,7 +245,7 @@ pub fn stop_by_pid() -> Result<()> {
 // ── OS-specific process utilities ─────────────────────────────────────────────
 
 #[cfg(target_os = "windows")]
-fn pid_is_alive(pid: u32) -> bool {
+pub(crate) fn pid_is_alive(pid: u32) -> bool {
     // On Windows: check if the process exists via tasklist
     let out = Command::new("tasklist")
         .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
@@ -260,7 +260,7 @@ fn pid_is_alive(pid: u32) -> bool {
 }
 
 #[cfg(not(target_os = "windows"))]
-fn pid_is_alive(pid: u32) -> bool {
+pub(crate) fn pid_is_alive(pid: u32) -> bool {
     // POSIX: kill -0 sends no signal but checks existence / permission
     Command::new("kill")
         .args(["-0", &pid.to_string()])

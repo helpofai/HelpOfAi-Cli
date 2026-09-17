@@ -10,3 +10,6 @@ pub mod graph;
 pub mod installer;
 pub mod manager;
 pub mod platform;
+pub mod status;
+
+pub use status::CodebaseMemoryStatus;

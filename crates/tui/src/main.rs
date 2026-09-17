@@ -2867,6 +2867,35 @@ async fn run_doctor(config: &Config, workspace: &Path, config_path_override: Opt
         );
     }
 
+    // Codebase Memory Engine
+    println!();
+    println!("{}", "Codebase Memory Engine:".bold());
+    let cbm_status = helpofai_codebase_memory::status::probe_status();
+    match cbm_status {
+        helpofai_codebase_memory::CodebaseMemoryStatus::Running { port, pid } => {
+            println!("  status: {} (PID {pid}, port {port})", "● running".green());
+            println!("  web ui: http://localhost:{port}");
+        }
+        helpofai_codebase_memory::CodebaseMemoryStatus::Downloading => {
+            println!(
+                "  status: {} downloading & initializing engine",
+                "⟳".yellow()
+            );
+        }
+        helpofai_codebase_memory::CodebaseMemoryStatus::Stopped => {
+            println!(
+                "  status: {} stopped (start with `helpofai graph start`)",
+                "○".yellow()
+            );
+        }
+        helpofai_codebase_memory::CodebaseMemoryStatus::NotInstalled => {
+            println!(
+                "  status: {} not installed (install with `helpofai codebase install`)",
+                "✕".dimmed()
+            );
+        }
+    }
+
     // Check API keys
     println!();
     println!("{}", "API Keys:".bold());
@@ -3773,6 +3802,25 @@ fn run_doctor_json(
             "message": tls_status.message,
         },
         "search_provider": doctor_search_provider_json(config),
+        "codebase_memory": match helpofai_codebase_memory::status::probe_status() {
+            helpofai_codebase_memory::CodebaseMemoryStatus::Running { port, pid } => {
+                serde_json::json!({
+                    "state": "running",
+                    "port": port,
+                    "pid": pid,
+                    "url": format!("http://localhost:{port}")
+                })
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::Downloading => {
+                serde_json::json!({ "state": "downloading" })
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::Stopped => {
+                serde_json::json!({ "state": "stopped" })
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::NotInstalled => {
+                serde_json::json!({ "state": "not_installed" })
+            }
+        },
         "memory": memory_summary,
         "mcp": mcp_summary,
         "skills": {

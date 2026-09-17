@@ -46,6 +46,8 @@ fn format_status(app: &App) -> String {
         "MCP:",
         &format!("{} configured", app.mcp_configured_count),
     );
+    let cbm_status = helpofai_codebase_memory::status::probe_status();
+    push_row(&mut out, "Codebase memory:", &cbm_status.to_string());
     push_row(&mut out, "Footer items:", &footer_items(app));
     let _ = writeln!(out);
     push_row(

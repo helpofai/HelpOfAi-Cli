@@ -96,6 +96,8 @@ pub struct HeaderData<'a> {
     /// so the widget itself stays a pure pre-built render. `None` hides the
     /// chip entirely (e.g., `status_indicator = "off"`).
     pub status_indicator_frame: Option<&'static str>,
+    /// Live Codebase Memory engine status (running port, downloading, stopped, or not installed).
+    pub codebase_memory_status: Option<helpofai_codebase_memory::CodebaseMemoryStatus>,
 }
 
 impl<'a> HeaderData<'a> {
@@ -121,7 +123,18 @@ impl<'a> HeaderData<'a> {
             reasoning_effort_label: None,
             provider_label: None,
             status_indicator_frame: None,
+            codebase_memory_status: None,
         }
+    }
+
+    /// Attach a live Codebase Memory status for rendering in the header chips.
+    #[must_use]
+    pub fn with_codebase_memory(
+        mut self,
+        status: Option<helpofai_codebase_memory::CodebaseMemoryStatus>,
+    ) -> Self {
+        self.codebase_memory_status = status;
+        self
     }
 
     /// Attach a short reasoning-effort label for the header chip.
@@ -336,6 +349,47 @@ impl<'a> HeaderWidget<'a> {
         vec![Span::styled(body, Style::default().fg(color))]
     }
 
+    fn codebase_memory_chip_spans(&self) -> Vec<Span<'static>> {
+        let Some(status) = self.data.codebase_memory_status else {
+            return Vec::new();
+        };
+        match status {
+            helpofai_codebase_memory::CodebaseMemoryStatus::Running { port, .. } => {
+                vec![
+                    Span::styled("🧠 ", Style::default().fg(palette::DEEPSEEK_SKY)),
+                    Span::styled(
+                        "●",
+                        Style::default()
+                            .fg(palette::STATUS_SUCCESS)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(
+                        format!(" {port}"),
+                        Style::default().fg(palette::TEXT_SECONDARY),
+                    ),
+                ]
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::Downloading => {
+                vec![
+                    Span::styled("🧠 ", Style::default().fg(palette::STATUS_WARNING)),
+                    Span::styled("⟳ dl...", Style::default().fg(palette::STATUS_WARNING)),
+                ]
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::Stopped => {
+                vec![
+                    Span::styled("🧠 ", Style::default().fg(palette::TEXT_HINT)),
+                    Span::styled("○ off", Style::default().fg(palette::TEXT_HINT)),
+                ]
+            }
+            helpofai_codebase_memory::CodebaseMemoryStatus::NotInstalled => {
+                vec![
+                    Span::styled("🧠 ", Style::default().fg(palette::TEXT_HINT)),
+                    Span::styled("✕", Style::default().fg(palette::TEXT_HINT)),
+                ]
+            }
+        }
+    }
+
     fn status_variant(
         &self,
         show_stream_label: bool,
@@ -372,8 +426,17 @@ impl<'a> HeaderWidget<'a> {
             spans.extend(effort_spans);
         }
 
+        let cbm_spans = self.codebase_memory_chip_spans();
+        let has_cbm = !cbm_spans.is_empty();
+        if has_cbm {
+            if has_provider || has_indicator || has_effort {
+                spans.push(Span::raw("  "));
+            }
+            spans.extend(cbm_spans);
+        }
+
         if self.data.is_streaming {
-            if has_effort || has_provider {
+            if has_effort || has_provider || has_cbm {
                 spans.push(Span::raw("  "));
             }
             spans.push(Span::styled(
@@ -901,5 +964,50 @@ mod tests {
         assert!(!rendered.contains("🐳"));
         assert!(!rendered.contains("🐋"));
         assert!(rendered.contains("max"));
+    }
+
+    #[test]
+    fn header_renders_codebase_memory_running_chip() {
+        let rendered = render_header(
+            HeaderData::new(
+                AppMode::Agent,
+                "deepseek-v4-pro",
+                "helpofai-tui",
+                false,
+                palette::DEEPSEEK_INK,
+            )
+            .with_codebase_memory(Some(
+                helpofai_codebase_memory::CodebaseMemoryStatus::Running {
+                    port: 9749,
+                    pid: 12345,
+                },
+            )),
+            90,
+        );
+        assert!(
+            rendered.contains("9749"),
+            "expected port in header chip, got: {rendered}"
+        );
+    }
+
+    #[test]
+    fn header_renders_codebase_memory_downloading_chip() {
+        let rendered = render_header(
+            HeaderData::new(
+                AppMode::Agent,
+                "deepseek-v4-pro",
+                "helpofai-tui",
+                false,
+                palette::DEEPSEEK_INK,
+            )
+            .with_codebase_memory(Some(
+                helpofai_codebase_memory::CodebaseMemoryStatus::Downloading,
+            )),
+            90,
+        );
+        assert!(
+            rendered.contains("dl"),
+            "expected dl indicator in header chip, got: {rendered}"
+        );
     }
 }

@@ -2345,6 +2345,7 @@ dependencies = [
  "flate2",
  "futures-util",
  "helpofai-aios",
+ "helpofai-codebase-memory",
  "helpofai-config",
  "helpofai-execpolicy",
  "helpofai-protocol",

@@ -8683,6 +8683,21 @@ fn render(f: &mut Frame, app: &mut App) {
 
     // Render header
     {
+        fn cached_codebase_memory_status() -> helpofai_codebase_memory::CodebaseMemoryStatus {
+            static CBM_CACHE: std::sync::Mutex<
+                Option<(Instant, helpofai_codebase_memory::CodebaseMemoryStatus)>,
+            > = std::sync::Mutex::new(None);
+            let mut guard = CBM_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some((instant, status)) = *guard {
+                if instant.elapsed() < Duration::from_secs(2) {
+                    return status;
+                }
+            }
+            let status = helpofai_codebase_memory::status::probe_status();
+            *guard = Some((Instant::now(), status));
+            status
+        }
+
         let sanitized_context_window = context_usage
             .as_ref()
             .map(|(_, max, _)| *max)
@@ -8761,7 +8776,8 @@ fn render(f: &mut Frame, app: &mut App) {
         .with_status_indicator(crate::tui::widgets::header_status_indicator_frame(
             status_indicator_started_at,
             &app.status_indicator,
-        ));
+        ))
+        .with_codebase_memory(Some(cached_codebase_memory_status()));
         let header_widget = HeaderWidget::new(header_data);
         let buf = f.buffer_mut();
         header_widget.render(header_area, buf);

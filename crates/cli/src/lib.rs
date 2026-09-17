@@ -2854,6 +2854,8 @@ fn run_codebase_command(command: CodebaseCommand) -> Result<()> {
                 println!("Engine binary:  NOT FOUND");
                 println!("Run `helpofai codebase install` to download it.");
             }
+            let status = helpofai_codebase_memory::status::probe_status();
+            println!("Engine status:  {status}");
             let manager = CodebaseMemoryManager::new()?;
             println!("Daemon status check:");
             let _ = manager.get_status();

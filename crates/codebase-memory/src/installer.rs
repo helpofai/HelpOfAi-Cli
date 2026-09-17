@@ -8,7 +8,7 @@
 
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
@@ -19,6 +19,26 @@ use sha2::{Digest, Sha256};
 use crate::platform::{engine_binary_path, engine_dir, get_architecture, get_platform};
 
 const BASE_URL: &str = "https://github.com/DeusData/codebase-memory-mcp/releases/latest/download";
+
+struct DownloadLock(PathBuf);
+
+impl DownloadLock {
+    fn acquire() -> Option<Self> {
+        let path = engine_dir().ok()?.join("runtime").join("downloading.lock");
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let pid = std::process::id();
+        let _ = std::fs::write(&path, pid.to_string());
+        Some(Self(path))
+    }
+}
+
+impl Drop for DownloadLock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
 
 pub struct Installer {
     client: Client,
@@ -82,6 +102,7 @@ impl Installer {
     // ── core download/install pipeline ────────────────────────────────────────
 
     fn download_and_install(&self) -> Result<()> {
+        let _download_lock = DownloadLock::acquire();
         let platform = get_platform();
         let arch = get_architecture()?;
         let ext = if platform == "windows" {
