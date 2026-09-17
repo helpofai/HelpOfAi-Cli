@@ -75,7 +75,6 @@ impl GraphSupervisor {
         let log_file_path = logs_dir.join("graph.log");
         let log_file = std::fs::OpenOptions::new()
             .create(true)
-            .write(true)
             .append(true)
             .open(&log_file_path)
             .ok();
