@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.4] - 2026-09-19
+
+### Added
+- **Google Antigravity Context Window & 64k Output Scaling**: Configured native 1,000,000 token context window and 64,000 max output token limit for Google Antigravity Gateway (`ApiProvider::Antigravity`), matching Gemini 3.8/3.7/3.6/3.1 and Auto routing capabilities. Added dynamic 1M window resolution for Claude Sonnet 4.6 (Thinking) and Claude Opus 4.6 (Thinking) under Antigravity routing.
+
+### Fixed
+- **Plan & Checklist Persistence Across Compaction & Mode Switches**:
+  - **Auto-Pinning in Context Compaction**: Added `is_plan_message` and `is_checklist_message` detectors in context compaction; `plan_compaction` now permanently pins both the latest plan (`update_plan`) and latest checklist (`checklist_*` / `todo_*`) messages along with their tool call/result pairs, guaranteeing plans and checklists are never evicted during long multi-step turns.
+  - **Tool-Result Pruning Protection**: Exempted `update_plan`, `checklist_*`, and `todo_*` from tool output pruning in `prune_tool_results_until`, preventing truncation placeholders from erasing active plans.
+  - **Live `<turn_meta>` Injection**: `turn_metadata_block` in the engine now injects active checklist progress (`[x]`, `[~]`, `[ ]`) and plan steps directly into every user and steer turn.
+  - **Autonomous Continuous Execution in YOLO Mode**: Updated YOLO mode guidance to enforce continuous systematic execution through all checklist items until 100% completion before concluding the task.
+  - **Compaction Summary Protection**: Instructed the compaction summarizer to explicitly preserve active plans and pending/completed checklist tasks across conversation summaries.
+
 ## [0.9.3] - 2026-09-17
 
 ### Fixed
@@ -2450,7 +2463,8 @@ overflow report and `/theme` picker edge-wrapping patch in #1814.
 
 Older releases (v0.8.39 and earlier) are archived in [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
 
-[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/helpofai/HelpOfAi-Cli/compare/v0.8.99...v0.9.1

@@ -7,23 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### [Unreleased]
 
+## [0.9.4] - 2026-09-19
+
+### Added
+- **Google Antigravity Context Window & 64k Output Scaling**: Configured native 1,000,000 token context window and 64,000 max output token limit for Google Antigravity Gateway (`ApiProvider::Antigravity`), matching Gemini 3.8/3.7/3.6/3.1 and Auto routing capabilities. Added dynamic 1M window resolution for Claude Sonnet 4.6 (Thinking) and Claude Opus 4.6 (Thinking) under Antigravity routing.
+
+### Fixed
+- **Plan & Checklist Persistence Across Compaction & Mode Switches**:
+  - **Auto-Pinning in Context Compaction**: Added `is_plan_message` and `is_checklist_message` detectors in context compaction; `plan_compaction` now permanently pins both the latest plan (`update_plan`) and latest checklist (`checklist_*` / `todo_*`) messages along with their tool call/result pairs, guaranteeing plans and checklists are never evicted during long multi-step turns.
+  - **Tool-Result Pruning Protection**: Exempted `update_plan`, `checklist_*`, and `todo_*` from tool output pruning in `prune_tool_results_until`, preventing truncation placeholders from erasing active plans.
+  - **Live `<turn_meta>` Injection**: `turn_metadata_block` in the engine now injects active checklist progress (`[x]`, `[~]`, `[ ]`) and plan steps directly into every user and steer turn.
+  - **Autonomous Continuous Execution in YOLO Mode**: Updated YOLO mode guidance to enforce continuous systematic execution through all checklist items until 100% completion before concluding the task.
+  - **Compaction Summary Protection**: Instructed the compaction summarizer to explicitly preserve active plans and pending/completed checklist tasks across conversation summaries.
+
 ## [0.9.3] - 2026-09-17
 
 ### Fixed
-- **Permanent Background Daemon Lifecycle**: `/graph start` and `/graph open` now delegate to the native background daemon, keeping the knowledge graph visualization server running permanently without blocking or suffering from stale PID crashes.
+- **Codebase Memory Native Daemon Lifecycle**: Switched `GraphSupervisor` and CLI graph commands to use the native `codebase-memory-mcp daemon start --port=...` lifecycle. Spawns as a permanent detached background daemon (`.spawn_permanent = true`) that survives parent process exit and terminal closing, eliminating premature shutdown and stale PID errors.
+- **Non-Blocking CLI Workflow**: Removed blocking child process wait in `helpofai graph start`, `helpofai graph open`, and `helpofai graph restart`, enabling the command to verify HTTP readiness, launch the browser, and cleanly return to the prompt while the server stays active.
+- **Clean Daemon Shutdown & Status Detection**: Integrated `codebase-memory-mcp daemon stop` and `codebase-memory-mcp daemon status` for graceful SQLite WAL flushing and reliable real-time status reporting.
 
 ## [0.9.2] - 2026-09-17
 
 ### Added
-- **Codebase Memory Graph UI Readiness & Resilient Supervisor**: Synchronous port readiness detection before opening the browser, persistent supervisor stdin pipe, and live port liveness probing in header chip and commands.
-- **TUI Slash Commands**: Added `/graph open`, `/graph start`, `/graph stop`, `/graph index`, and `/graph status` slash commands.
-- **MCP Auto-Registration & Skills**: Injected 15 Codebase Memory tools and skill documentation into AI agents upon engine installation.
+- **Codebase Memory Graph UI Readiness & Resilient Supervisor**: Enhanced background supervisor to wait synchronously for HTTP port readiness before launching the default browser, eliminating `ERR_CONNECTION_REFUSED` on startup. Kept supervisor stdin pipe held open throughout application lifecycle to prevent premature MCP engine exit on EOF.
+- **TUI & CLI Memory Commands**: Added `/graph open`, `/graph start`, `/graph stop`, `/graph index`, and `/graph status` slash commands in TUI, alongside `helpofai graph` and `helpofai codebase` subcommands.
+- **Codebase Memory MCP Auto-Registration & Skills**: HelpOfAi AI agents automatically receive all 15 native Codebase Memory MCP tools (`index_repository`, `search_graph`, `trace_path`, `get_architecture`, `detect_changes`, `manage_adr`, etc.) and bundled skills with Cypher syntax guides when the engine is installed.
+- **Real-Time Port Liveness Status**: Improved `/status` command, doctor diagnosis, and TUI header chip (`🧠 ● 9749`, `🧠 ⟳ dl...`, `🧠 ○ off`, `🧠 ✕`) to probe live TCP port responsiveness, auto-recovering from stale PID files.
 
 ## [0.9.1] - 2026-09-16
 
 ### Added
-- **Codebase Memory Engine Integration**: Added native support for the DeusData Codebase Memory engine. Includes `helpofai codebase install`, `helpofai codebase update`, `helpofai codebase doctor`, and `helpofai graph` UI supervisor, isolating the CBM graph dynamically in `%LOCALAPPDATA%` and auto-registering the codebase-memory MCP engine for AI agent consumption.
-- **Built-in 3D Graph Visualization**: Bundled 3D interactive knowledge graph visualization assets with real-time process monitoring and graph rendering.
+- **Google Antigravity Direct OAuth & Multi-Account Failover**: Added direct Google Account browser login via `helpofai auth login --provider antigravity` (and `helpofai login --provider antigravity`), eliminating the need for manual API key copying. Supports configuring multiple Google accounts in a credentials pool (`helpofai auth accounts`, `helpofai auth switch-account`, `helpofai auth remove-account`) with automatic model quota exhaustion failover: when one Google account exhausts its Gemini model quota (HTTP 429 / `RESOURCE_EXHAUSTED`), requests automatically rotate to the next available standby account in the pool with zero interruption.
+- **Google Antigravity Gateway Provider**: Added native first-class provider integration for Google Antigravity Gateway (`https://generativelanguage.googleapis.com/v1beta/openai`). Features dynamic model resolution and context-window inference for Gemini 3.x and 2.5 series (`gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.1-pro`), plus Claude Sonnet/Opus 4.6 (Thinking) and GPT-OSS models via Antigravity routing. Configurable via `[providers.antigravity]`, `ANTIGRAVITY_API_KEY`, `GOOGLE_ANTIGRAVITY_API_KEY`, or `GEMINI_API_KEY`, with full reasoning effort parameter translation and seed model registry inclusion.
+- **Codebase Memory Engine Integration & Auto-Download**: Added native support for the DeusData Codebase Memory engine. Includes `helpofai codebase install`, `helpofai codebase update`, `helpofai codebase doctor`, and `helpofai graph` UI supervisor, isolating the CBM graph dynamically in `%LOCALAPPDATA%` and auto-registering the codebase-memory MCP engine for AI agent consumption. `helpofai update` now automatically verifies and installs or updates the codebase memory engine binary silently on user devices both during CLI binary updates and when already on latest version.
+- **Built-in 3D Graph Visualization & Auto-Launch**: Bundled 3D interactive knowledge graph visualization assets with real-time process monitoring and graph rendering. CLI interactive launch now automatically spins up the Codebase Memory Graph UI daemon and opens the system default web browser to the interactive knowledge graph interface (`http://localhost:9749`), with opt-out available via `HELPOFAI_NO_GRAPH_AUTO_OPEN=1`.
 - **Dynamic Port Management & Process Supervisor**: Added automatic port reservation, stale PID cleanup, and lifecycle management for the codebase memory server.
 
 ## [0.8.99] - 2026-09-11
@@ -130,32 +148,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OmniRoute ModelRegistry resolution**: Added default `"auto"` model registry entry and passthrough resolving for OmniRoute, preventing fallback to DeepSeek when querying the registry or resolving models.
 - **Transparent Reasoning-Only Retry**: Automatically retry when a reasoning model returns thinking but fails to yield a final answer or tool calls.
 - **Hermetic Unit Testing**: Hardened environment isolation in DeepSeek defaults test to prevent host configuration leakage.
-
-## [0.8.78] - 2026-07-15
-
-### Added
-
-- Support for dynamically fetching and selecting models from the OmniRoute gateway in the Model Picker.
-
-### Fixed
-
-- Friendly network error connection message when the local OmniRoute server is offline.
-
-## [0.8.77] - 2026-07-15
-
-### Added
-
-- OmniRoute provider integration is now fully functional and passes all tests.
-
-### Fixed
-
-- Adjusted DeepSeek base URL logic to avoid env overrides when base_url is not set (fixes test).
-
-## [0.8.76] - 2026-07-15
-
-### Fixed
-
-- **OmniRoute auto-router bypass**: Completely bypass the local classification router when OmniRoute is the active provider. This prevents out-of-band requests to `deepseek-v4-flash` and avoids DeepSeek credential requirements altogether for OmniRoute setups.
 
 ---
 

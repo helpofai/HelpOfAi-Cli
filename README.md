@@ -82,8 +82,8 @@ nix run github:helpofai/HelpOfAi-Cli
 scoop install helpofai        # or the NSIS installer from GitHub Releases
 
 # CNB mirror for users who cannot reliably reach GitHub
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.3 helpofai-cli --locked --force
-cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.3 helpofai-tui --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.4 helpofai-cli --locked --force
+cargo install --git https://cnb.cool/helpofai.net/helpofai --tag v0.9.4 helpofai-tui --locked --force
 
 # Legacy Homebrew compatibility while the formula is renamed
 brew tap helpofai/HelpOfAi-Cli

@@ -97,6 +97,7 @@ function deriveProviders() {
     MinimaxAnthropic: { id: "minimax-anthropic", label: "MiniMax (Anthropic-compatible)", env: "MINIMAX_API_KEY" },
     Sakana: { id: "sakana", label: "Sakana AI (Fugu)", env: "FUGU_API_KEY / SAKANA_API_KEY" },
     LongCat: { id: "longcat", label: "Meituan LongCat", env: "LONGCAT_API_KEY" },
+    Antigravity: { id: "antigravity", label: "Google Antigravity", env: "ANTIGRAVITY_API_KEY / GOOGLE_ANTIGRAVITY_API_KEY / GEMINI_API_KEY (or `helpofai auth login --provider antigravity`)" },
     Meta: { id: "meta", label: "Meta Model API", env: "META_MODEL_API_KEY / MODEL_API_KEY" },
     Xai: { id: "xai", label: "xAI", env: "XAI_API_KEY" },
     Custom: { id: "custom", label: "Custom (OpenAI-compatible)", env: "(Any / Custom)" },
