@@ -989,6 +989,25 @@ impl ModelRegistry {
                     fallback_chain,
                 };
             }
+            if provider_hint == Some(ProviderKind::Antigravity) {
+                return ModelResolution {
+                    requested: Some(name.to_string()),
+                    resolved: self
+                        .models
+                        .iter()
+                        .find(|m| m.provider == ProviderKind::Antigravity && model_matches(m, name))
+                        .cloned()
+                        .unwrap_or_else(|| ModelInfo {
+                            id: name.trim().to_string(),
+                            provider: ProviderKind::Antigravity,
+                            aliases: Vec::new(),
+                            supports_tools: true,
+                            supports_reasoning: true,
+                        }),
+                    used_fallback: false,
+                    fallback_chain,
+                };
+            }
             if let Some(provider) = provider_hint
                 && let Some(model) = self
                     .models
@@ -1348,6 +1367,29 @@ mod tests {
 
         let resolved = registry.resolve(Some("voiceclone"), Some(ProviderKind::XiaomiMimo));
         assert_eq!(resolved.resolved.id, "mimo-v2.5-tts-voiceclone");
+    }
+
+    #[test]
+    fn antigravity_resolves_known_and_passthrough_models() {
+        let registry = ModelRegistry::default();
+
+        // Known model resolves with registry metadata
+        let resolved = registry.resolve(Some("gemini-3.1-pro"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.provider, ProviderKind::Antigravity);
+        assert_eq!(resolved.resolved.id, "gemini-3.1-pro");
+        assert!(resolved.resolved.supports_tools);
+        assert!(resolved.resolved.supports_reasoning);
+
+        // Alias resolves to canonical id
+        let resolved = registry.resolve(Some("gemini-3-1-pro"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.id, "gemini-3.1-pro");
+
+        // Arbitrary / newly released model passes through directly
+        let resolved = registry.resolve(Some("gemini-3.1-flash"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.provider, ProviderKind::Antigravity);
+        assert_eq!(resolved.resolved.id, "gemini-3.1-flash");
+        assert!(resolved.resolved.supports_tools);
+        assert!(resolved.resolved.supports_reasoning);
     }
 
     #[test]

@@ -5003,6 +5003,7 @@ pub(crate) fn provider_passes_model_through(provider: ApiProvider) -> bool {
             | ApiProvider::Ollama
             | ApiProvider::Huggingface
             | ApiProvider::Omniroute
+            | ApiProvider::Antigravity
     )
 }
 
@@ -6014,6 +6015,9 @@ pub fn has_api_key_for(config: &Config, provider: ApiProvider) -> bool {
         // Token env overrides are checked above; also honor the Codex CLI OAuth
         // login on disk.
         return crate::oauth::auth_file_path().exists();
+    }
+    if provider == ApiProvider::Antigravity {
+        return helpofai_config::AntigravityAccountStore::file_path().exists();
     }
 
     // Self-hosted providers typically run without authentication.
@@ -12702,6 +12706,11 @@ model = "deepseek-ai/deepseek-v4-pro"
         // instructions (`auto`, `auto/coding`, `cc/claude-...`, `glm/glm-5.1`)
         // and must reach the gateway verbatim.
         assert!(provider_passes_model_through(ApiProvider::Omniroute));
+    }
+
+    #[test]
+    fn antigravity_passes_model_through() {
+        assert!(provider_passes_model_through(ApiProvider::Antigravity));
     }
 
     #[test]
