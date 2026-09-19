@@ -604,6 +604,21 @@ pub fn provider_capability(provider: ApiProvider, resolved_model: &str) -> Provi
         };
     }
 
+    if matches!(provider, ApiProvider::Antigravity) {
+        return ProviderCapability {
+            provider,
+            resolved_model: resolved_model.to_string(),
+            context_window: crate::models::context_window_for_model(resolved_model)
+                .unwrap_or(1_000_000),
+            max_output: crate::models::max_output_tokens_for_model(resolved_model)
+                .unwrap_or(64_000),
+            thinking_supported: crate::models::model_supports_reasoning(resolved_model),
+            cache_telemetry_supported: false,
+            request_payload_mode: RequestPayloadMode::ChatCompletions,
+            alias_deprecation: None,
+        };
+    }
+
     let model_lower = resolved_model.to_ascii_lowercase();
     let alias_deprecation = if matches!(
         provider,
@@ -12407,6 +12422,24 @@ model = "deepseek-ai/deepseek-v4-pro"
             cap.request_payload_mode,
             RequestPayloadMode::ChatCompletions
         );
+    }
+
+    #[test]
+    fn provider_capability_antigravity_resolves_gemini_and_auto_1m() {
+        let cap_auto = provider_capability(ApiProvider::Antigravity, "auto");
+        assert_eq!(cap_auto.context_window, 1_000_000);
+        assert_eq!(cap_auto.max_output, 64_000);
+        assert_eq!(
+            cap_auto.request_payload_mode,
+            RequestPayloadMode::ChatCompletions
+        );
+
+        let cap_gemini = provider_capability(ApiProvider::Antigravity, "gemini-3.1-pro");
+        assert_eq!(cap_gemini.context_window, 1_000_000);
+        assert_eq!(cap_gemini.max_output, 64_000);
+
+        let cap_claude = provider_capability(ApiProvider::Antigravity, "claude-sonnet-4-6");
+        assert_eq!(cap_claude.context_window, 1_000_000);
     }
 
     #[test]

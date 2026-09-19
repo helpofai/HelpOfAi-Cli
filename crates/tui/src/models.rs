@@ -259,6 +259,9 @@ pub fn context_window_for_model(model: &str) -> Option<u32> {
         return Some(window);
     }
     if lower.contains("claude") {
+        if lower.contains("4-6") || lower.contains("4-8") {
+            return Some(1_000_000);
+        }
         return Some(200_000);
     }
     if lower.contains("gemini") {
@@ -281,7 +284,7 @@ fn known_context_window_for_model(model_lower: &str) -> Option<u32> {
         // https://developers.openai.com/api/docs/models/gpt-5.3-codex
         "gpt-5-codex" | "gpt-5.3-codex" => Some(400_000),
         // Anthropic 4.6+ models carry a 1M window; Haiku stays at 200K (#3014).
-        "claude-opus-4-8" | "claude-sonnet-4-6" => Some(1_000_000),
+        "claude-opus-4-8" | "claude-opus-4-6" | "claude-sonnet-4-6" => Some(1_000_000),
         "claude-haiku-4-5" => Some(200_000),
         "trinity-mini" => Some(128_000),
         "arcee-ai/trinity-large-thinking" | "trinity-large-thinking" | "trinity-large-preview" => {
