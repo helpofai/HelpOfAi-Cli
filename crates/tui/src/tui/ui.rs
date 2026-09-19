@@ -4991,6 +4991,9 @@ async fn fetch_available_models(config: &Config) -> Result<Vec<String>> {
     let mut ids = models.into_iter().map(|model| model.id).collect::<Vec<_>>();
     ids.sort();
     ids.dedup();
+    if config.api_provider() == ApiProvider::Antigravity {
+        let _ = helpofai_config::AntigravityAccountStore::save_cached_models(&ids);
+    }
     Ok(ids)
 }
 
@@ -7671,11 +7674,17 @@ async fn apply_command_result(
             }
             AppAction::OpenModelPicker => {
                 if app.view_stack.top_kind() != Some(ModalKind::ModelPicker) {
-                    if app.api_provider == ApiProvider::Omniroute {
-                        let is_manual = config
-                            .provider_config_for(ApiProvider::Omniroute)
-                            .and_then(|c| c.mode.as_deref())
-                            == Some("manual");
+                    if app.api_provider == ApiProvider::Omniroute
+                        || app.api_provider == ApiProvider::Antigravity
+                    {
+                        let is_manual = if app.api_provider == ApiProvider::Omniroute {
+                            config
+                                .provider_config_for(ApiProvider::Omniroute)
+                                .and_then(|c| c.mode.as_deref())
+                                == Some("manual")
+                        } else {
+                            true
+                        };
                         if is_manual {
                             let cell = app.fetched_gateway_models.clone();
                             let need_fetch = {
@@ -7684,7 +7693,12 @@ async fn apply_command_result(
                             };
                             if need_fetch {
                                 let config_clone = config.clone();
-                                app.status_message = Some("Fetching gateway models...".to_string());
+                                let msg = if app.api_provider == ApiProvider::Antigravity {
+                                    "Discovering Google Antigravity models..."
+                                } else {
+                                    "Fetching gateway models..."
+                                };
+                                app.status_message = Some(msg.to_string());
                                 tokio::spawn(async move {
                                     if let Ok(models) = fetch_available_models(&config_clone).await
                                     {

@@ -162,6 +162,7 @@ pub fn run_antigravity_oauth_login(store: &mut ConfigStore) -> Result<()> {
         expires_at_epoch_secs: now_secs + expires_in,
         quota_exhausted_until_epoch_secs: 0,
         added_at: format!("{} UTC", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")),
+        tier: helpofai_config::AntigravityTier::Auto,
     };
 
     let pos = account_store.add_or_update(account);
@@ -213,14 +214,16 @@ pub fn list_antigravity_accounts() -> Result<()> {
         store.accounts.len()
     );
     println!(
-        "{:<3} {:<32} {:<10} {:<12}",
-        "#", "Email", "Role", "Quota State"
+        "{:<3} {:<30} {:<10} {:<10} {:<18} {:<15}",
+        "#", "Email", "Role", "Tier", "Auto Model", "Quota State"
     );
-    println!("{}", "-".repeat(65));
+    println!("{}", "-".repeat(90));
 
     for (i, account) in store.accounts.iter().enumerate() {
         let is_active = i == store.active_index;
         let role = if is_active { "Active *" } else { "Standby" };
+        let tier_name = account.tier.display_name();
+        let auto_model = account.tier.auto_model();
         let quota_state = if account.is_quota_exhausted(now_secs) {
             let remaining = account.quota_cooldown_remaining_secs(now_secs);
             format!("Exhausted ({remaining}s left)")
@@ -229,14 +232,29 @@ pub fn list_antigravity_accounts() -> Result<()> {
         };
 
         println!(
-            "{:<3} {:<32} {:<10} {:<12}",
-            i, account.email, role, quota_state
+            "{:<3} {:<30} {:<10} {:<10} {:<18} {:<15}",
+            i, account.email, role, tier_name, auto_model, quota_state
         );
     }
 
     println!();
     println!("Automatic failover is active: if the active account exhausts its model quota (429),");
-    println!("HelpOfAi will automatically route requests to the next available standby account.");
+    println!("HelpOfAi will automatically failover and retry using the next available account.");
+    Ok(())
+}
+
+/// Set the tier (free, pro, paid, enterprise, auto) for an Antigravity account.
+pub fn set_antigravity_account_tier(identifier: &str, tier_str: &str) -> Result<()> {
+    let tier = helpofai_config::AntigravityTier::parse(tier_str)
+        .context("Invalid tier. Choose one of: free, pro, paid, enterprise, auto")?;
+    let mut store = AntigravityAccountStore::load();
+    let email = store.set_account_tier(identifier, tier)?;
+    println!(
+        "Updated Google Antigravity tier for {} to: {} (auto model: {})",
+        email,
+        tier.display_name(),
+        tier.auto_model()
+    );
     Ok(())
 }
 

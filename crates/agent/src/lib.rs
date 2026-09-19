@@ -911,6 +911,58 @@ impl Default for ModelRegistry {
                 supports_tools: true,
                 supports_reasoning: true,
             },
+            ModelInfo {
+                id: "gemini-3.1-pro-high".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3.1-pro-high-reasoning".to_string(),
+                    "antigravity-3.1-pro-high".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gemini-3.1-pro-low".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gemini-3.1-pro-low-reasoning".to_string(),
+                    "antigravity-3.1-pro-low".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "claude-sonnet-4-6".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "claude-sonnet-4.6".to_string(),
+                    "antigravity-claude-sonnet".to_string(),
+                    "claude-3-7-sonnet".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "claude-opus-4-6".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "claude-opus-4.6".to_string(),
+                    "antigravity-claude-opus".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
+            ModelInfo {
+                id: "gpt-oss-120b".to_string(),
+                provider: ProviderKind::Antigravity,
+                aliases: vec![
+                    "gpt-oss".to_string(),
+                    "antigravity-gpt-oss".to_string(),
+                    "gpt_oss_120b".to_string(),
+                ],
+                supports_tools: true,
+                supports_reasoning: true,
+            },
         ];
         Self::new(models)
     }
@@ -990,15 +1042,25 @@ impl ModelRegistry {
                 };
             }
             if provider_hint == Some(ProviderKind::Antigravity) {
+                let resolved_id = if name.trim().eq_ignore_ascii_case("auto") {
+                    let store = helpofai_config::AntigravityAccountStore::load();
+                    store.active_auto_model().to_string()
+                } else {
+                    name.trim().to_string()
+                };
+
                 return ModelResolution {
                     requested: Some(name.to_string()),
                     resolved: self
                         .models
                         .iter()
-                        .find(|m| m.provider == ProviderKind::Antigravity && model_matches(m, name))
+                        .find(|m| {
+                            m.provider == ProviderKind::Antigravity
+                                && model_matches(m, &resolved_id)
+                        })
                         .cloned()
                         .unwrap_or_else(|| ModelInfo {
-                            id: name.trim().to_string(),
+                            id: resolved_id,
                             provider: ProviderKind::Antigravity,
                             aliases: Vec::new(),
                             supports_tools: true,
@@ -1064,6 +1126,23 @@ impl ModelRegistry {
 
         let provider = provider_hint.unwrap_or(ProviderKind::Deepseek);
         fallback_chain.push(format!("provider_default:{}", provider.as_str()));
+        if provider == ProviderKind::Antigravity {
+            let store = helpofai_config::AntigravityAccountStore::load();
+            let auto_model = store.active_auto_model();
+            if let Some(model) = self
+                .models
+                .iter()
+                .find(|m| m.provider == ProviderKind::Antigravity && model_matches(m, auto_model))
+                .cloned()
+            {
+                return ModelResolution {
+                    requested: requested.map(ToOwned::to_owned),
+                    resolved: model,
+                    used_fallback: true,
+                    fallback_chain,
+                };
+            }
+        }
         if let Some(model) = self.models.iter().find(|m| m.provider == provider).cloned() {
             return ModelResolution {
                 requested: requested.map(ToOwned::to_owned),
@@ -1384,10 +1463,24 @@ mod tests {
         let resolved = registry.resolve(Some("gemini-3-1-pro"), Some(ProviderKind::Antigravity));
         assert_eq!(resolved.resolved.id, "gemini-3.1-pro");
 
-        // Arbitrary / newly released model passes through directly
-        let resolved = registry.resolve(Some("gemini-3.1-flash"), Some(ProviderKind::Antigravity));
+        // Claude on Antigravity
+        let resolved = registry.resolve(Some("claude-sonnet-4-6"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.id, "claude-sonnet-4-6");
+        assert!(resolved.resolved.supports_reasoning);
+
+        // GPT-OSS on Antigravity
+        let resolved = registry.resolve(Some("gpt-oss-120b"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.id, "gpt-oss-120b");
+
+        // Auto mode resolves to tier default
+        let resolved = registry.resolve(Some("auto"), Some(ProviderKind::Antigravity));
         assert_eq!(resolved.resolved.provider, ProviderKind::Antigravity);
-        assert_eq!(resolved.resolved.id, "gemini-3.1-flash");
+        assert!(!resolved.resolved.id.is_empty());
+
+        // Arbitrary / newly released model passes through directly
+        let resolved = registry.resolve(Some("gemini-3.9-flash"), Some(ProviderKind::Antigravity));
+        assert_eq!(resolved.resolved.provider, ProviderKind::Antigravity);
+        assert_eq!(resolved.resolved.id, "gemini-3.9-flash");
         assert!(resolved.resolved.supports_tools);
         assert!(resolved.resolved.supports_reasoning);
     }

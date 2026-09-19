@@ -663,6 +663,17 @@ enum AuthCommand {
         /// Account email or 0-based index to remove.
         account: String,
     },
+    /// Set subscription tier for an account in multi-account providers (e.g. free, pro, paid, enterprise, auto).
+    SetTier {
+        #[arg(long, value_enum, default_value_t = ProviderArg::Antigravity)]
+        provider: ProviderArg,
+        /// Account email or 0-based index.
+        #[arg(long)]
+        account: String,
+        /// Tier: free, pro, paid, enterprise, auto.
+        #[arg(long)]
+        tier: String,
+    },
     /// Save an API key to the shared user config file. Reads from
     /// `--api-key`, `--api-key-stdin`, or prompts on stdin when
     /// neither is given. Does not echo the key.
@@ -1654,6 +1665,18 @@ fn run_auth_command_with_secrets(
                 antigravity_oauth::remove_antigravity_account(&account)
             } else {
                 bail!("Account removal is not supported for {}", provider.as_str());
+            }
+        }
+        AuthCommand::SetTier {
+            provider,
+            account,
+            tier,
+        } => {
+            let provider: ProviderKind = provider.into();
+            if provider == ProviderKind::Antigravity {
+                antigravity_oauth::set_antigravity_account_tier(&account, &tier)
+            } else {
+                bail!("Setting tier is not supported for {}", provider.as_str());
             }
         }
         AuthCommand::Migrate { dry_run } => run_auth_migrate(store, secrets, dry_run),

@@ -1051,7 +1051,12 @@ impl DeepSeekClient {
     {
         let mut retry_cfg: LlmRetryConfig = self.retry.clone().into();
         if self.api_provider == ApiProvider::Antigravity {
-            retry_cfg.max_retries = retry_cfg.max_retries.max(3);
+            let account_count = helpofai_config::AntigravityAccountStore::load()
+                .accounts
+                .len();
+            retry_cfg.max_retries = retry_cfg
+                .max_retries
+                .max(((account_count * 2).max(3)) as u32);
         }
         let request_result = with_retry(
             &retry_cfg,
@@ -1093,8 +1098,12 @@ impl DeepSeekClient {
                     {
                         if let Ok(Some(new_acc)) = crate::oauth_antigravity::mark_active_exhausted_and_failover() {
                             logging::warn(format!(
-                                "[Antigravity] Model quota exhausted on Google account. Failed over to: {new_acc} (retrying request...)"
+                                "[Antigravity] Model quota exhausted on Google account. Failed over to: {new_acc} (retrying immediately with next account...)"
                             ));
+                            return Err(LlmError::RateLimited {
+                                message: format!("Antigravity failover to account: {new_acc}"),
+                                retry_after: Some(Duration::from_millis(50)),
+                            });
                         }
                     }
 

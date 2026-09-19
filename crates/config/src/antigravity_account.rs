@@ -8,6 +8,61 @@ use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 
+/// Account subscription or billing tier for Google Antigravity.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum AntigravityTier {
+    #[default]
+    Auto,
+    Free,
+    Pro,
+    Paid,
+    Enterprise,
+}
+
+impl AntigravityTier {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "auto" => Some(Self::Auto),
+            "free" => Some(Self::Free),
+            "pro" => Some(Self::Pro),
+            "paid" | "payg" | "pay-as-you-go" => Some(Self::Paid),
+            "enterprise" => Some(Self::Enterprise),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Free => "free",
+            Self::Pro => "pro",
+            Self::Paid => "paid",
+            Self::Enterprise => "enterprise",
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            Self::Auto => "Auto",
+            Self::Free => "Free",
+            Self::Pro => "Pro",
+            Self::Paid => "Paid (Pay-As-You-Go)",
+            Self::Enterprise => "Enterprise",
+        }
+    }
+
+    /// Select optimal model in `auto` mode based on account tier:
+    /// - Free: Fast, high-RPM flash model (`gemini-3.8-flash`) to prevent 2 RPM 429 lockouts
+    /// - Pro / Paid / Enterprise: Flagship Pro model (`gemini-3.1-pro`) for maximum reasoning
+    pub fn auto_model(&self) -> &'static str {
+        match self {
+            Self::Free => "gemini-3.8-flash",
+            Self::Pro | Self::Paid | Self::Enterprise | Self::Auto => "gemini-3.1-pro",
+        }
+    }
+}
+
 /// A single Google account authenticated via OAuth for Google Antigravity.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AntigravityAccount {
@@ -21,6 +76,8 @@ pub struct AntigravityAccount {
     pub quota_exhausted_until_epoch_secs: u64,
     #[serde(default)]
     pub added_at: String,
+    #[serde(default)]
+    pub tier: AntigravityTier,
 }
 
 impl AntigravityAccount {
@@ -140,6 +197,9 @@ impl AntigravityAccountStore {
             if account.refresh_token.is_some() {
                 self.accounts[pos].refresh_token = account.refresh_token;
             }
+            if account.tier != AntigravityTier::Auto {
+                self.accounts[pos].tier = account.tier;
+            }
             self.accounts[pos].expires_at_epoch_secs = account.expires_at_epoch_secs;
             self.accounts[pos].quota_exhausted_until_epoch_secs = 0; // reset quota cooldown on fresh auth
             pos
@@ -151,6 +211,44 @@ impl AntigravityAccountStore {
             }
             new_pos
         }
+    }
+
+    /// Update tier for an account matching email or 0-based index.
+    pub fn set_account_tier(&mut self, identifier: &str, tier: AntigravityTier) -> Result<String> {
+        if self.accounts.is_empty() {
+            bail!("No Google Antigravity accounts configured.");
+        }
+        let trimmed = identifier.trim();
+        let idx = if let Ok(i) = trimmed.parse::<usize>() {
+            if i < self.accounts.len() {
+                i
+            } else {
+                bail!(
+                    "Invalid account index {i}. Valid indices are 0 to {}.",
+                    self.accounts.len().saturating_sub(1)
+                );
+            }
+        } else if let Some(pos) = self
+            .accounts
+            .iter()
+            .position(|a| a.email.eq_ignore_ascii_case(trimmed))
+        {
+            pos
+        } else {
+            bail!("No Antigravity account found matching '{identifier}'.");
+        };
+
+        self.accounts[idx].tier = tier;
+        let email = self.accounts[idx].email.clone();
+        self.save()?;
+        Ok(email)
+    }
+
+    /// Return the optimal model for the currently active account in `auto` mode.
+    pub fn active_auto_model(&self) -> &'static str {
+        self.active_account()
+            .map(|a| a.tier.auto_model())
+            .unwrap_or("gemini-3.1-pro")
     }
 
     /// Switch active account by email address or 0-based index.
@@ -283,6 +381,34 @@ impl AntigravityAccountStore {
         self.active_index = min_idx;
         self.accounts.get_mut(min_idx)
     }
+
+    /// Resolve path to cached dynamic models discovered from Google Antigravity.
+    pub fn models_cache_path() -> PathBuf {
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        home.join(".helpofai").join("antigravity_models.json")
+    }
+
+    /// Load dynamically discovered models from cache.
+    pub fn load_cached_models() -> Vec<String> {
+        let path = Self::models_cache_path();
+        if let Ok(data) = fs::read_to_string(path) {
+            if let Ok(models) = serde_json::from_str::<Vec<String>>(&data) {
+                return models;
+            }
+        }
+        Vec::new()
+    }
+
+    /// Save dynamically discovered models to cache.
+    pub fn save_cached_models(models: &[String]) -> Result<()> {
+        let path = Self::models_cache_path();
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let json = serde_json::to_string_pretty(models)?;
+        fs::write(path, json)?;
+        Ok(())
+    }
 }
 
 pub fn now_epoch_secs() -> u64 {
@@ -337,6 +463,7 @@ mod tests {
             expires_at_epoch_secs: 1000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "now".to_string(),
+            tier: AntigravityTier::default(),
         });
 
         assert_eq!(store.accounts.len(), 1);
@@ -351,6 +478,7 @@ mod tests {
             expires_at_epoch_secs: 2000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "later".to_string(),
+            tier: AntigravityTier::default(),
         });
         assert_eq!(store.accounts.len(), 1);
         assert_eq!(store.active_account().unwrap().access_token, "token1_fresh");
@@ -370,6 +498,7 @@ mod tests {
             expires_at_epoch_secs: 10000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "now".to_string(),
+            tier: AntigravityTier::default(),
         });
         store.add_or_update(AntigravityAccount {
             email: "bob@gmail.com".to_string(),
@@ -378,6 +507,7 @@ mod tests {
             expires_at_epoch_secs: 10000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "now".to_string(),
+            tier: AntigravityTier::default(),
         });
 
         assert_eq!(store.active_index, 0);
@@ -404,6 +534,7 @@ mod tests {
             expires_at_epoch_secs: 10000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "now".to_string(),
+            tier: AntigravityTier::default(),
         });
         store.add_or_update(AntigravityAccount {
             email: "user2@gmail.com".to_string(),
@@ -412,6 +543,7 @@ mod tests {
             expires_at_epoch_secs: 10000,
             quota_exhausted_until_epoch_secs: 0,
             added_at: "now".to_string(),
+            tier: AntigravityTier::default(),
         });
 
         // Switch to index 1
@@ -429,5 +561,31 @@ mod tests {
         );
         assert_eq!(store.accounts.len(), 1);
         assert_eq!(store.active_account().unwrap().email, "user2@gmail.com");
+    }
+
+    #[test]
+    fn test_antigravity_tier_and_auto_model() {
+        let mut store = AntigravityAccountStore::default();
+        store.add_or_update(AntigravityAccount {
+            email: "free_user@gmail.com".to_string(),
+            access_token: "t_free".to_string(),
+            refresh_token: None,
+            expires_at_epoch_secs: 10000,
+            quota_exhausted_until_epoch_secs: 0,
+            added_at: "now".to_string(),
+            tier: AntigravityTier::Free,
+        });
+
+        assert_eq!(store.active_auto_model(), "gemini-3.8-flash");
+
+        store
+            .set_account_tier("free_user@gmail.com", AntigravityTier::Pro)
+            .unwrap();
+        assert_eq!(store.active_auto_model(), "gemini-3.1-pro");
+
+        store
+            .set_account_tier("free_user@gmail.com", AntigravityTier::Paid)
+            .unwrap();
+        assert_eq!(store.active_auto_model(), "gemini-3.1-pro");
     }
 }

@@ -2,7 +2,7 @@ pub mod antigravity_account;
 pub mod provider;
 
 pub use antigravity_account::{
-    AntigravityAccount, AntigravityAccountStore, antigravity_oauth_client_id,
+    AntigravityAccount, AntigravityAccountStore, AntigravityTier, antigravity_oauth_client_id,
     antigravity_oauth_client_secret, now_epoch_secs,
 };
 
@@ -157,7 +157,7 @@ const DEFAULT_META_MODEL: &str = "muse-spark-1.1";
 const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
 const DEFAULT_XAI_MODEL: &str = "grok-4.5";
 const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
-const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-2.5-pro";
+const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-3.1-pro";
 const DEFAULT_ANTIGRAVITY_BASE_URL: &str =
     "https://generativelanguage.googleapis.com/v1beta/openai";
 

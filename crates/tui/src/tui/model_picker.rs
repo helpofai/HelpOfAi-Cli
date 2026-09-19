@@ -423,7 +423,7 @@ fn picker_model_rows(
         picker_model_hint("auto"),
     );
 
-    if api_provider == ApiProvider::Omniroute {
+    if api_provider == ApiProvider::Omniroute || api_provider == ApiProvider::Antigravity {
         if let Some(models) = fetched_models {
             for id in models {
                 if id != "auto" {
@@ -432,6 +432,17 @@ fn picker_model_rows(
                         id.clone(),
                         Some(api_provider),
                         picker_model_hint(id),
+                    );
+                }
+            }
+        } else if api_provider == ApiProvider::Antigravity {
+            for id in helpofai_config::AntigravityAccountStore::load_cached_models() {
+                if id != "auto" {
+                    push_model_row(
+                        &mut rows,
+                        id.clone(),
+                        Some(api_provider),
+                        picker_model_hint(&id),
                     );
                 }
             }

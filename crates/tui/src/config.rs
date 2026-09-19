@@ -212,7 +212,7 @@ pub const DEFAULT_META_MODEL: &str = "llama-3.5-70b";
 pub const DEFAULT_META_BASE_URL: &str = "https://api.meta.ai/v1";
 pub const DEFAULT_XAI_MODEL: &str = "grok-2.5";
 pub const DEFAULT_XAI_BASE_URL: &str = "https://api.x.ai/v1";
-pub const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-2.5-pro";
+pub const DEFAULT_ANTIGRAVITY_MODEL: &str = "gemini-3.1-pro";
 pub const DEFAULT_ANTIGRAVITY_BASE_URL: &str =
     "https://generativelanguage.googleapis.com/v1beta/openai";
 
@@ -1224,6 +1224,12 @@ pub fn model_completion_names_for_provider(provider: ApiProvider) -> Vec<&'stati
             "gemini-3.7-flash",
             "gemini-3.6-flash",
             "gemini-3.1-pro",
+            "gemini-3.1-pro-high",
+            "gemini-3.1-pro-low",
+            "claude-sonnet-4-6",
+            "claude-opus-4-6",
+            "gpt-oss-120b",
+            "gemini-2.5-pro",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
         ],
@@ -2931,6 +2937,10 @@ impl Config {
         if let Some(model) = self.default_text_model.as_deref()
             && model.trim().eq_ignore_ascii_case("auto")
         {
+            if provider == ApiProvider::Antigravity {
+                let store = helpofai_config::AntigravityAccountStore::load();
+                return store.active_auto_model().to_string();
+            }
             return "auto".to_string();
         }
         if provider == ApiProvider::XiaomiMimo
@@ -2991,7 +3001,10 @@ impl Config {
             ApiProvider::LongCat => DEFAULT_LONGCAT_MODEL,
             ApiProvider::Meta => DEFAULT_META_MODEL,
             ApiProvider::Xai => DEFAULT_XAI_MODEL,
-            ApiProvider::Antigravity => DEFAULT_ANTIGRAVITY_MODEL,
+            ApiProvider::Antigravity => {
+                let store = helpofai_config::AntigravityAccountStore::load();
+                store.active_auto_model()
+            }
             ApiProvider::Custom => "custom-model",
         }
         .to_string()
