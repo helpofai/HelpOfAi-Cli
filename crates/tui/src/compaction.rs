@@ -399,6 +399,59 @@ fn should_pin_message(text: &str, working_set_paths: &HashSet<String>) -> bool {
     patch_markers.iter().any(|m| lower.contains(m))
 }
 
+fn is_plan_message(msg: &Message) -> bool {
+    for block in &msg.content {
+        match block {
+            ContentBlock::ToolUse { name, .. } => {
+                if name == "update_plan" {
+                    return true;
+                }
+            }
+            ContentBlock::ToolResult { content, .. } => {
+                let lower = content.to_lowercase();
+                if lower.contains("plan updated:") || lower.contains("\"verification_plan\"") {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn is_checklist_message(msg: &Message) -> bool {
+    for block in &msg.content {
+        match block {
+            ContentBlock::ToolUse { name, .. } => {
+                if matches!(
+                    name.as_str(),
+                    "checklist_write"
+                        | "checklist_update"
+                        | "checklist_add"
+                        | "checklist_list"
+                        | "todo_write"
+                        | "todo_update"
+                        | "todo_add"
+                        | "todo_list"
+                ) {
+                    return true;
+                }
+            }
+            ContentBlock::ToolResult { content, .. } => {
+                let lower = content.to_lowercase();
+                if lower.contains("completion_pct")
+                    || lower.contains("todo list (")
+                    || lower.contains("checklist (")
+                {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
 pub fn plan_compaction(
     messages: &[Message],
     workspace: Option<&Path>,
@@ -435,6 +488,21 @@ pub fn plan_compaction(
         let text = message_text(msg);
         if should_pin_message(&text, &working_set_paths) {
             pinned_indices.insert(idx);
+        }
+    }
+
+    // Always preserve the latest plan and checklist messages so the model does
+    // not lose its active plan or checklist when context compaction fires.
+    for (idx, msg) in messages.iter().enumerate().rev() {
+        if is_plan_message(msg) {
+            pinned_indices.insert(idx);
+            break;
+        }
+    }
+    for (idx, msg) in messages.iter().enumerate().rev() {
+        if is_checklist_message(msg) {
+            pinned_indices.insert(idx);
+            break;
         }
     }
 
@@ -833,6 +901,20 @@ where
             let Some(info) = tool_uses.get(tool_use_id) else {
                 continue;
             };
+            if matches!(
+                info.name.as_str(),
+                "update_plan"
+                    | "checklist_write"
+                    | "checklist_update"
+                    | "checklist_add"
+                    | "checklist_list"
+                    | "todo_write"
+                    | "todo_update"
+                    | "todo_add"
+                    | "todo_list"
+            ) {
+                continue;
+            }
             latest_by_key.insert(info.key.clone(), message_idx);
             *count_by_key.entry(info.key.clone()).or_insert(0) += 1;
             candidates.push(ToolResultPruneCandidate {
@@ -1332,7 +1414,8 @@ fn should_use_cache_aligned_summary(model: &str, messages: &[Message]) -> bool {
 fn summary_instruction(word_limit: usize) -> String {
     format!(
         "Summarize the conversation above in a concise but comprehensive way. \
-         Preserve key information, decisions made, exact file paths, commands, \
+         Explicitly preserve key information, active plans, checklist tasks (both completed and remaining), \
+         decisions made, exact file paths, commands, \
          errors, and tool-result facts needed to continue the work. \
          Tool outputs may be abbreviated only when they are repetitive. \
          Keep it under {word_limit} words."
@@ -2891,5 +2974,155 @@ mod tests {
             None,
         );
         assert!(plan.pinned_indices.contains(&0)); // src/main.rs mention
+    }
+
+    #[test]
+    fn test_plan_compaction_pins_plan_and_checklist_messages() {
+        let messages = vec![
+            msg("user", "start session"),
+            Message {
+                role: "assistant".to_string(),
+                content: vec![ContentBlock::ToolUse {
+                    id: "call-plan".to_string(),
+                    name: "update_plan".to_string(),
+                    input: json!({"title": "Implementation Plan"}),
+                    caller: None,
+                }],
+            },
+            Message {
+                role: "user".to_string(),
+                content: vec![ContentBlock::ToolResult {
+                    tool_use_id: "call-plan".to_string(),
+                    content: "Plan updated: 2 pending, 0 in progress, 0 completed (0% done)\n1. ○ Step 1\n2. ○ Step 2".to_string(),
+                    is_error: Some(false),
+                    content_blocks: None,
+                }],
+            },
+            Message {
+                role: "assistant".to_string(),
+                content: vec![ContentBlock::ToolUse {
+                    id: "call-check".to_string(),
+                    name: "checklist_write".to_string(),
+                    input: json!({"items": ["Step 1", "Step 2"]}),
+                    caller: None,
+                }],
+            },
+            Message {
+                role: "user".to_string(),
+                content: vec![ContentBlock::ToolResult {
+                    tool_use_id: "call-check".to_string(),
+                    content: "{\"completion_pct\": 0, \"items\": []}".to_string(),
+                    is_error: Some(false),
+                    content_blocks: None,
+                }],
+            },
+            msg("assistant", "noise 1"),
+            msg("user", "noise 2"),
+            msg("assistant", "noise 3"),
+            msg("user", "recent 1"),
+            msg("assistant", "recent 2"),
+        ];
+
+        let plan = plan_compaction(&messages, None, 2, None, None);
+        // Both plan and checklist tool calls and results should be pinned
+        assert!(
+            plan.pinned_indices.contains(&1),
+            "update_plan call must be pinned"
+        );
+        assert!(
+            plan.pinned_indices.contains(&2),
+            "update_plan result must be pinned"
+        );
+        assert!(
+            plan.pinned_indices.contains(&3),
+            "checklist_write call must be pinned"
+        );
+        assert!(
+            plan.pinned_indices.contains(&4),
+            "checklist_write result must be pinned"
+        );
+    }
+
+    #[test]
+    fn test_prune_tool_results_exempts_plan_and_checklist() {
+        let mut messages = vec![
+            Message {
+                role: "assistant".to_string(),
+                content: vec![
+                    ContentBlock::ToolUse {
+                        id: "c1".to_string(),
+                        name: "update_plan".to_string(),
+                        input: json!({}),
+                        caller: None,
+                    },
+                    ContentBlock::ToolUse {
+                        id: "c2".to_string(),
+                        name: "checklist_write".to_string(),
+                        input: json!({}),
+                        caller: None,
+                    },
+                    ContentBlock::ToolUse {
+                        id: "c3".to_string(),
+                        name: "exec_shell".to_string(),
+                        input: json!({"command": "ls -la"}),
+                        caller: None,
+                    },
+                ],
+            },
+            Message {
+                role: "user".to_string(),
+                content: vec![
+                    ContentBlock::ToolResult {
+                        tool_use_id: "c1".to_string(),
+                        content: "Plan updated: ".repeat(100),
+                        is_error: Some(false),
+                        content_blocks: None,
+                    },
+                    ContentBlock::ToolResult {
+                        tool_use_id: "c2".to_string(),
+                        content: "{\"completion_pct\": 50}".repeat(50),
+                        is_error: Some(false),
+                        content_blocks: None,
+                    },
+                    ContentBlock::ToolResult {
+                        tool_use_id: "c3".to_string(),
+                        content: "directory listing output ".repeat(100),
+                        is_error: Some(false),
+                        content_blocks: None,
+                    },
+                ],
+            },
+            msg("user", "recent 1"),
+        ];
+
+        let saved = prune_tool_results_until(&mut messages, 1, |_, _| false);
+        assert!(saved > 0, "should save bytes from exec_shell");
+
+        // Verify update_plan and checklist_write were NOT pruned
+        let result_block = &messages[1].content;
+        let ContentBlock::ToolResult {
+            content: plan_res, ..
+        } = &result_block[0]
+        else {
+            panic!()
+        };
+        assert!(plan_res.contains("Plan updated:"));
+
+        let ContentBlock::ToolResult {
+            content: check_res, ..
+        } = &result_block[1]
+        else {
+            panic!()
+        };
+        assert!(check_res.contains("completion_pct"));
+
+        // But exec_shell result was pruned to a summary
+        let ContentBlock::ToolResult {
+            content: shell_res, ..
+        } = &result_block[2]
+        else {
+            panic!()
+        };
+        assert!(shell_res.contains("tool result pruned"));
     }
 }

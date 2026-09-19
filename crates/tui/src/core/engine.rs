@@ -1707,6 +1707,50 @@ impl Engine {
         if let Some(working_set_summary) = working_set_summary {
             lines.push(working_set_summary);
         }
+        if let Ok(todos) = self.config.todos.try_lock() {
+            let snap = todos.snapshot();
+            if !snap.items.is_empty() {
+                let mut todo_lines = Vec::new();
+                todo_lines.push(format!(
+                    "Active Checklist ({}% complete):",
+                    snap.completion_pct
+                ));
+                for item in &snap.items {
+                    let marker = match item.status {
+                        crate::tools::todo::TodoStatus::Pending => "[ ]",
+                        crate::tools::todo::TodoStatus::InProgress => "[~]",
+                        crate::tools::todo::TodoStatus::Completed => "[x]",
+                    };
+                    todo_lines.push(format!("- {marker} {}", item.content));
+                }
+                lines.push(todo_lines.join("\n"));
+            }
+        }
+        if let Ok(plan) = self.config.plan_state.try_lock() {
+            if !plan.is_empty() {
+                let snap = plan.snapshot();
+                let mut plan_lines = Vec::new();
+                plan_lines.push("Active Plan:".to_string());
+                if let Some(title) = snap.title.as_deref() {
+                    plan_lines.push(format!("Title: {title}"));
+                }
+                if let Some(obj) = snap.objective.as_deref() {
+                    plan_lines.push(format!("Objective: {obj}"));
+                }
+                if !snap.items.is_empty() {
+                    plan_lines.push("Steps:".to_string());
+                    for item in &snap.items {
+                        let status_str = match item.status {
+                            crate::tools::plan::StepStatus::Pending => "[Pending]",
+                            crate::tools::plan::StepStatus::InProgress => "[In Progress]",
+                            crate::tools::plan::StepStatus::Completed => "[Completed]",
+                        };
+                        plan_lines.push(format!("- {status_str} {}", item.step));
+                    }
+                }
+                lines.push(plan_lines.join("\n"));
+            }
+        }
         let summary = lines.join("\n");
 
         ContentBlock::Text {

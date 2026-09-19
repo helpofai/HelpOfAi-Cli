@@ -2641,6 +2641,64 @@ fn turn_metadata_omits_mode_policy() {
 }
 
 #[test]
+fn turn_metadata_includes_active_checklist_and_plan() {
+    let tmp = tempdir().expect("tempdir");
+    let config = EngineConfig {
+        workspace: tmp.path().to_path_buf(),
+        ..Default::default()
+    };
+    let (engine, _handle) = Engine::new(config, &Config::default());
+
+    // Populate a todo item
+    {
+        let mut todos = engine.config.todos.try_lock().expect("lock todos");
+        todos.add(
+            "Fix bug in tokenizer".to_string(),
+            crate::tools::todo::TodoStatus::InProgress,
+        );
+        todos.add(
+            "Write integration tests".to_string(),
+            crate::tools::todo::TodoStatus::Pending,
+        );
+    }
+
+    // Populate plan state
+    {
+        let mut plan = engine.config.plan_state.try_lock().expect("lock plan");
+        plan.update(crate::tools::plan::UpdatePlanArgs {
+            title: Some("Fix Tokenizer Bug".to_string()),
+            objective: Some("Resolve off-by-one error".to_string()),
+            plan: vec![
+                crate::tools::plan::PlanItemArg {
+                    step: "Locate off-by-one".to_string(),
+                    status: crate::tools::plan::StepStatus::Completed,
+                },
+                crate::tools::plan::PlanItemArg {
+                    step: "Apply patch".to_string(),
+                    status: crate::tools::plan::StepStatus::InProgress,
+                },
+            ],
+            ..Default::default()
+        });
+    }
+
+    let user_msg = engine.user_text_message_with_turn_metadata("proceed".to_string());
+    let last_block = user_msg.content.last().expect("turn metadata block");
+    let ContentBlock::Text { text, .. } = last_block else {
+        panic!("expected text metadata block");
+    };
+
+    assert!(text.contains("Active Checklist (0% complete):"));
+    assert!(text.contains("- [~] Fix bug in tokenizer"));
+    assert!(text.contains("- [ ] Write integration tests"));
+    assert!(text.contains("Active Plan:"));
+    assert!(text.contains("Title: Fix Tokenizer Bug"));
+    assert!(text.contains("Objective: Resolve off-by-one error"));
+    assert!(text.contains("- [Completed] Locate off-by-one"));
+    assert!(text.contains("- [In Progress] Apply patch"));
+}
+
+#[test]
 fn current_mode_field_assignment_takes_effect_synchronously() {
     // Basic unit-level invariant: the current_mode field mutates as expected.
     // Op::ChangeMode dispatch through the run loop is exercised by the

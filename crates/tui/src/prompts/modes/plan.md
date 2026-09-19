@@ -14,7 +14,7 @@ secrets in sources, file lists, or handoff text.
 All writes and patches are blocked — you can read the world but you
 can't change it. Shell and code execution are unavailable.
 
-Use this mode to build a thorough plan. Spawn read-only sub-agents for parallel investigation.
+Use this mode to build a thorough plan with concrete, actionable steps that can be tracked and executed sequentially during implementation. Spawn read-only sub-agents for parallel investigation.
 After `update_plan` presents the plan, wait for the user's next action instead of continuing to
 tool around in Plan mode.
 
